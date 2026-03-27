@@ -11,6 +11,7 @@ import fs from "fs";
 import path from "path";
 import url from "url";
 import { runCoachAgent } from "./src/lib/aiCoachAgent.js";
+import { buildQAContext, buildQAPrompt } from "./src/lib/sessionQA.js";
 var MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
@@ -325,6 +326,107 @@ export function createServer({ sessionFile, distDir }) {
         } catch (e) {
           res.writeHead(500);
           res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+        }
+      });
+      return;
+    }
+
+    if (pathname === "/api/qa") {
+      if (req.method !== "POST") {
+        res.setHeader("Content-Type", "application/json");
+        res.writeHead(405); res.end(JSON.stringify({ error: "Method not allowed" })); return;
+      }
+      var qaBody = "";
+      req.on("data", function (chunk) { qaBody += chunk; });
+      req.on("end", async function () {
+        res.setHeader("Content-Type", "application/json");
+        try {
+          var payload = JSON.parse(qaBody);
+          var question = payload.question;
+          var events = payload.events || [];
+          var turns = payload.turns || [];
+          var metadata = payload.metadata || {};
+          var requestedModel = payload.model || null;
+
+          if (!question) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "Missing 'question' field" }));
+            return;
+          }
+
+          var context = buildQAContext(events, turns, metadata);
+          var prompt = buildQAPrompt(question, context);
+
+          // Use the Copilot SDK session-based pattern (same as coach)
+          var { CopilotClient, approveAll } = await import("@github/copilot-sdk");
+          var client = new CopilotClient();
+          var answer = "";
+
+          try {
+            await client.start();
+
+            var sessionOpts = {
+              tools: [],
+              onPermissionRequest: approveAll,
+              systemMessage: {
+                mode: "replace",
+                content: prompt.system,
+              },
+            };
+            if (requestedModel) sessionOpts.model = requestedModel;
+
+            var session = await client.createSession(sessionOpts);
+
+            // Send the question and wait for the session to idle (response complete)
+            await new Promise(function (resolve, reject) {
+              var done = false;
+              var unsubscribe = session.on(function (event) {
+                if (done) return;
+                if (event.type === "session.idle") {
+                  done = true;
+                  unsubscribe();
+                  resolve();
+                } else if (event.type === "session.error") {
+                  done = true;
+                  unsubscribe();
+                  reject(new Error(event.data && event.data.message ? event.data.message : "Session error"));
+                } else if (event.type === "assistant.message.delta") {
+                  // Accumulate streamed text
+                  var delta = event.data && (event.data.text || event.data.content || "");
+                  answer += delta;
+                } else if (event.type === "assistant.message") {
+                  // Complete message in one event
+                  var text = event.data && (event.data.text || event.data.content || "");
+                  if (text) answer = text;
+                }
+              });
+              session.send({ prompt: prompt.user }).catch(function (err) {
+                if (!done) { done = true; unsubscribe(); reject(err); }
+              });
+            });
+
+            await session.disconnect();
+          } finally {
+            await client.stop().catch(function () {});
+          }
+
+          // Extract turn references from the answer
+          var references = [];
+          var refRegex = /\[Turn (\d+)\]/g;
+          var refMatch;
+          while ((refMatch = refRegex.exec(answer)) !== null) {
+            var turnIdx = parseInt(refMatch[1], 10);
+            if (!references.some(function (r) { return r.turnIndex === turnIdx; })) {
+              references.push({ turnIndex: turnIdx });
+            }
+          }
+
+          res.writeHead(200);
+          var modelLabel = requestedModel || "default";
+          res.end(JSON.stringify({ answer: answer, references: references, model: modelLabel }));
+        } catch (e) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: e.message || "Q&A failed" }));
         }
       });
       return;

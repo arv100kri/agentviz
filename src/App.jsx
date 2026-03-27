@@ -26,6 +26,8 @@ import CompareLandingState from "./components/app/CompareLandingState.jsx";
 import CompareShell from "./components/app/CompareShell.jsx";
 import { APP_VIEWS, PLAYBACK_SPEEDS } from "./components/app/constants.js";
 import DebriefView from "./components/DebriefView.jsx";
+import QAView from "./components/QAView.jsx";
+import useSessionQA from "./hooks/useSessionQA.js";
 import { buildAutonomyMetrics, buildAutonomySummary } from "./lib/autonomyMetrics.js";
 import {
   loadStoredSessionContent,
@@ -95,6 +97,18 @@ function renderActiveView(activeView, props) {
         onSetRecommendationState={props.onSetRecommendationState}
         metadata={props.session.metadata}
         rawSession={{ events: props.session.events, turns: props.session.turns, metadata: props.session.metadata, autonomyMetrics: props.autonomyMetrics }}
+      />
+    );
+  }
+
+  if (activeView === "qa") {
+    return (
+      <QAView
+        qa={props.qa}
+        events={props.session.events}
+        turns={props.session.turns}
+        metadata={props.session.metadata}
+        onSeekTurn={props.playback.seek}
       />
     );
   }
@@ -227,6 +241,7 @@ export default function App() {
   }, [session.events]);
 
   var search = useSearch(filteredEventEntries);
+  var qa = useSessionQA();
 
   useEffect(function () {
     if (session.total > 0) {
@@ -563,6 +578,7 @@ export default function App() {
           turnStartMap: turnStartMap,
           autonomyMetrics: autonomyMetrics,
           debrief: debrief,
+          qa: qa,
           onOpenCoach: function () { setView("coach"); },
         })}
       </div>
