@@ -72,7 +72,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     display: "flex",
     flexDirection: "column",
     height: "100%",
-    background: theme.bg.primary,
+    background: theme.bg.base,
     color: theme.text.primary,
   };
 
@@ -118,7 +118,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
   };
 
   var suggestionBtnStyle = {
-    background: theme.bg.secondary,
+    background: theme.bg.surface,
     border: "1px solid " + theme.border.default,
     borderRadius: theme.radius.md + "px",
     padding: theme.space.md + "px " + theme.space.lg + "px",
@@ -132,7 +132,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
 
   var userMsgStyle = {
     alignSelf: "flex-end",
-    background: theme.accent.blue,
+    background: theme.accent.primary,
     color: "#fff",
     padding: theme.space.md + "px " + theme.space.lg + "px",
     borderRadius: theme.radius.lg + "px",
@@ -145,7 +145,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
 
   var assistantMsgStyle = {
     alignSelf: "flex-start",
-    background: theme.bg.secondary,
+    background: theme.bg.surface,
     border: "1px solid " + theme.border.default,
     padding: theme.space.lg + "px",
     borderRadius: theme.radius.lg + "px",
@@ -160,7 +160,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
 
   var turnRefStyle = {
     display: "inline",
-    color: theme.accent.blue,
+    color: theme.accent.primary,
     cursor: "pointer",
     textDecoration: "underline",
     fontWeight: 600,
@@ -180,12 +180,12 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     gap: theme.space.sm + "px",
     padding: theme.space.lg + "px",
     borderTop: "1px solid " + theme.border.default,
-    background: theme.bg.secondary,
+    background: theme.bg.surface,
   };
 
   var inputStyle = {
     flex: 1,
-    background: theme.bg.primary,
+    background: theme.bg.base,
     border: "1px solid " + theme.border.default,
     borderRadius: theme.radius.md + "px",
     padding: theme.space.md + "px " + theme.space.lg + "px",
@@ -196,7 +196,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
   };
 
   var sendBtnStyle = {
-    background: theme.accent.blue,
+    background: theme.accent.primary,
     border: "none",
     borderRadius: theme.radius.md + "px",
     padding: theme.space.md + "px " + theme.space.lg + "px",
@@ -215,7 +215,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     justifyContent: "space-between",
     padding: theme.space.md + "px " + theme.space.xl + "px",
     borderBottom: "1px solid " + theme.border.default,
-    background: theme.bg.secondary,
+    background: theme.bg.surface,
   };
 
   var headerLabelStyle = {
@@ -249,7 +249,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     color: theme.text.dim,
     textAlign: "center",
     padding: "4px " + theme.space.lg + "px",
-    background: theme.bg.secondary,
+    background: theme.bg.surface,
   };
 
   var hasMessages = qa.messages.length > 0;

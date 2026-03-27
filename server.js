@@ -356,15 +356,55 @@ export function createServer({ sessionFile, distDir }) {
           var context = buildQAContext(events, turns, metadata);
           var prompt = buildQAPrompt(question, context);
 
-          // Use the Copilot SDK to answer, same pattern as coach
-          var { CopilotClient } = await import("@github/copilot-sdk");
+          // Use the Copilot SDK session-based pattern (same as coach)
+          var { CopilotClient, approveAll } = await import("@github/copilot-sdk");
           var client = new CopilotClient();
-          var response = await client.chat([
-            { role: "system", content: prompt.system },
-            { role: "user", content: prompt.user },
-          ]);
+          var answer = "";
 
-          var answer = response.message || response.content || "";
+          try {
+            await client.start();
+
+            var session = await client.createSession({
+              tools: [],
+              onPermissionRequest: approveAll,
+              systemMessage: {
+                mode: "replace",
+                content: prompt.system,
+              },
+            });
+
+            // Send the question and wait for the session to idle (response complete)
+            await new Promise(function (resolve, reject) {
+              var done = false;
+              var unsubscribe = session.on(function (event) {
+                if (done) return;
+                if (event.type === "session.idle") {
+                  done = true;
+                  unsubscribe();
+                  resolve();
+                } else if (event.type === "session.error") {
+                  done = true;
+                  unsubscribe();
+                  reject(new Error(event.data && event.data.message ? event.data.message : "Session error"));
+                } else if (event.type === "assistant.message.delta") {
+                  // Accumulate streamed text
+                  var delta = event.data && (event.data.text || event.data.content || "");
+                  answer += delta;
+                } else if (event.type === "assistant.message") {
+                  // Complete message in one event
+                  var text = event.data && (event.data.text || event.data.content || "");
+                  if (text) answer = text;
+                }
+              });
+              session.send({ prompt: prompt.user }).catch(function (err) {
+                if (!done) { done = true; unsubscribe(); reject(err); }
+              });
+            });
+
+            await session.disconnect();
+          } finally {
+            await client.stop().catch(function () {});
+          }
 
           // Extract turn references from the answer
           var references = [];
