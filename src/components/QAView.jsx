@@ -1,0 +1,350 @@
+/**
+ * QAView -- AI-powered Session Q&A panel.
+ *
+ * Chat-style interface for asking natural-language questions about a loaded session.
+ * Answers are grounded in session data with clickable turn references.
+ */
+
+import { useState, useRef, useEffect } from "react";
+import { theme, alpha } from "../lib/theme.js";
+import Icon from "./Icon.jsx";
+
+var SUGGESTED_QUESTIONS = [
+  "What tools were used most frequently?",
+  "What errors occurred and how were they resolved?",
+  "What was the agent's overall approach?",
+  "Which files were modified?",
+  "What happened around the first error?",
+];
+
+function parseTurnReferences(text) {
+  var parts = [];
+  var regex = /\[Turn (\d+)\]/g;
+  var lastIndex = 0;
+  var match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: "text", value: text.substring(lastIndex, match.index) });
+    }
+    parts.push({ type: "ref", turnIndex: parseInt(match[1], 10), value: match[0] });
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push({ type: "text", value: text.substring(lastIndex) });
+  }
+  return parts;
+}
+
+export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
+  var [input, setInput] = useState("");
+  var messagesEndRef = useRef(null);
+  var inputRef = useRef(null);
+
+  useEffect(function () {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [qa.messages.length, qa.loading]);
+
+  useEffect(function () {
+    if (inputRef.current) inputRef.current.focus();
+  }, []);
+
+  function handleSubmit(e) {
+    if (e) e.preventDefault();
+    if (!input.trim() || qa.loading) return;
+    qa.askQuestion(input.trim(), events, turns, metadata);
+    setInput("");
+  }
+
+  function handleSuggestion(q) {
+    qa.askQuestion(q, events, turns, metadata);
+  }
+
+  function handleTurnClick(turnIndex) {
+    if (onSeekTurn && turns) {
+      var turn = turns.find(function (t) { return t.index === turnIndex; });
+      if (turn) onSeekTurn(turn.startTime);
+    }
+  }
+
+  var containerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    height: "100%",
+    background: theme.bg.primary,
+    color: theme.text.primary,
+  };
+
+  var messagesContainerStyle = {
+    flex: 1,
+    overflowY: "auto",
+    padding: theme.spacing.xl + "px",
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.md + "px",
+  };
+
+  var emptyStateStyle = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    gap: theme.spacing.lg + "px",
+    padding: theme.spacing.xxl + "px",
+  };
+
+  var titleStyle = {
+    fontSize: theme.fontSize.lg,
+    fontWeight: 600,
+    color: theme.text.primary,
+  };
+
+  var subtitleStyle = {
+    fontSize: theme.fontSize.sm,
+    color: theme.text.secondary,
+    textAlign: "center",
+    maxWidth: 400,
+    lineHeight: 1.5,
+  };
+
+  var suggestionsStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.sm + "px",
+    width: "100%",
+    maxWidth: 500,
+  };
+
+  var suggestionBtnStyle = {
+    background: theme.bg.secondary,
+    border: "1px solid " + theme.border.default,
+    borderRadius: theme.radius.md + "px",
+    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    color: theme.text.secondary,
+    fontSize: theme.fontSize.sm,
+    fontFamily: theme.font.mono,
+    cursor: "pointer",
+    textAlign: "left",
+    transition: theme.transition.fast,
+  };
+
+  var userMsgStyle = {
+    alignSelf: "flex-end",
+    background: theme.accent.blue,
+    color: "#fff",
+    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    borderRadius: theme.radius.lg + "px",
+    maxWidth: "75%",
+    fontSize: theme.fontSize.sm,
+    fontFamily: theme.font.mono,
+    lineHeight: 1.5,
+    wordBreak: "break-word",
+  };
+
+  var assistantMsgStyle = {
+    alignSelf: "flex-start",
+    background: theme.bg.secondary,
+    border: "1px solid " + theme.border.default,
+    padding: theme.spacing.lg + "px",
+    borderRadius: theme.radius.lg + "px",
+    maxWidth: "85%",
+    fontSize: theme.fontSize.sm,
+    fontFamily: theme.font.mono,
+    lineHeight: 1.6,
+    color: theme.text.primary,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+  };
+
+  var turnRefStyle = {
+    display: "inline",
+    color: theme.accent.blue,
+    cursor: "pointer",
+    textDecoration: "underline",
+    fontWeight: 600,
+  };
+
+  var loadingStyle = {
+    alignSelf: "flex-start",
+    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    color: theme.text.muted,
+    fontSize: theme.fontSize.sm,
+    fontFamily: theme.font.mono,
+    fontStyle: "italic",
+  };
+
+  var inputContainerStyle = {
+    display: "flex",
+    gap: theme.spacing.sm + "px",
+    padding: theme.spacing.lg + "px",
+    borderTop: "1px solid " + theme.border.default,
+    background: theme.bg.secondary,
+  };
+
+  var inputStyle = {
+    flex: 1,
+    background: theme.bg.primary,
+    border: "1px solid " + theme.border.default,
+    borderRadius: theme.radius.md + "px",
+    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    color: theme.text.primary,
+    fontSize: theme.fontSize.sm,
+    fontFamily: theme.font.mono,
+    outline: "none",
+  };
+
+  var sendBtnStyle = {
+    background: theme.accent.blue,
+    border: "none",
+    borderRadius: theme.radius.md + "px",
+    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    color: "#fff",
+    fontSize: theme.fontSize.sm,
+    fontFamily: theme.font.mono,
+    fontWeight: 600,
+    cursor: qa.loading ? "not-allowed" : "pointer",
+    opacity: qa.loading ? 0.5 : 1,
+    transition: theme.transition.fast,
+  };
+
+  var headerStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: theme.spacing.md + "px " + theme.spacing.xl + "px",
+    borderBottom: "1px solid " + theme.border.default,
+    background: theme.bg.secondary,
+  };
+
+  var headerLabelStyle = {
+    fontSize: theme.fontSize.sm,
+    color: theme.text.secondary,
+    fontWeight: 500,
+  };
+
+  var clearBtnStyle = {
+    background: "transparent",
+    border: "1px solid " + theme.border.default,
+    borderRadius: theme.radius.sm + "px",
+    padding: "4px 10px",
+    color: theme.text.muted,
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.font.mono,
+    cursor: "pointer",
+    transition: theme.transition.fast,
+  };
+
+  var errorStyle = {
+    alignSelf: "center",
+    color: theme.semantic.error,
+    fontSize: theme.fontSize.sm,
+    fontFamily: theme.font.mono,
+    padding: theme.spacing.md + "px",
+  };
+
+  var limitationStyle = {
+    fontSize: theme.fontSize.xs,
+    color: theme.text.dim,
+    textAlign: "center",
+    padding: "4px " + theme.spacing.lg + "px",
+    background: theme.bg.secondary,
+  };
+
+  var hasMessages = qa.messages.length > 0;
+
+  return (
+    <div style={containerStyle}>
+      {hasMessages && (
+        <div style={headerStyle}>
+          <span style={headerLabelStyle}>Session Q&A</span>
+          <button
+            className="av-btn"
+            style={clearBtnStyle}
+            onClick={qa.clearHistory}
+            title="Clear conversation"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      <div style={messagesContainerStyle}>
+        {!hasMessages && (
+          <div style={emptyStateStyle}>
+            <Icon name="message-circle" size={32} color={theme.text.dim} />
+            <div style={titleStyle}>Ask about this session</div>
+            <div style={subtitleStyle}>
+              Ask natural-language questions about the loaded session and get answers grounded in the session data.
+            </div>
+            <div style={suggestionsStyle}>
+              {SUGGESTED_QUESTIONS.map(function (q, i) {
+                return (
+                  <button
+                    key={i}
+                    className="av-btn"
+                    style={suggestionBtnStyle}
+                    onClick={function () { handleSuggestion(q); }}
+                  >
+                    {q}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {qa.messages.map(function (msg, i) {
+          if (msg.role === "user") {
+            return <div key={i} style={userMsgStyle}>{msg.content}</div>;
+          }
+          var parts = parseTurnReferences(msg.content);
+          return (
+            <div key={i} style={assistantMsgStyle}>
+              {parts.map(function (part, pi) {
+                if (part.type === "ref") {
+                  return (
+                    <span
+                      key={pi}
+                      style={turnRefStyle}
+                      onClick={function () { handleTurnClick(part.turnIndex); }}
+                      title={"Jump to Turn " + part.turnIndex}
+                    >
+                      {part.value}
+                    </span>
+                  );
+                }
+                return <span key={pi}>{part.value}</span>;
+              })}
+            </div>
+          );
+        })}
+
+        {qa.loading && <div style={loadingStyle}>Thinking...</div>}
+        {qa.error && <div style={errorStyle}>{qa.error}</div>}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div style={limitationStyle}>
+        Requires a running AGENTVIZ server. Not available in self-contained HTML exports.
+      </div>
+
+      <form onSubmit={handleSubmit} style={inputContainerStyle}>
+        <input
+          ref={inputRef}
+          style={inputStyle}
+          className="av-search"
+          type="text"
+          placeholder="Ask a question about this session..."
+          value={input}
+          onChange={function (e) { setInput(e.target.value); }}
+          disabled={qa.loading}
+        />
+        <button type="submit" style={sendBtnStyle} disabled={qa.loading}>
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}
