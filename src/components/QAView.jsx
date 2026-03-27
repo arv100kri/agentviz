@@ -79,10 +79,10 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
   var messagesContainerStyle = {
     flex: 1,
     overflowY: "auto",
-    padding: theme.spacing.xl + "px",
+    padding: theme.space.xl + "px",
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.md + "px",
+    gap: theme.space.md + "px",
   };
 
   var emptyStateStyle = {
@@ -91,8 +91,8 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     alignItems: "center",
     justifyContent: "center",
     flex: 1,
-    gap: theme.spacing.lg + "px",
-    padding: theme.spacing.xxl + "px",
+    gap: theme.space.lg + "px",
+    padding: theme.space.xxl + "px",
   };
 
   var titleStyle = {
@@ -112,7 +112,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
   var suggestionsStyle = {
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.sm + "px",
+    gap: theme.space.sm + "px",
     width: "100%",
     maxWidth: 500,
   };
@@ -121,7 +121,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     background: theme.bg.secondary,
     border: "1px solid " + theme.border.default,
     borderRadius: theme.radius.md + "px",
-    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    padding: theme.space.md + "px " + theme.space.lg + "px",
     color: theme.text.secondary,
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
@@ -134,7 +134,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     alignSelf: "flex-end",
     background: theme.accent.blue,
     color: "#fff",
-    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    padding: theme.space.md + "px " + theme.space.lg + "px",
     borderRadius: theme.radius.lg + "px",
     maxWidth: "75%",
     fontSize: theme.fontSize.sm,
@@ -147,7 +147,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     alignSelf: "flex-start",
     background: theme.bg.secondary,
     border: "1px solid " + theme.border.default,
-    padding: theme.spacing.lg + "px",
+    padding: theme.space.lg + "px",
     borderRadius: theme.radius.lg + "px",
     maxWidth: "85%",
     fontSize: theme.fontSize.sm,
@@ -168,7 +168,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
 
   var loadingStyle = {
     alignSelf: "flex-start",
-    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    padding: theme.space.md + "px " + theme.space.lg + "px",
     color: theme.text.muted,
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
@@ -177,8 +177,8 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
 
   var inputContainerStyle = {
     display: "flex",
-    gap: theme.spacing.sm + "px",
-    padding: theme.spacing.lg + "px",
+    gap: theme.space.sm + "px",
+    padding: theme.space.lg + "px",
     borderTop: "1px solid " + theme.border.default,
     background: theme.bg.secondary,
   };
@@ -188,7 +188,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     background: theme.bg.primary,
     border: "1px solid " + theme.border.default,
     borderRadius: theme.radius.md + "px",
-    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    padding: theme.space.md + "px " + theme.space.lg + "px",
     color: theme.text.primary,
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
@@ -199,7 +199,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     background: theme.accent.blue,
     border: "none",
     borderRadius: theme.radius.md + "px",
-    padding: theme.spacing.md + "px " + theme.spacing.lg + "px",
+    padding: theme.space.md + "px " + theme.space.lg + "px",
     color: "#fff",
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
@@ -213,7 +213,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: theme.spacing.md + "px " + theme.spacing.xl + "px",
+    padding: theme.space.md + "px " + theme.space.xl + "px",
     borderBottom: "1px solid " + theme.border.default,
     background: theme.bg.secondary,
   };
@@ -241,14 +241,14 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
     color: theme.semantic.error,
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
-    padding: theme.spacing.md + "px",
+    padding: theme.space.md + "px",
   };
 
   var limitationStyle = {
     fontSize: theme.fontSize.xs,
     color: theme.text.dim,
     textAlign: "center",
-    padding: "4px " + theme.spacing.lg + "px",
+    padding: "4px " + theme.space.lg + "px",
     background: theme.bg.secondary,
   };
 
