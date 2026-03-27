@@ -41,7 +41,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
   var inputRef = useRef(null);
 
   useEffect(function () {
-    if (messagesEndRef.current) {
+    if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [qa.messages.length, qa.loading]);
