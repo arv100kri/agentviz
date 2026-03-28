@@ -103,11 +103,22 @@ Agent types: user, assistant, system
 - `npm run dev` - Start Vite dev server on port 3000
 - `node bin/agentviz.js` - Start API backend on port 4242 (Coach, sessions, config, apply, streaming)
 - `npm run build` - Production build to dist/
-- `npm test` - Run 253 tests via Vitest (parsers, layout, diff, graph, autonomy, regressions, and more)
-- `npm run test:watch` - Watch mode for tests
+- `npm test` - Run 273 unit tests via Vitest (parsers, layout, diff, graph, autonomy, regressions, and more)
+- `npm run test:watch` - Watch mode for unit tests
+- `npm run test:e2e` - Run Playwright E2E tests (smoke, navigation, interaction)
+- `npm run typecheck` - TypeScript type checking
 
 For full functionality in dev mode, run BOTH `node bin/agentviz.js` and `npm run dev`.
 Vite proxies `/api/*` to the backend automatically.
+
+## UX testing
+
+After any UI change, run `npm run test:e2e` to verify views load and interactions work. For deeper evaluation, invoke the appropriate Copilot CLI skills:
+- **ux-check** - Functionality and ease-of-use evaluation (dynamic view discovery, interaction testing, UX quality reasoning)
+- **a11y-check** - Accessibility audit (axe-core, keyboard navigation, ARIA, contrast, focus rings)
+- **perf-check** - Performance profiling (load times, render speed, DOM size, memory usage)
+
+The Playwright MCP server is configured in `.github/copilot/mcp.json` for agent-driven browser testing.
 
 ## Conventions
 - No em dashes in any content or comments
