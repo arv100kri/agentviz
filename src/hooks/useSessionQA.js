@@ -12,7 +12,7 @@ export default function useSessionQA() {
   var [model, setModel] = useState(null);
   var abortRef = useRef(null);
 
-  var askQuestion = useCallback(function (question, events, turns, metadata) {
+  var askQuestion = useCallback(function (question, events, turns, metadata, model) {
     if (!question.trim() || loading) return;
 
     setLoading(true);
@@ -30,7 +30,7 @@ export default function useSessionQA() {
     fetch("/api/qa", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: question, events: events, turns: turns, metadata: metadata }),
+      body: JSON.stringify({ question: question, events: events, turns: turns, metadata: metadata, model: model }),
       signal: controller.signal,
     })
       .then(function (res) {

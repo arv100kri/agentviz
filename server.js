@@ -346,6 +346,7 @@ export function createServer({ sessionFile, distDir }) {
           var events = payload.events || [];
           var turns = payload.turns || [];
           var metadata = payload.metadata || {};
+          var requestedModel = payload.model || null;
 
           if (!question) {
             res.writeHead(400);
@@ -364,14 +365,17 @@ export function createServer({ sessionFile, distDir }) {
           try {
             await client.start();
 
-            var session = await client.createSession({
+            var sessionOpts = {
               tools: [],
               onPermissionRequest: approveAll,
               systemMessage: {
                 mode: "replace",
                 content: prompt.system,
               },
-            });
+            };
+            if (requestedModel) sessionOpts.model = requestedModel;
+
+            var session = await client.createSession(sessionOpts);
 
             // Send the question and wait for the session to idle (response complete)
             await new Promise(function (resolve, reject) {
@@ -418,7 +422,8 @@ export function createServer({ sessionFile, distDir }) {
           }
 
           res.writeHead(200);
-          res.end(JSON.stringify({ answer: answer, references: references, model: "Copilot (GPT-4o)" }));
+          var modelLabel = requestedModel || "default";
+          res.end(JSON.stringify({ answer: answer, references: references, model: modelLabel }));
         } catch (e) {
           res.writeHead(500);
           res.end(JSON.stringify({ error: e.message || "Q&A failed" }));

@@ -157,8 +157,8 @@ describe("Q&A view integration", function () {
     // Verify send button
     expect(findExactButton(app.container, "Send")).toBeTruthy();
 
-    // Verify limitation notice
-    expect(findByText(app.container, "Requires a running AGENTVIZ server")).toBeTruthy();
+    // Verify model status bar
+    expect(findByText(app.container, "Powered by Copilot SDK")).toBeTruthy();
 
     await app.unmount();
   });
@@ -175,7 +175,7 @@ describe("Q&A view integration", function () {
             return {
               answer: "The session used the view tool in [Turn 0].",
               references: [{ turnIndex: 0 }],
-              model: "Copilot (GPT-4o)",
+              model: "gpt-5.4",
             };
           },
         };
@@ -228,7 +228,7 @@ describe("Q&A view integration", function () {
     expect(turnRef.textContent).toBe("[Turn 0]");
 
     // Verify the model label is displayed
-    expect(findByText(app.container, "Powered by Copilot (GPT-4o)")).toBeTruthy();
+    expect(findByText(app.container, "Powered by GPT-5.4")).toBeTruthy();
 
     await app.unmount();
   });

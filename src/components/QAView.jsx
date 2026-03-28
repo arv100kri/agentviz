@@ -35,8 +35,21 @@ function parseTurnReferences(text) {
   return parts;
 }
 
+var AVAILABLE_MODELS = [
+  { id: "gpt-5.4", label: "GPT-5.4" },
+  { id: "gpt-5.2", label: "GPT-5.2" },
+  { id: "gpt-5.1", label: "GPT-5.1" },
+  { id: "gpt-4.1", label: "GPT-4.1" },
+  { id: "claude-sonnet-4.5", label: "Claude Sonnet 4.5" },
+  { id: "claude-sonnet-4", label: "Claude Sonnet 4" },
+  { id: "claude-haiku-4.5", label: "Claude Haiku 4.5" },
+];
+
+var DEFAULT_MODEL = "gpt-5.4";
+
 export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
   var [input, setInput] = useState("");
+  var [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
 
@@ -53,12 +66,12 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
   function handleSubmit(e) {
     if (e) e.preventDefault();
     if (!input.trim() || qa.loading) return;
-    qa.askQuestion(input.trim(), events, turns, metadata);
+    qa.askQuestion(input.trim(), events, turns, metadata, selectedModel);
     setInput("");
   }
 
   function handleSuggestion(q) {
-    qa.askQuestion(q, events, turns, metadata);
+    qa.askQuestion(q, events, turns, metadata, selectedModel);
   }
 
   function handleTurnClick(turnIndex) {
@@ -254,21 +267,45 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
 
   var hasMessages = qa.messages.length > 0;
 
+  var modelSelectStyle = {
+    background: theme.bg.base,
+    color: theme.text.secondary,
+    border: "1px solid " + theme.border.default,
+    borderRadius: theme.radius.sm + "px",
+    padding: "4px 8px",
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.font.mono,
+    outline: "none",
+    cursor: "pointer",
+  };
+
   return (
     <div style={containerStyle}>
-      {hasMessages && (
-        <div style={headerStyle}>
-          <span style={headerLabelStyle}>Session Q&A</span>
-          <button
-            className="av-btn"
-            style={clearBtnStyle}
-            onClick={qa.clearHistory}
-            title="Clear conversation"
+      <div style={headerStyle}>
+        <span style={headerLabelStyle}>Session Q&A</span>
+        <div style={{ display: "flex", alignItems: "center", gap: theme.space.sm + "px" }}>
+          <select
+            style={modelSelectStyle}
+            value={selectedModel}
+            onChange={function (e) { setSelectedModel(e.target.value); }}
+            title="Choose model"
           >
-            Clear
-          </button>
+            {AVAILABLE_MODELS.map(function (m) {
+              return <option key={m.id} value={m.id}>{m.label}</option>;
+            })}
+          </select>
+          {hasMessages && (
+            <button
+              className="av-btn"
+              style={clearBtnStyle}
+              onClick={qa.clearHistory}
+              title="Clear conversation"
+            >
+              Clear
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       <div style={messagesContainerStyle}>
         {!hasMessages && (
@@ -328,8 +365,8 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
 
       <div style={limitationStyle}>
         {qa.model
-          ? "Powered by " + qa.model
-          : "Requires a running AGENTVIZ server. Not available in self-contained HTML exports."}
+          ? "Powered by " + (AVAILABLE_MODELS.find(function (m) { return m.id === qa.model; }) || { label: qa.model }).label
+          : "Powered by Copilot SDK"}
       </div>
 
       <form onSubmit={handleSubmit} style={inputContainerStyle}>
