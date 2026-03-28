@@ -307,7 +307,7 @@ More formats planned: LangSmith traces, OpenTelemetry spans.
 src/
   App.jsx                # Main orchestrator: file loading, playback, view routing
   cli/
-    index.ts             # Node-target CLI analysis exports bundled into dist-cli/
+    index.js             # Node-target CLI analysis exports bundled into dist-cli/
   hooks/
     usePlayback.js       # Play/pause, speed, seek state machine
     useSearch.js         # Debounced full-text search with match highlighting

@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import { fileURLToPath } from "url";
 
-var cliEntry = fileURLToPath(new URL("./src/cli/index.ts", import.meta.url));
+var cliEntry = fileURLToPath(new URL("./src/cli/index.js", import.meta.url));
 
 export default defineConfig({
   build: {
