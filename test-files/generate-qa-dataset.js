@@ -231,8 +231,8 @@ validProfiles.forEach(function (session) {
       difficulty: "hard",
       sessionId: session.fullId,
       sessionLabel: session.label,
-      expectedFamily: "session-summary",
-      expectedLatency: "model",
+      expectedFamily: "error-diagnosis",
+      expectedLatency: "instant",
       goldenAnswer: {
         text: "The session had " + pluralize(session.errorCount, "error") + " across turns " + session.errorTurns.join(", ") + ". Resolution status requires analysis of subsequent turns.",
         turnReferences: session.errorTurns,
@@ -370,8 +370,8 @@ validProfiles.forEach(function (session) {
       difficulty: "medium",
       sessionId: session.fullId,
       sessionLabel: session.label,
-      expectedFamily: "session-summary",
-      expectedLatency: "model",
+      expectedFamily: "tool-lookup",
+      expectedLatency: "instant",
       goldenAnswer: {
         text: "In turns " + Math.max(0, lastTurn - 4) + "-" + lastTurn + ", the agent used various tools.",
         turnReferences: Array.from({length: Math.min(5, turnCount)}, function(_, i) { return lastTurn - i; }),
@@ -388,8 +388,8 @@ validProfiles.forEach(function (session) {
       difficulty: "medium",
       sessionId: session.fullId,
       sessionLabel: session.label,
-      expectedFamily: "metric",
-      expectedLatency: "fast",
+      expectedFamily: "session-summary",
+      expectedLatency: "model",
       goldenAnswer: {
         text: "The longest tool call was " + session.longestToolCall.toolName + " lasting " + formatDuration(session.longestToolCall.duration) + " in turn " + session.longestToolCall.turnIndex + ".",
         turnReferences: [session.longestToolCall.turnIndex],
@@ -425,8 +425,8 @@ validProfiles.forEach(function (session) {
       difficulty: "very-hard",
       sessionId: session.fullId,
       sessionLabel: session.label,
-      expectedFamily: "session-summary",
-      expectedLatency: "model",
+      expectedFamily: "turn-lookup",
+      expectedLatency: "instant",
       goldenAnswer: {
         text: "The error in turn " + session.errorTurns[0] + " led to subsequent actions in the session.",
         turnReferences: [session.errorTurns[0]],

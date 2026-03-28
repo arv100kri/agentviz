@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-03-28T18:14:21.489Z",
+  "generatedAt": "2026-03-28T18:19:53.326Z",
   "stats": {
     "totalQuestions": 332,
     "byDifficulty": {
@@ -15,18 +15,18 @@
       "session-specific": 281
     },
     "byLatency": {
-      "instant": 144,
-      "model": 139,
-      "fast": 49
+      "instant": 183,
+      "fast": 34,
+      "model": 115
     },
     "byFamily": {
-      "metric": 42,
-      "tool-lookup": 18,
+      "metric": 27,
+      "tool-lookup": 33,
       "file-lookup": 32,
-      "error-diagnosis": 6,
+      "error-diagnosis": 18,
       "command-query-lookup": 3,
-      "turn-lookup": 78,
-      "session-summary": 139,
+      "turn-lookup": 90,
+      "session-summary": 115,
       "exact-raw-evidence": 14
     }
   },
@@ -172,12 +172,12 @@
       "question": "How many turns are in this session?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session has 130 turns. Turn indices are zero-based (0 through 129).",
+        "text": "The session has 9 turns. Turn indices are zero-based (0 through 8).",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -187,12 +187,12 @@
       "question": "How many turns are in this session?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session has 640 turns. Turn indices are zero-based (0 through 639).",
+        "text": "The session has 281 turns. Turn indices are zero-based (0 through 280).",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -202,12 +202,12 @@
       "question": "How many turns are in this session?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session has 6 turns. Turn indices are zero-based (0 through 5).",
+        "text": "The session has 232 turns. Turn indices are zero-based (0 through 231).",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -217,12 +217,12 @@
       "question": "How many tool calls were made?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session made 810 tool calls.",
+        "text": "The session made 13 tool calls.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -232,12 +232,12 @@
       "question": "How many tool calls were made?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session made 777 tool calls.",
+        "text": "The session made 868 tool calls.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -247,12 +247,12 @@
       "question": "How many tool calls were made?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session made 5 tool calls.",
+        "text": "The session made 549 tool calls.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -262,12 +262,12 @@
       "question": "How many errors occurred?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session recorded 86 errors.",
+        "text": "The session recorded 0 errors.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -277,12 +277,12 @@
       "question": "How many errors occurred?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session recorded 6 errors.",
+        "text": "The session recorded 33 errors.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -292,12 +292,12 @@
       "question": "How many errors occurred?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session recorded 0 errors.",
+        "text": "The session recorded 33 errors.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -307,12 +307,12 @@
       "question": "How long did the session last?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session lasted 395h 32m.",
+        "text": "The session lasted 2m 15s.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -322,12 +322,12 @@
       "question": "How long did the session last?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session lasted 19h 35m.",
+        "text": "The session lasted 77h 45m.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -337,12 +337,12 @@
       "question": "How long did the session last?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session lasted 2m 42s.",
+        "text": "The session lasted 3h 36m.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -352,12 +352,12 @@
       "question": "What model was used?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The primary model used in this session was claude-haiku-4.5.",
+        "text": "The primary model used in this session was claude-opus-4.6-1m.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -367,12 +367,12 @@
       "question": "What model was used?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The primary model used in this session was claude-opus-4.6-1m.",
+        "text": "The primary model used in this session was claude-haiku-4.5.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -382,8 +382,8 @@
       "question": "What model was used?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
@@ -397,8 +397,8 @@
       "question": "What is the session format?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
@@ -412,8 +412,8 @@
       "question": "What is the session format?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
@@ -427,8 +427,8 @@
       "question": "What is the session format?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
@@ -442,12 +442,12 @@
       "question": "How many events are in this session?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session has 1231 events.",
+        "text": "The session has 24 events.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -457,12 +457,12 @@
       "question": "How many events are in this session?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session has 1543 events.",
+        "text": "The session has 1506 events.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -472,12 +472,12 @@
       "question": "How many events are in this session?",
       "scope": "general",
       "difficulty": "trivial",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session has 17 events.",
+        "text": "The session has 1006 events.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -487,12 +487,12 @@
       "question": "What tools were used?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "tool-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session used 10 tools: grep, view, powershell, glob, report_intent, edit, task, ado-wit_get_work_item, create, web_search.",
+        "text": "The session used 8 tools: view, report_intent, skill, icm-get_incident_context, icm-get_ai_summary, icm-get_incident_details_by_id, icm-get_incident_customer_impact, icm-get_support_requests_crisit.",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -502,12 +502,12 @@
       "question": "What tools were used?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "tool-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session used 10 tools: powershell, view, edit, grep, report_intent, glob, create, sql, read_powershell, exit_plan_mode.",
+        "text": "The session used 10 tools: view, grep, powershell, edit, glob, report_intent, task, read_agent, sql, create.",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -517,12 +517,12 @@
       "question": "What tools were used?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "tool-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session used 3 tools: powershell, read_powershell, report_intent.",
+        "text": "The session used 10 tools: view, grep, powershell, edit, glob, report_intent, read_powershell, read_agent, sql, stop_powershell.",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -532,12 +532,12 @@
       "question": "What was the most used tool?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The most-used tool was grep with 295 calls.",
+        "text": "The most-used tool was view with 4 calls.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -547,12 +547,12 @@
       "question": "What was the most used tool?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The most-used tool was powershell with 253 calls.",
+        "text": "The most-used tool was view with 250 calls.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -562,12 +562,12 @@
       "question": "What was the most used tool?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "metric",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The most-used tool was powershell with 2 calls.",
+        "text": "The most-used tool was view with 135 calls.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -577,12 +577,12 @@
       "question": "Which files were modified?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "file-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session referenced 10 files including: C:\\azs\\repos\\AzureSearch, C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Context\\AboveClusterCoreSettingsExtensions.cs, C:\\azs\\repos\\AzureSearch\\Source, C:\\azs\\repos\\AzureSearch\\FrontendRepo\\Serverless\\Product\\SearchCore.Serverless, C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Context\\Secrets\\Definitions\\CertificateDefinitions.cs.",
+        "text": "The session referenced 1 file including: C:\\azs\\repos\\AzureSearch\\.github\\skills\\ops-rca-critic\\references\\examples.md.",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -592,12 +592,12 @@
       "question": "Which files were modified?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "file-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session referenced 10 files including: C:\\src\\agentviz\\server.js, C:\\src\\agentviz\\bin\\agentviz.js, C:\\src\\agentviz\\src\\App.jsx, C:\\src\\agentviz\\src\\lib\\sessionQA.js, C:\\src\\agentviz\\src\\components\\QAView.jsx.",
+        "text": "The session referenced 10 files including: C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement\\Product\\IndexPlacement.Application\\ClusterManagement\\ClusterGroupAutoScalingHandler.cs, C:\\azs\\repos\\AzureSearch, C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement\\Tests\\IndexPlacement.UnitTests\\Infrastructure\\ClusterManagement\\ClusterGroupAutoScalerTests.cs, C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment\\Stamps\\Models\\StampMetadata.cs, C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment\\Stamps\\StampDefinitions\\DeveloperStamps.cs.",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -607,12 +607,12 @@
       "question": "Which files were modified?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "file-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "No file references found.",
+        "text": "The session referenced 10 files including: C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore\\Controllers\\2013-11-22-Preview\\ClusterGroups20131122PreviewController.cs, C:\\src\\AzureSearch1, C:\\src\\AzureSearch1\\Source\\StampController, C:\\src\\AzureSearch1\\Source\\StampController\\Tests\\StampController.Tests\\MiseV2AuthenticationTests.cs, C:\\src\\AzureSearch1\\Source\\IndexPlacement\\Tests\\IndexPlacement.UnitTests\\Infrastructure\\ClusterManagement\\ClusterGroupAutoScalerTests.cs.",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -622,12 +622,12 @@
       "question": "What errors occurred?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "error-diagnosis",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session had 86 errors in turns: 2, 4, 5, 14, 15, 25, 33, 48, 96, 122.",
+        "text": "No errors were recorded in this session.",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -637,12 +637,12 @@
       "question": "What errors occurred?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "error-diagnosis",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session had 6 errors in turns: 191, 244, 366, 423, 567.",
+        "text": "The session had 33 errors in turns: 4, 28, 32, 91, 108, 117, 120, 126, 128, 199.",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -652,12 +652,12 @@
       "question": "What errors occurred?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "error-diagnosis",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "No errors were recorded in this session.",
+        "text": "The session had 33 errors in turns: 9, 11, 16, 21, 22, 49, 52, 56, 59, 63.",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -667,12 +667,12 @@
       "question": "What commands were run?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "command-query-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session ran commands including: cd \"C:\\Users\\arjagann\\.copilot\\session-state\\8cfb77ae-8988-4273-82da-eace3b28d7f7\\files\"\n# Try to extract text from t...; Get-Content \"C:\\Users\\arjagann\\AppData\\Local\\Temp\\copilot-tool-output-1773132285207-t25jjy.txt\" | Select-Object -Firs...; Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\\FrontendRepo\\Serverless\\Product\\SearchCore.Serverless\\Services\\Serverle...; Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\\FrontendRepo\" -Recurse -Filter \"*Backend*grpc*\" -ErrorAction SilentlyCo...; Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\\FrontendRepo\" -Recurse -Filter \"*ServerlessBackend*\" -ErrorAction Silen....",
+        "text": "No commands were recorded.",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -682,12 +682,12 @@
       "question": "What commands were run?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "command-query-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session ran commands including: cd C:\\src\\agentviz && git --no-pager log -1 --stat; cd C:\\src\\agentviz && git --no-pager diff HEAD~1 HEAD -- bin/agentviz.js; Get-ChildItem -Path \"C:\\src\\agentviz\\src\\__tests__\" -Filter \"*.test.js\" -o Name | Measure-Object -Line; Get-ChildItem -Path \"C:\\src\\agentviz\\src\\__tests__\" -Filter \"*.test.js\" | Measure-Object | Select-Object Count; cd C:\\src\\agentviz && Get-ChildItem dist\\assets\\index-*.js -Name 2>$null; Get-ChildItem test-files -Name 2>$null.",
+        "text": "The session ran commands including: cd C:\\azs\\repos\\AzureSearch && git branch --show-current; cd C:\\azs\\repos\\AzureSearch && git --no-pager log --oneline -30; cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --author=\"Carson\" --oneline -20; cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --author=\"Giuliano\" --oneline -20; cd C:\\azs\\repos\\AzureSearch && git --no-pager diff origin/main...HEAD --stat.",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -697,12 +697,12 @@
       "question": "What commands were run?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "command-query-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session ran commands including: cd C:\\src\\PolyPilot\\PolyPilot && dotnet build -f net10.0-windows10.0.19041.0 2>&1 | Select-Object -Last 30; cd C:\\src\\PolyPilot\\PolyPilot && dotnet run -f net10.0-windows10.0.19041.0 2>&1.",
+        "text": "The session ran commands including: Remove-Item \"C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore\\Controllers\\2013-11-22-Preview\\In...; Rename-Item \"C:\\src\\AzureSearch1\\Source\\StampController\\Tests\\StampController.Tests\\Auth\\IndexPlacementClusterGroupsC...; & C:\\src\\AzureSearch1\\.github\\skills\\dev-dotnet\\scripts\\build-project.ps1 -ProjectFile \"C:\\src\\AzureSearch1\\Source\\St...; Select-String -Path \"C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore.Hosting.Windows\\StampCont...; Get-Content \"C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore.Hosting.Windows\\StampControllerDe....",
         "turnReferences": [],
         "rubric": "contains-list"
       },
@@ -712,12 +712,12 @@
       "question": "What happened in the first turn?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "turn-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "Turn 0: You are an expert security researcher and a software engineer who understands key details of architecture, authentication and authorization (AuthNZ) as well as the Azure AI Search codebase.\n\nYou ha...",
+        "text": "Turn 0: /ops-rca-critic",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -727,12 +727,12 @@
       "question": "What happened in the first turn?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "turn-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "Turn 0: Can you add tests for the feature that was added in the most recent commit",
+        "text": "Turn 0: You need to analyze the codebase and understand how Unlimited architecture works with regards to cluster group provisioning and scale up. Look for commits by Joey Carson and Giuliano to understand ...",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -742,12 +742,12 @@
       "question": "What happened in the first turn?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "turn-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "Turn 0: How do I run the poly pilot application?",
+        "text": "Turn 0: Hey so look at @C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore\\Controllers\\2013-11-22-Preview\\ClusterGroups20131122PreviewController.cs and @C:\\src\\AzureSearch1\\Source\\Stamp...",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -757,12 +757,12 @@
       "question": "What happened in the last turn?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+      "sessionLabel": "Ops RCA Critic",
       "expectedFamily": "turn-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "Turn 88: (continuation)",
+        "text": "Turn 8: (continuation)",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -772,12 +772,12 @@
       "question": "What happened in the last turn?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "turn-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "Turn 428: (continuation)",
+        "text": "Turn 189: (continuation)",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -787,12 +787,12 @@
       "question": "What happened in the last turn?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "turn-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "Turn 5: (continuation)",
+        "text": "Turn 156: (continuation)",
         "turnReferences": [],
         "rubric": "contains-key-facts"
       },
@@ -902,8 +902,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
       "sessionLabel": "AgentViz Q&A",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 6 errors across turns 191, 244, 366, 423, 567. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -1036,8 +1036,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
       "sessionLabel": "AgentViz Q&A",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 635-639, the agent used various tools.",
         "turnReferences": [
@@ -1057,8 +1057,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
       "sessionLabel": "AgentViz Q&A",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was view lasting 3m 25s in turn 35.",
         "turnReferences": [
@@ -1089,8 +1089,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
       "sessionLabel": "AgentViz Q&A",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 191 led to subsequent actions in the session.",
         "turnReferences": [
@@ -1222,8 +1222,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:224334e2-d474-4925-af37-a30a3c1f5860:events.jsonl",
       "sessionLabel": "Explore Repository And Run App",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 4 errors across turns 17, 21, 55, 133. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -1355,8 +1355,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:224334e2-d474-4925-af37-a30a3c1f5860:events.jsonl",
       "sessionLabel": "Explore Repository And Run App",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 133-137, the agent used various tools.",
         "turnReferences": [
@@ -1376,8 +1376,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:224334e2-d474-4925-af37-a30a3c1f5860:events.jsonl",
       "sessionLabel": "Explore Repository And Run App",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was exit_plan_mode lasting 11m 17s in turn 95.",
         "turnReferences": [
@@ -1408,8 +1408,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:224334e2-d474-4925-af37-a30a3c1f5860:events.jsonl",
       "sessionLabel": "Explore Repository And Run App",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 17 led to subsequent actions in the session.",
         "turnReferences": [
@@ -1541,8 +1541,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:ecdc9dab-5ccf-405f-b9e3-631c3cc686b9:events.jsonl",
       "sessionLabel": "Create Automated UX Testing Skill",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 5 errors across turns 12, 26, 49. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -1673,8 +1673,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:ecdc9dab-5ccf-405f-b9e3-631c3cc686b9:events.jsonl",
       "sessionLabel": "Create Automated UX Testing Skill",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 156-160, the agent used various tools.",
         "turnReferences": [
@@ -1694,8 +1694,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:ecdc9dab-5ccf-405f-b9e3-631c3cc686b9:events.jsonl",
       "sessionLabel": "Create Automated UX Testing Skill",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was powershell lasting 2m 1s in turn 93.",
         "turnReferences": [
@@ -1726,8 +1726,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:ecdc9dab-5ccf-405f-b9e3-631c3cc686b9:events.jsonl",
       "sessionLabel": "Create Automated UX Testing Skill",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 12 led to subsequent actions in the session.",
         "turnReferences": [
@@ -1859,8 +1859,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:4efe7267-186a-4640-9f2b-b7630959bda0:events.jsonl",
       "sessionLabel": "AgentViz CLI mode",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 3 errors across turns 1, 37, 71. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -1991,8 +1991,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:4efe7267-186a-4640-9f2b-b7630959bda0:events.jsonl",
       "sessionLabel": "AgentViz CLI mode",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 116-120, the agent used various tools.",
         "turnReferences": [
@@ -2012,8 +2012,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:4efe7267-186a-4640-9f2b-b7630959bda0:events.jsonl",
       "sessionLabel": "AgentViz CLI mode",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was ask_user lasting 3m 14s in turn 6.",
         "turnReferences": [
@@ -2044,8 +2044,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:4efe7267-186a-4640-9f2b-b7630959bda0:events.jsonl",
       "sessionLabel": "AgentViz CLI mode",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 1 led to subsequent actions in the session.",
         "turnReferences": [
@@ -2177,8 +2177,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:8cfb77ae-8988-4273-82da-eace3b28d7f7:events.jsonl",
       "sessionLabel": "Secure IPS-SC Communication",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 14 errors across turns 43, 51, 73, 126, 137, 139, 148, 149, 166, 167. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -2316,8 +2316,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:8cfb77ae-8988-4273-82da-eace3b28d7f7:events.jsonl",
       "sessionLabel": "Secure IPS-SC Communication",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 236-240, the agent used various tools.",
         "turnReferences": [
@@ -2337,8 +2337,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:8cfb77ae-8988-4273-82da-eace3b28d7f7:events.jsonl",
       "sessionLabel": "Secure IPS-SC Communication",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was exit_plan_mode lasting 5m 28s in turn 124.",
         "turnReferences": [
@@ -2369,8 +2369,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:8cfb77ae-8988-4273-82da-eace3b28d7f7:events.jsonl",
       "sessionLabel": "Secure IPS-SC Communication",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 43 led to subsequent actions in the session.",
         "turnReferences": [
@@ -2502,8 +2502,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
       "sessionLabel": "Consolidate ClusterGroup Controllers",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 33 errors across turns 9, 11, 16, 21, 22, 49, 52, 56, 59, 63. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -2641,8 +2641,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
       "sessionLabel": "Consolidate ClusterGroup Controllers",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 227-231, the agent used various tools.",
         "turnReferences": [
@@ -2662,8 +2662,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
       "sessionLabel": "Consolidate ClusterGroup Controllers",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was ask_user lasting 4m 57s in turn 30.",
         "turnReferences": [
@@ -2694,8 +2694,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
       "sessionLabel": "Consolidate ClusterGroup Controllers",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 9 led to subsequent actions in the session.",
         "turnReferences": [
@@ -2827,8 +2827,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
       "sessionLabel": "FE to BE communication",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 86 errors across turns 2, 4, 5, 14, 15, 25, 33, 48, 96, 122. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -2966,8 +2966,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
       "sessionLabel": "FE to BE communication",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 125-129, the agent used various tools.",
         "turnReferences": [
@@ -2987,8 +2987,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
       "sessionLabel": "FE to BE communication",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was task lasting 8m 16s in turn 14.",
         "turnReferences": [
@@ -3019,8 +3019,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
       "sessionLabel": "FE to BE communication",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 2 led to subsequent actions in the session.",
         "turnReferences": [
@@ -3152,8 +3152,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:db97d47c-efe8-4c83-a626-dc16e940651d:events.jsonl",
       "sessionLabel": "Assess YARP Integration With OpenSearch",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 39 errors across turns 2, 5, 7, 8, 19, 23, 24, 28, 29. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -3290,8 +3290,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:db97d47c-efe8-4c83-a626-dc16e940651d:events.jsonl",
       "sessionLabel": "Assess YARP Integration With OpenSearch",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 40-44, the agent used various tools.",
         "turnReferences": [
@@ -3311,8 +3311,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:db97d47c-efe8-4c83-a626-dc16e940651d:events.jsonl",
       "sessionLabel": "Assess YARP Integration With OpenSearch",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was lsp lasting 1m in turn 28.",
         "turnReferences": [
@@ -3343,8 +3343,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:db97d47c-efe8-4c83-a626-dc16e940651d:events.jsonl",
       "sessionLabel": "Assess YARP Integration With OpenSearch",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 2 led to subsequent actions in the session.",
         "turnReferences": [
@@ -3476,8 +3476,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:1554ef53-f5e2-4458-9fc2-0c322e770245:events.jsonl",
       "sessionLabel": "Diagnose EV2 Deployment Failure",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 30 errors across turns 0, 18, 23, 31, 41, 44, 45, 47, 72, 76. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -3615,8 +3615,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:1554ef53-f5e2-4458-9fc2-0c322e770245:events.jsonl",
       "sessionLabel": "Diagnose EV2 Deployment Failure",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 157-161, the agent used various tools.",
         "turnReferences": [
@@ -3636,8 +3636,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:1554ef53-f5e2-4458-9fc2-0c322e770245:events.jsonl",
       "sessionLabel": "Diagnose EV2 Deployment Failure",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was powershell lasting 2m 17s in turn 149.",
         "turnReferences": [
@@ -3668,8 +3668,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:1554ef53-f5e2-4458-9fc2-0c322e770245:events.jsonl",
       "sessionLabel": "Diagnose EV2 Deployment Failure",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 0 led to subsequent actions in the session.",
         "turnReferences": [
@@ -3801,8 +3801,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:ba9ecfef-bdab-4484-abf1-75cb88ea9a04:events.jsonl",
       "sessionLabel": "Collaborative Agent Technologies Research",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 9 errors across turns 43, 47, 50, 101, 290, 292. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -3936,8 +3936,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:ba9ecfef-bdab-4484-abf1-75cb88ea9a04:events.jsonl",
       "sessionLabel": "Collaborative Agent Technologies Research",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 289-293, the agent used various tools.",
         "turnReferences": [
@@ -3957,8 +3957,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:ba9ecfef-bdab-4484-abf1-75cb88ea9a04:events.jsonl",
       "sessionLabel": "Collaborative Agent Technologies Research",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was edit lasting 2m 35s in turn 33.",
         "turnReferences": [
@@ -3989,8 +3989,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:ba9ecfef-bdab-4484-abf1-75cb88ea9a04:events.jsonl",
       "sessionLabel": "Collaborative Agent Technologies Research",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 43 led to subsequent actions in the session.",
         "turnReferences": [
@@ -4122,8 +4122,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
       "sessionLabel": "Analyze Unlimited Cluster Provisioning",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 33 errors across turns 4, 28, 32, 91, 108, 117, 120, 126, 128, 199. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -4261,8 +4261,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
       "sessionLabel": "Analyze Unlimited Cluster Provisioning",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 276-280, the agent used various tools.",
         "turnReferences": [
@@ -4282,8 +4282,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
       "sessionLabel": "Analyze Unlimited Cluster Provisioning",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was powershell lasting 21m 19s in turn 23.",
         "turnReferences": [
@@ -4314,8 +4314,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
       "sessionLabel": "Analyze Unlimited Cluster Provisioning",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 4 led to subsequent actions in the session.",
         "turnReferences": [
@@ -4527,8 +4527,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
       "sessionLabel": "Run Poly Pilot Application",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 1-5, the agent used various tools.",
         "turnReferences": [
@@ -4548,8 +4548,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
       "sessionLabel": "Run Poly Pilot Application",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was powershell lasting 28s in turn 1.",
         "turnReferences": [
@@ -4681,8 +4681,8 @@
       "difficulty": "hard",
       "sessionId": "copilot-cli:9020d425-6513-414d-8859-96e36c4e9735:events.jsonl",
       "sessionLabel": "Generate AGENTS.md Hierarchy",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The session had 40 errors across turns 14, 25, 26, 31, 32, 33, 34, 120. Resolution status requires analysis of subsequent turns.",
         "turnReferences": [
@@ -4818,8 +4818,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:9020d425-6513-414d-8859-96e36c4e9735:events.jsonl",
       "sessionLabel": "Generate AGENTS.md Hierarchy",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 127-131, the agent used various tools.",
         "turnReferences": [
@@ -4839,8 +4839,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:9020d425-6513-414d-8859-96e36c4e9735:events.jsonl",
       "sessionLabel": "Generate AGENTS.md Hierarchy",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was task lasting 14m 52s in turn 26.",
         "turnReferences": [
@@ -4871,8 +4871,8 @@
       "difficulty": "very-hard",
       "sessionId": "copilot-cli:9020d425-6513-414d-8859-96e36c4e9735:events.jsonl",
       "sessionLabel": "Generate AGENTS.md Hierarchy",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "turn-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "The error in turn 14 led to subsequent actions in the session.",
         "turnReferences": [
@@ -5085,8 +5085,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
       "sessionLabel": "Ops RCA Critic",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 4-8, the agent used various tools.",
         "turnReferences": [
@@ -5106,8 +5106,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
       "sessionLabel": "Ops RCA Critic",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was icm-get_incident_context lasting 7s in turn 6.",
         "turnReferences": [
@@ -5335,8 +5335,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:d368cedb-32fd-43f2-a51c-4888197a35fb:events.jsonl",
       "sessionLabel": "Cherry-Pick Commit Range",
-      "expectedFamily": "session-summary",
-      "expectedLatency": "model",
+      "expectedFamily": "tool-lookup",
+      "expectedLatency": "instant",
       "goldenAnswer": {
         "text": "In turns 11-15, the agent used various tools.",
         "turnReferences": [
@@ -5356,8 +5356,8 @@
       "difficulty": "medium",
       "sessionId": "copilot-cli:d368cedb-32fd-43f2-a51c-4888197a35fb:events.jsonl",
       "sessionLabel": "Cherry-Pick Commit Range",
-      "expectedFamily": "metric",
-      "expectedLatency": "fast",
+      "expectedFamily": "session-summary",
+      "expectedLatency": "model",
       "goldenAnswer": {
         "text": "The longest tool call was ask_user lasting 1m 34s in turn 11.",
         "turnReferences": [
@@ -5404,12 +5404,12 @@
       "question": "What was the longest tool call in this session?",
       "scope": "general",
       "difficulty": "medium",
-      "sessionId": "copilot-cli:d368cedb-32fd-43f2-a51c-4888197a35fb:events.jsonl",
-      "sessionLabel": "Cherry-Pick Commit Range",
+      "sessionId": "copilot-cli:1554ef53-f5e2-4458-9fc2-0c322e770245:events.jsonl",
+      "sessionLabel": "Diagnose EV2 Deployment Failure",
       "expectedFamily": "metric",
       "expectedLatency": "fast",
       "goldenAnswer": {
-        "text": "The longest tool call was ask_user lasting 1m 34s in turn 11.",
+        "text": "The longest tool call was powershell lasting 2m 17s in turn 149.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
@@ -5419,16 +5419,46 @@
       "question": "What was the longest tool call in this session?",
       "scope": "general",
       "difficulty": "medium",
-      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
-      "sessionLabel": "Run Poly Pilot Application",
+      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
       "expectedFamily": "metric",
       "expectedLatency": "fast",
       "goldenAnswer": {
-        "text": "The longest tool call was powershell lasting 28s in turn 1.",
+        "text": "The longest tool call was powershell lasting 21m 19s in turn 23.",
         "turnReferences": [],
         "rubric": "exact-value"
       },
       "id": "q316"
+    },
+    {
+      "question": "Which turns had errors?",
+      "scope": "general",
+      "difficulty": "medium",
+      "sessionId": "copilot-cli:ba9ecfef-bdab-4484-abf1-75cb88ea9a04:events.jsonl",
+      "sessionLabel": "Collaborative Agent Technologies Research",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "fast",
+      "goldenAnswer": {
+        "text": "Errors occurred in turns: 43, 47, 50, 101, 290, 292.",
+        "turnReferences": [],
+        "rubric": "contains-list"
+      },
+      "id": "q317"
+    },
+    {
+      "question": "Which turns had errors?",
+      "scope": "general",
+      "difficulty": "medium",
+      "sessionId": "copilot-cli:ecdc9dab-5ccf-405f-b9e3-631c3cc686b9:events.jsonl",
+      "sessionLabel": "Create Automated UX Testing Skill",
+      "expectedFamily": "error-diagnosis",
+      "expectedLatency": "fast",
+      "goldenAnswer": {
+        "text": "Errors occurred in turns: 12, 26, 49.",
+        "turnReferences": [],
+        "rubric": "contains-list"
+      },
+      "id": "q318"
     },
     {
       "question": "Which turns had errors?",
@@ -5443,48 +5473,18 @@
         "turnReferences": [],
         "rubric": "contains-list"
       },
-      "id": "q317"
-    },
-    {
-      "question": "Which turns had errors?",
-      "scope": "general",
-      "difficulty": "medium",
-      "sessionId": "copilot-cli:9020d425-6513-414d-8859-96e36c4e9735:events.jsonl",
-      "sessionLabel": "Generate AGENTS.md Hierarchy",
-      "expectedFamily": "error-diagnosis",
-      "expectedLatency": "fast",
-      "goldenAnswer": {
-        "text": "Errors occurred in turns: 14, 25, 26, 31, 32, 33, 34, 120.",
-        "turnReferences": [],
-        "rubric": "contains-list"
-      },
-      "id": "q318"
-    },
-    {
-      "question": "Which turns had errors?",
-      "scope": "general",
-      "difficulty": "medium",
-      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
-      "sessionLabel": "Consolidate ClusterGroup Controllers",
-      "expectedFamily": "error-diagnosis",
-      "expectedLatency": "fast",
-      "goldenAnswer": {
-        "text": "Errors occurred in turns: 9, 11, 16, 21, 22, 49, 52, 56, 59, 63.",
-        "turnReferences": [],
-        "rubric": "contains-list"
-      },
       "id": "q319"
     },
     {
       "question": "How many distinct files were accessed?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
-      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
+      "sessionId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
+      "sessionLabel": "Run Poly Pilot Application",
       "expectedFamily": "file-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
-        "text": "The session accessed 10 distinct files.",
+        "text": "The session accessed 0 distinct files.",
         "turnReferences": [],
         "rubric": "exact-count"
       },
@@ -5494,8 +5494,8 @@
       "question": "How many distinct files were accessed?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
-      "sessionLabel": "AgentViz Q&A",
+      "sessionId": "copilot-cli:4efe7267-186a-4640-9f2b-b7630959bda0:events.jsonl",
+      "sessionLabel": "AgentViz CLI mode",
       "expectedFamily": "file-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
@@ -5509,8 +5509,8 @@
       "question": "How many distinct files were accessed?",
       "scope": "general",
       "difficulty": "easy",
-      "sessionId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
-      "sessionLabel": "FE to BE communication",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "file-lookup",
       "expectedLatency": "instant",
       "goldenAnswer": {
@@ -5539,12 +5539,12 @@
       "question": "Summarize this session in a few sentences.",
       "scope": "session-specific",
       "difficulty": "hard",
-      "sessionId": "copilot-cli:d368cedb-32fd-43f2-a51c-4888197a35fb:events.jsonl",
-      "sessionLabel": "Cherry-Pick Commit Range",
+      "sessionId": "copilot-cli:224334e2-d474-4925-af37-a30a3c1f5860:events.jsonl",
+      "sessionLabel": "Explore Repository And Run App",
       "expectedFamily": "session-summary",
       "expectedLatency": "model",
       "goldenAnswer": {
-        "text": "The session 'Cherry-Pick Commit Range' covered 16 turns of work.",
+        "text": "The session 'Explore Repository And Run App' covered 138 turns of work.",
         "turnReferences": [],
         "rubric": "reasonable-synthesis"
       },
@@ -5554,12 +5554,12 @@
       "question": "What was the main goal of this session?",
       "scope": "session-specific",
       "difficulty": "hard",
-      "sessionId": "copilot-cli:4efe7267-186a-4640-9f2b-b7630959bda0:events.jsonl",
-      "sessionLabel": "AgentViz CLI mode",
+      "sessionId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+      "sessionLabel": "Consolidate ClusterGroup Controllers",
       "expectedFamily": "session-summary",
       "expectedLatency": "model",
       "goldenAnswer": {
-        "text": "The session 'AgentViz CLI mode' covered 121 turns of work.",
+        "text": "The session 'Consolidate ClusterGroup Controllers' covered 232 turns of work.",
         "turnReferences": [],
         "rubric": "reasonable-synthesis"
       },
@@ -5569,12 +5569,12 @@
       "question": "What was the main goal of this session?",
       "scope": "session-specific",
       "difficulty": "hard",
-      "sessionId": "copilot-cli:224334e2-d474-4925-af37-a30a3c1f5860:events.jsonl",
-      "sessionLabel": "Explore Repository And Run App",
+      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
+      "sessionLabel": "AgentViz Q&A",
       "expectedFamily": "session-summary",
       "expectedLatency": "model",
       "goldenAnswer": {
-        "text": "The session 'Explore Repository And Run App' covered 138 turns of work.",
+        "text": "The session 'AgentViz Q&A' covered 640 turns of work.",
         "turnReferences": [],
         "rubric": "reasonable-synthesis"
       },
@@ -5599,12 +5599,12 @@
       "question": "Did the session accomplish what it set out to do?",
       "scope": "session-specific",
       "difficulty": "hard",
-      "sessionId": "copilot-cli:224334e2-d474-4925-af37-a30a3c1f5860:events.jsonl",
-      "sessionLabel": "Explore Repository And Run App",
+      "sessionId": "copilot-cli:8cfb77ae-8988-4273-82da-eace3b28d7f7:events.jsonl",
+      "sessionLabel": "Secure IPS-SC Communication",
       "expectedFamily": "session-summary",
       "expectedLatency": "model",
       "goldenAnswer": {
-        "text": "The session 'Explore Repository And Run App' covered 138 turns of work.",
+        "text": "The session 'Secure IPS-SC Communication' covered 241 turns of work.",
         "turnReferences": [],
         "rubric": "reasonable-synthesis"
       },
@@ -5614,12 +5614,12 @@
       "question": "Walk me through the key decisions made in this session.",
       "scope": "session-specific",
       "difficulty": "hard",
-      "sessionId": "copilot-cli:9020d425-6513-414d-8859-96e36c4e9735:events.jsonl",
-      "sessionLabel": "Generate AGENTS.md Hierarchy",
+      "sessionId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
+      "sessionLabel": "AgentViz Q&A",
       "expectedFamily": "session-summary",
       "expectedLatency": "model",
       "goldenAnswer": {
-        "text": "The session 'Generate AGENTS.md Hierarchy' covered 132 turns of work.",
+        "text": "The session 'AgentViz Q&A' covered 640 turns of work.",
         "turnReferences": [],
         "rubric": "reasonable-synthesis"
       },
@@ -5629,12 +5629,12 @@
       "question": "Walk me through the key decisions made in this session.",
       "scope": "session-specific",
       "difficulty": "hard",
-      "sessionId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
-      "sessionLabel": "Analyze Unlimited Cluster Provisioning",
+      "sessionId": "copilot-cli:db97d47c-efe8-4c83-a626-dc16e940651d:events.jsonl",
+      "sessionLabel": "Assess YARP Integration With OpenSearch",
       "expectedFamily": "session-summary",
       "expectedLatency": "model",
       "goldenAnswer": {
-        "text": "The session 'Analyze Unlimited Cluster Provisioning' covered 281 turns of work.",
+        "text": "The session 'Assess YARP Integration With OpenSearch' covered 45 turns of work.",
         "turnReferences": [],
         "rubric": "reasonable-synthesis"
       },
@@ -5659,12 +5659,12 @@
       "question": "What were the most important turning points?",
       "scope": "session-specific",
       "difficulty": "hard",
-      "sessionId": "copilot-cli:db97d47c-efe8-4c83-a626-dc16e940651d:events.jsonl",
-      "sessionLabel": "Assess YARP Integration With OpenSearch",
+      "sessionId": "copilot-cli:4efe7267-186a-4640-9f2b-b7630959bda0:events.jsonl",
+      "sessionLabel": "AgentViz CLI mode",
       "expectedFamily": "session-summary",
       "expectedLatency": "model",
       "goldenAnswer": {
-        "text": "The session 'Assess YARP Integration With OpenSearch' covered 45 turns of work.",
+        "text": "The session 'AgentViz CLI mode' covered 121 turns of work.",
         "turnReferences": [],
         "rubric": "reasonable-synthesis"
       },

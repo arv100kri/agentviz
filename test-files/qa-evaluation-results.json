@@ -1,62 +1,31 @@
 {
-  "evaluatedAt": "2026-03-28T18:17:04.431Z",
+  "evaluatedAt": "2026-03-28T18:19:56.230Z",
   "summary": {
     "totalQuestions": 332,
     "evaluated": 332,
     "errors": 0,
-    "routingAccuracy": "78%",
-    "routingCorrect": 258,
+    "routingAccuracy": "94%",
+    "routingCorrect": 312,
     "routingTotal": 332,
     "latency": {
       "p50": "3ms",
       "p90": "8ms",
-      "p99": "19ms",
-      "max": "31ms"
+      "p99": "14ms",
+      "max": "23ms"
     },
     "deterministicCount": 218,
     "modelRequiredCount": 114,
     "familyAccuracy": {
       "metric": {
-        "accuracy": "64%",
+        "accuracy": "100%",
         "correct": 27,
-        "total": 42,
-        "misrouted": [
-          {
-            "id": "q058",
-            "question": "What was the slowest operation in this session and why di...",
-            "expected": "metric",
-            "actual": "session-summary"
-          },
-          {
-            "id": "q077",
-            "question": "What was the slowest operation in this session and why di...",
-            "expected": "metric",
-            "actual": "session-summary"
-          },
-          {
-            "id": "q096",
-            "question": "What was the slowest operation in this session and why di...",
-            "expected": "metric",
-            "actual": "session-summary"
-          },
-          {
-            "id": "q115",
-            "question": "What was the slowest operation in this session and why di...",
-            "expected": "metric",
-            "actual": "session-summary"
-          },
-          {
-            "id": "q134",
-            "question": "What was the slowest operation in this session and why di...",
-            "expected": "metric",
-            "actual": "session-summary"
-          }
-        ]
+        "total": 27,
+        "misrouted": []
       },
       "tool-lookup": {
         "accuracy": "100%",
-        "correct": 18,
-        "total": 18,
+        "correct": 33,
+        "total": 33,
         "misrouted": []
       },
       "file-lookup": {
@@ -98,8 +67,8 @@
       },
       "error-diagnosis": {
         "accuracy": "100%",
-        "correct": 6,
-        "total": 6,
+        "correct": 18,
+        "total": 18,
         "misrouted": []
       },
       "command-query-lookup": {
@@ -110,42 +79,18 @@
       },
       "turn-lookup": {
         "accuracy": "100%",
-        "correct": 78,
-        "total": 78,
+        "correct": 90,
+        "total": 90,
         "misrouted": []
       },
       "session-summary": {
-        "accuracy": "71%",
-        "correct": 99,
-        "total": 139,
+        "accuracy": "99%",
+        "correct": 114,
+        "total": 115,
         "misrouted": [
           {
-            "id": "q049",
-            "question": "Were the errors in this session eventually resolved?",
-            "expected": "session-summary",
-            "actual": "error-diagnosis"
-          },
-          {
-            "id": "q057",
-            "question": "What tools were used in the last 5 turns?",
-            "expected": "session-summary",
-            "actual": "tool-lookup"
-          },
-          {
-            "id": "q060",
-            "question": "How did the errors in turn 191 affect the rest of the ses...",
-            "expected": "session-summary",
-            "actual": "turn-lookup"
-          },
-          {
-            "id": "q068",
-            "question": "Were the errors in this session eventually resolved?",
-            "expected": "session-summary",
-            "actual": "error-diagnosis"
-          },
-          {
-            "id": "q076",
-            "question": "What tools were used in the last 5 turns?",
+            "id": "q129",
+            "question": "Why did the agent in the document let's call the?",
             "expected": "session-summary",
             "actual": "tool-lookup"
           }
@@ -200,8 +145,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 31,
-      "contextChars": 12926,
+      "actualLatencyMs": 23,
+      "contextChars": 2509,
       "routeKind": "metric"
     },
     {
@@ -214,7 +159,7 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 7,
-      "contextChars": 10789,
+      "contextChars": 13098,
       "routeKind": "metric"
     },
     {
@@ -226,8 +171,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 1426,
+      "actualLatencyMs": 4,
+      "contextChars": 13160,
       "routeKind": "metric"
     },
     {
@@ -239,8 +184,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 13830,
+      "actualLatencyMs": 0,
+      "contextChars": 5980,
       "routeKind": "metric"
     },
     {
@@ -252,8 +197,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 11,
-      "contextChars": 9286,
+      "actualLatencyMs": 5,
+      "contextChars": 10928,
       "routeKind": "metric"
     },
     {
@@ -265,8 +210,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 4044,
+      "actualLatencyMs": 4,
+      "contextChars": 10488,
       "routeKind": "metric"
     },
     {
@@ -278,8 +223,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 8,
-      "contextChars": 14493,
+      "actualLatencyMs": 0,
+      "contextChars": 4858,
       "routeKind": "metric"
     },
     {
@@ -291,8 +236,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 7,
-      "contextChars": 7482,
+      "actualLatencyMs": 5,
+      "contextChars": 11651,
       "routeKind": "metric"
     },
     {
@@ -304,8 +249,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 1411,
+      "actualLatencyMs": 3,
+      "contextChars": 11941,
       "routeKind": "metric"
     },
     {
@@ -317,8 +262,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 12921,
+      "actualLatencyMs": 0,
+      "contextChars": 2504,
       "routeKind": "metric"
     },
     {
@@ -330,8 +275,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 9,
-      "contextChars": 9646,
+      "actualLatencyMs": 6,
+      "contextChars": 16299,
       "routeKind": "metric"
     },
     {
@@ -343,8 +288,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 2742,
+      "actualLatencyMs": 3,
+      "contextChars": 13813,
       "routeKind": "metric"
     },
     {
@@ -356,8 +301,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 16851,
+      "actualLatencyMs": 1,
+      "contextChars": 2494,
       "routeKind": "metric"
     },
     {
@@ -369,8 +314,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 8265,
+      "actualLatencyMs": 4,
+      "contextChars": 16314,
       "routeKind": "metric"
     },
     {
@@ -382,8 +327,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 1411,
+      "actualLatencyMs": 2,
+      "contextChars": 13900,
       "routeKind": "metric"
     },
     {
@@ -395,8 +340,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 12918,
+      "actualLatencyMs": 1,
+      "contextChars": 2501,
       "routeKind": "metric"
     },
     {
@@ -408,8 +353,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 12070,
+      "actualLatencyMs": 2,
+      "contextChars": 13857,
       "routeKind": "metric"
     },
     {
@@ -421,8 +366,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 1418,
+      "actualLatencyMs": 2,
+      "contextChars": 12107,
       "routeKind": "metric"
     },
     {
@@ -434,8 +379,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 12927,
+      "actualLatencyMs": 1,
+      "contextChars": 2510,
       "routeKind": "metric"
     },
     {
@@ -447,8 +392,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 7,
-      "contextChars": 10011,
+      "actualLatencyMs": 3,
+      "contextChars": 15991,
       "routeKind": "metric"
     },
     {
@@ -460,8 +405,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 1427,
+      "actualLatencyMs": 3,
+      "contextChars": 13867,
       "routeKind": "metric"
     },
     {
@@ -473,8 +418,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 7,
-      "contextChars": 15444,
+      "actualLatencyMs": 1,
+      "contextChars": 5971,
       "routeKind": "index"
     },
     {
@@ -486,8 +431,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 7,
-      "contextChars": 9133,
+      "actualLatencyMs": 11,
+      "contextChars": 11849,
       "routeKind": "index"
     },
     {
@@ -499,8 +444,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 4035,
+      "actualLatencyMs": 5,
+      "contextChars": 11637,
       "routeKind": "index"
     },
     {
@@ -512,8 +457,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 14473,
+      "actualLatencyMs": 0,
+      "contextChars": 5020,
       "routeKind": "metric"
     },
     {
@@ -526,7 +471,7 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 5,
-      "contextChars": 8737,
+      "contextChars": 11715,
       "routeKind": "metric"
     },
     {
@@ -538,8 +483,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 4042,
+      "actualLatencyMs": 3,
+      "contextChars": 11347,
       "routeKind": "metric"
     },
     {
@@ -551,8 +496,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 8,
-      "contextChars": 16673,
+      "actualLatencyMs": 1,
+      "contextChars": 6520,
       "routeKind": "index"
     },
     {
@@ -564,8 +509,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 11,
-      "contextChars": 10005,
+      "actualLatencyMs": 4,
+      "contextChars": 13114,
       "routeKind": "index"
     },
     {
@@ -577,9 +522,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 1430,
-      "routeKind": "model"
+      "actualLatencyMs": 4,
+      "contextChars": 14755,
+      "routeKind": "index"
     },
     {
       "id": "q031",
@@ -590,8 +535,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 8,
-      "contextChars": 13645,
+      "actualLatencyMs": 1,
+      "contextChars": 4854,
       "routeKind": "index"
     },
     {
@@ -604,7 +549,7 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 9,
-      "contextChars": 7478,
+      "contextChars": 11647,
       "routeKind": "index"
     },
     {
@@ -616,9 +561,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 2472,
-      "routeKind": "chunk"
+      "actualLatencyMs": 4,
+      "contextChars": 11937,
+      "routeKind": "index"
     },
     {
       "id": "q034",
@@ -629,8 +574,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 10,
-      "contextChars": 9091,
+      "actualLatencyMs": 1,
+      "contextChars": 5184,
       "routeKind": "index"
     },
     {
@@ -642,8 +587,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 13,
-      "contextChars": 9897,
+      "actualLatencyMs": 7,
+      "contextChars": 9936,
       "routeKind": "index"
     },
     {
@@ -655,8 +600,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 4071,
+      "actualLatencyMs": 5,
+      "contextChars": 8597,
       "routeKind": "index"
     },
     {
@@ -668,8 +613,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 8599,
+      "actualLatencyMs": 2,
+      "contextChars": 4007,
       "routeKind": "chunk"
     },
     {
@@ -681,8 +626,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 7703,
+      "actualLatencyMs": 2,
+      "contextChars": 8695,
       "routeKind": "chunk"
     },
     {
@@ -694,8 +639,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 2508,
+      "actualLatencyMs": 3,
+      "contextChars": 8524,
       "routeKind": "chunk"
     },
     {
@@ -707,8 +652,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 8372,
+      "actualLatencyMs": 1,
+      "contextChars": 4007,
       "routeKind": "chunk"
     },
     {
@@ -720,8 +665,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 7386,
+      "actualLatencyMs": 5,
+      "contextChars": 8696,
       "routeKind": "chunk"
     },
     {
@@ -733,8 +678,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 2508,
+      "actualLatencyMs": 3,
+      "contextChars": 8136,
       "routeKind": "chunk"
     },
     {
@@ -746,7 +691,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 5,
       "contextChars": 7718,
       "routeKind": "chunk"
     },
@@ -785,7 +730,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 6,
       "contextChars": 7722,
       "routeKind": "chunk"
     },
@@ -798,7 +743,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 4945,
       "routeKind": "index"
     },
@@ -811,7 +756,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 7553,
       "routeKind": "chunk"
     },
@@ -819,12 +764,12 @@
       "id": "q049",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 11,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 10,
       "contextChars": 7509,
       "routeKind": "index"
     },
@@ -837,7 +782,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 7,
       "contextChars": 4575,
       "routeKind": "index"
     },
@@ -863,7 +808,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 8,
+      "actualLatencyMs": 7,
       "contextChars": 7814,
       "routeKind": "chunk"
     },
@@ -876,7 +821,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
+      "actualLatencyMs": 5,
       "contextChars": 7707,
       "routeKind": "chunk"
     },
@@ -889,7 +834,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 8,
+      "actualLatencyMs": 7,
       "contextChars": 7710,
       "routeKind": "chunk"
     },
@@ -902,7 +847,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 9,
+      "actualLatencyMs": 7,
       "contextChars": 7561,
       "routeKind": "chunk"
     },
@@ -915,7 +860,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 15,
+      "actualLatencyMs": 13,
       "contextChars": 6504,
       "routeKind": "index"
     },
@@ -923,12 +868,12 @@
       "id": "q057",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 13,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 10,
       "contextChars": 8781,
       "routeKind": "index"
     },
@@ -936,12 +881,12 @@
       "id": "q058",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 11,
+      "expectedLatency": "model",
+      "actualLatencyMs": 9,
       "contextChars": 7484,
       "routeKind": "chunk"
     },
@@ -954,7 +899,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 4,
       "contextChars": 6789,
       "routeKind": "index"
     },
@@ -962,11 +907,11 @@
       "id": "q060",
       "question": "How did the errors in turn 191 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 1,
       "contextChars": 1938,
       "routeKind": "index"
@@ -980,7 +925,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 11,
+      "actualLatencyMs": 9,
       "contextChars": 7096,
       "routeKind": "chunk"
     },
@@ -1019,7 +964,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 1,
       "contextChars": 7940,
       "routeKind": "chunk"
     },
@@ -1032,7 +977,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 7942,
       "routeKind": "chunk"
     },
@@ -1045,7 +990,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 3737,
       "routeKind": "index"
     },
@@ -1066,12 +1011,12 @@
       "id": "q068",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 5,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 4,
       "contextChars": 9587,
       "routeKind": "index"
     },
@@ -1084,7 +1029,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 6594,
       "routeKind": "index"
     },
@@ -1097,7 +1042,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 7943,
       "routeKind": "chunk"
     },
@@ -1123,7 +1068,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 7762,
       "routeKind": "chunk"
     },
@@ -1149,7 +1094,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 3,
       "contextChars": 7433,
       "routeKind": "chunk"
     },
@@ -1162,7 +1107,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 8,
+      "actualLatencyMs": 9,
       "contextChars": 7624,
       "routeKind": "index"
     },
@@ -1170,12 +1115,12 @@
       "id": "q076",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 6,
       "contextChars": 11158,
       "routeKind": "index"
     },
@@ -1183,12 +1128,12 @@
       "id": "q077",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 3,
+      "expectedLatency": "model",
+      "actualLatencyMs": 4,
       "contextChars": 7719,
       "routeKind": "chunk"
     },
@@ -1209,11 +1154,11 @@
       "id": "q079",
       "question": "How did the errors in turn 17 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 0,
       "contextChars": 2101,
       "routeKind": "index"
@@ -1253,7 +1198,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 7141,
       "routeKind": "chunk"
     },
@@ -1279,7 +1224,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 7141,
       "routeKind": "chunk"
     },
@@ -1292,7 +1237,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 7509,
       "routeKind": "index"
     },
@@ -1313,11 +1258,11 @@
       "id": "q087",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 3,
       "contextChars": 10031,
       "routeKind": "index"
@@ -1331,7 +1276,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 4544,
       "routeKind": "index"
     },
@@ -1357,7 +1302,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 7085,
       "routeKind": "chunk"
     },
@@ -1370,7 +1315,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 7126,
       "routeKind": "chunk"
     },
@@ -1396,7 +1341,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 7301,
       "routeKind": "chunk"
     },
@@ -1417,12 +1362,12 @@
       "id": "q095",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 4,
       "contextChars": 8431,
       "routeKind": "index"
     },
@@ -1430,12 +1375,12 @@
       "id": "q096",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 3,
+      "expectedLatency": "model",
+      "actualLatencyMs": 4,
       "contextChars": 7291,
       "routeKind": "chunk"
     },
@@ -1448,7 +1393,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 2778,
       "routeKind": "index"
     },
@@ -1456,12 +1401,12 @@
       "id": "q098",
       "question": "How did the errors in turn 12 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 0,
       "contextChars": 2469,
       "routeKind": "index"
     },
@@ -1474,7 +1419,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 4,
       "contextChars": 7448,
       "routeKind": "chunk"
     },
@@ -1487,7 +1432,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 7345,
       "routeKind": "chunk"
     },
@@ -1539,7 +1484,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4490,
       "routeKind": "index"
     },
@@ -1560,12 +1505,12 @@
       "id": "q106",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 7,
       "contextChars": 10462,
       "routeKind": "index"
     },
@@ -1591,7 +1536,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 7409,
       "routeKind": "chunk"
     },
@@ -1630,7 +1575,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 7449,
       "routeKind": "chunk"
     },
@@ -1656,7 +1601,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 6,
       "contextChars": 10906,
       "routeKind": "index"
     },
@@ -1664,11 +1609,11 @@
       "id": "q114",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 3,
       "contextChars": 10571,
       "routeKind": "index"
@@ -1677,12 +1622,12 @@
       "id": "q115",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 4,
+      "expectedLatency": "model",
+      "actualLatencyMs": 3,
       "contextChars": 7465,
       "routeKind": "chunk"
     },
@@ -1695,7 +1640,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 2,
       "contextChars": 6676,
       "routeKind": "index"
     },
@@ -1703,11 +1648,11 @@
       "id": "q117",
       "question": "How did the errors in turn 1 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 1,
       "contextChars": 2796,
       "routeKind": "index"
@@ -1799,7 +1744,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 5,
       "contextChars": 9029,
       "routeKind": "chunk"
     },
@@ -1807,12 +1752,12 @@
       "id": "q125",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 12,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 13,
       "contextChars": 11540,
       "routeKind": "index"
     },
@@ -1890,7 +1835,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 9,
+      "actualLatencyMs": 8,
       "contextChars": 9039,
       "routeKind": "chunk"
     },
@@ -1903,7 +1848,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 14,
+      "actualLatencyMs": 15,
       "contextChars": 13683,
       "routeKind": "index"
     },
@@ -1911,11 +1856,11 @@
       "id": "q133",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 10,
       "contextChars": 10631,
       "routeKind": "index"
@@ -1924,12 +1869,12 @@
       "id": "q134",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 9,
+      "expectedLatency": "model",
+      "actualLatencyMs": 8,
       "contextChars": 9126,
       "routeKind": "chunk"
     },
@@ -1950,12 +1895,12 @@
       "id": "q136",
       "question": "How did the errors in turn 43 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 10,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 12,
       "contextChars": 5462,
       "routeKind": "index"
     },
@@ -1968,7 +1913,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 9,
+      "actualLatencyMs": 8,
       "contextChars": 8896,
       "routeKind": "chunk"
     },
@@ -1981,7 +1926,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 8410,
       "routeKind": "chunk"
     },
@@ -1994,7 +1939,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 4,
       "contextChars": 8414,
       "routeKind": "chunk"
     },
@@ -2033,7 +1978,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 1,
       "contextChars": 6494,
       "routeKind": "index"
     },
@@ -2054,12 +1999,12 @@
       "id": "q144",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 6,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 7,
       "contextChars": 11968,
       "routeKind": "index"
     },
@@ -2072,7 +2017,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 9500,
       "routeKind": "index"
     },
@@ -2098,7 +2043,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 8294,
       "routeKind": "chunk"
     },
@@ -2111,7 +2056,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 8465,
       "routeKind": "chunk"
     },
@@ -2137,7 +2082,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 4,
       "contextChars": 8584,
       "routeKind": "chunk"
     },
@@ -2150,7 +2095,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 8,
+      "actualLatencyMs": 9,
       "contextChars": 10059,
       "routeKind": "index"
     },
@@ -2158,11 +2103,11 @@
       "id": "q152",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 5,
       "contextChars": 11657,
       "routeKind": "index"
@@ -2171,11 +2116,11 @@
       "id": "q153",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
+      "expectedLatency": "model",
       "actualLatencyMs": 5,
       "contextChars": 8355,
       "routeKind": "chunk"
@@ -2197,11 +2142,11 @@
       "id": "q155",
       "question": "How did the errors in turn 9 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 1,
       "contextChars": 4246,
       "routeKind": "index"
@@ -2228,7 +2173,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 5,
       "contextChars": 8397,
       "routeKind": "chunk"
     },
@@ -2254,7 +2199,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 8,
       "contextChars": 8399,
       "routeKind": "chunk"
     },
@@ -2267,7 +2212,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 4,
       "contextChars": 8401,
       "routeKind": "chunk"
     },
@@ -2301,12 +2246,12 @@
       "id": "q163",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 16,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 11,
       "contextChars": 14272,
       "routeKind": "index"
     },
@@ -2319,7 +2264,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 19,
+      "actualLatencyMs": 12,
       "contextChars": 14554,
       "routeKind": "index"
     },
@@ -2345,7 +2290,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 5,
       "contextChars": 8363,
       "routeKind": "chunk"
     },
@@ -2358,7 +2303,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 8582,
       "routeKind": "chunk"
     },
@@ -2371,7 +2316,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 8323,
       "routeKind": "chunk"
     },
@@ -2397,7 +2342,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 19,
+      "actualLatencyMs": 14,
       "contextChars": 6224,
       "routeKind": "index"
     },
@@ -2405,11 +2350,11 @@
       "id": "q171",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 9,
       "contextChars": 14689,
       "routeKind": "index"
@@ -2418,12 +2363,12 @@
       "id": "q172",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 7,
+      "expectedLatency": "model",
+      "actualLatencyMs": 5,
       "contextChars": 8347,
       "routeKind": "chunk"
     },
@@ -2436,7 +2381,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 3414,
       "routeKind": "index"
     },
@@ -2444,11 +2389,11 @@
       "id": "q174",
       "question": "How did the errors in turn 2 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 0,
       "contextChars": 7411,
       "routeKind": "chunk"
@@ -2514,7 +2459,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 8479,
       "routeKind": "chunk"
     },
@@ -2548,12 +2493,12 @@
       "id": "q182",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 2,
       "contextChars": 12998,
       "routeKind": "index"
     },
@@ -2605,7 +2550,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 1,
       "contextChars": 8466,
       "routeKind": "chunk"
     },
@@ -2618,7 +2563,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 1,
       "contextChars": 8246,
       "routeKind": "chunk"
     },
@@ -2631,7 +2576,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 8401,
       "routeKind": "chunk"
     },
@@ -2644,7 +2589,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 11769,
       "routeKind": "index"
     },
@@ -2652,11 +2597,11 @@
       "id": "q190",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 2,
       "contextChars": 8573,
       "routeKind": "index"
@@ -2665,12 +2610,12 @@
       "id": "q191",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 3,
+      "expectedLatency": "model",
+      "actualLatencyMs": 1,
       "contextChars": 8412,
       "routeKind": "chunk"
     },
@@ -2683,7 +2628,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 8130,
       "routeKind": "index"
     },
@@ -2691,12 +2636,12 @@
       "id": "q193",
       "question": "How did the errors in turn 2 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 0,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 1,
       "contextChars": 4838,
       "routeKind": "index"
     },
@@ -2709,7 +2654,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 8384,
       "routeKind": "chunk"
     },
@@ -2735,7 +2680,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 8922,
       "routeKind": "chunk"
     },
@@ -2748,7 +2693,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 1,
       "contextChars": 8920,
       "routeKind": "chunk"
     },
@@ -2774,7 +2719,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 5535,
       "routeKind": "index"
     },
@@ -2787,7 +2732,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 1,
       "contextChars": 8920,
       "routeKind": "chunk"
     },
@@ -2795,12 +2740,12 @@
       "id": "q201",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 7,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 6,
       "contextChars": 11766,
       "routeKind": "index"
     },
@@ -2852,7 +2797,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 5,
       "contextChars": 8926,
       "routeKind": "chunk"
     },
@@ -2878,7 +2823,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 9071,
       "routeKind": "chunk"
     },
@@ -2891,7 +2836,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 6,
       "contextChars": 6238,
       "routeKind": "index"
     },
@@ -2899,12 +2844,12 @@
       "id": "q209",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 5,
       "contextChars": 10947,
       "routeKind": "index"
     },
@@ -2912,12 +2857,12 @@
       "id": "q210",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 4,
+      "expectedLatency": "model",
+      "actualLatencyMs": 5,
       "contextChars": 9084,
       "routeKind": "chunk"
     },
@@ -2930,7 +2875,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 7,
+      "actualLatencyMs": 8,
       "contextChars": 12187,
       "routeKind": "index"
     },
@@ -2938,11 +2883,11 @@
       "id": "q212",
       "question": "How did the errors in turn 0 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 1,
       "contextChars": 4137,
       "routeKind": "index"
@@ -2982,7 +2927,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 8152,
       "routeKind": "chunk"
     },
@@ -2995,7 +2940,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 2,
       "contextChars": 8152,
       "routeKind": "chunk"
     },
@@ -3008,7 +2953,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 19,
+      "actualLatencyMs": 2,
       "contextChars": 8152,
       "routeKind": "chunk"
     },
@@ -3034,7 +2979,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 8152,
       "routeKind": "chunk"
     },
@@ -3042,11 +2987,11 @@
       "id": "q220",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 7,
       "contextChars": 7703,
       "routeKind": "index"
@@ -3060,7 +3005,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 4,
       "contextChars": 6418,
       "routeKind": "index"
     },
@@ -3073,7 +3018,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 8662,
       "routeKind": "chunk"
     },
@@ -3099,7 +3044,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 8605,
       "routeKind": "chunk"
     },
@@ -3112,7 +3057,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 5,
       "contextChars": 8637,
       "routeKind": "chunk"
     },
@@ -3138,7 +3083,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 7,
+      "actualLatencyMs": 8,
       "contextChars": 10590,
       "routeKind": "index"
     },
@@ -3146,12 +3091,12 @@
       "id": "q228",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 6,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 5,
       "contextChars": 9787,
       "routeKind": "index"
     },
@@ -3159,11 +3104,11 @@
       "id": "q229",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
+      "expectedLatency": "model",
       "actualLatencyMs": 6,
       "contextChars": 8674,
       "routeKind": "chunk"
@@ -3177,7 +3122,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 3,
       "contextChars": 6299,
       "routeKind": "index"
     },
@@ -3185,11 +3130,11 @@
       "id": "q231",
       "question": "How did the errors in turn 43 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 1,
       "contextChars": 1424,
       "routeKind": "index"
@@ -3203,7 +3148,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
+      "actualLatencyMs": 5,
       "contextChars": 8396,
       "routeKind": "chunk"
     },
@@ -3229,7 +3174,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 8686,
       "routeKind": "chunk"
     },
@@ -3242,7 +3187,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 8686,
       "routeKind": "chunk"
     },
@@ -3268,7 +3213,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 1,
       "contextChars": 5723,
       "routeKind": "index"
     },
@@ -3289,12 +3234,12 @@
       "id": "q239",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 11,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 7,
       "contextChars": 11678,
       "routeKind": "index"
     },
@@ -3307,7 +3252,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 8,
+      "actualLatencyMs": 4,
       "contextChars": 8510,
       "routeKind": "index"
     },
@@ -3333,7 +3278,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 8624,
       "routeKind": "chunk"
     },
@@ -3372,7 +3317,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 8,
+      "actualLatencyMs": 6,
       "contextChars": 8517,
       "routeKind": "chunk"
     },
@@ -3385,7 +3330,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 12,
+      "actualLatencyMs": 14,
       "contextChars": 8947,
       "routeKind": "index"
     },
@@ -3393,12 +3338,12 @@
       "id": "q247",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 7,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 9,
       "contextChars": 10506,
       "routeKind": "index"
     },
@@ -3406,12 +3351,12 @@
       "id": "q248",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
-      "actualLatencyMs": 7,
+      "expectedLatency": "model",
+      "actualLatencyMs": 10,
       "contextChars": 8620,
       "routeKind": "chunk"
     },
@@ -3424,7 +3369,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 11,
+      "actualLatencyMs": 10,
       "contextChars": 8941,
       "routeKind": "index"
     },
@@ -3432,12 +3377,12 @@
       "id": "q250",
       "question": "How did the errors in turn 4 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 1,
       "contextChars": 2895,
       "routeKind": "index"
     },
@@ -3463,7 +3408,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 2500,
       "routeKind": "chunk"
     },
@@ -3476,7 +3421,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 2502,
       "routeKind": "chunk"
     },
@@ -3489,7 +3434,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 2500,
       "routeKind": "chunk"
     },
@@ -3593,7 +3538,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4178,
       "routeKind": "index"
     },
@@ -3601,12 +3546,12 @@
       "id": "q263",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 0,
       "contextChars": 4055,
       "routeKind": "index"
     },
@@ -3614,11 +3559,11 @@
       "id": "q264",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
+      "expectedLatency": "model",
       "actualLatencyMs": 0,
       "contextChars": 2531,
       "routeKind": "chunk"
@@ -3658,7 +3603,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 4,
       "contextChars": 8420,
       "routeKind": "chunk"
     },
@@ -3671,7 +3616,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 2,
       "contextChars": 8418,
       "routeKind": "chunk"
     },
@@ -3697,7 +3642,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 4,
       "contextChars": 6184,
       "routeKind": "index"
     },
@@ -3718,12 +3663,12 @@
       "id": "q272",
       "question": "Were the errors in this session eventually resolved?",
       "difficulty": "hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "error-diagnosis",
       "actualFamily": "error-diagnosis",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 11,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 12,
       "contextChars": 11826,
       "routeKind": "index"
     },
@@ -3736,7 +3681,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 16,
+      "actualLatencyMs": 12,
       "contextChars": 12253,
       "routeKind": "index"
     },
@@ -3762,7 +3707,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 8356,
       "routeKind": "chunk"
     },
@@ -3775,7 +3720,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
+      "actualLatencyMs": 5,
       "contextChars": 8514,
       "routeKind": "chunk"
     },
@@ -3801,7 +3746,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
+      "actualLatencyMs": 6,
       "contextChars": 8426,
       "routeKind": "chunk"
     },
@@ -3814,7 +3759,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 5874,
       "routeKind": "index"
     },
@@ -3822,12 +3767,12 @@
       "id": "q280",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 8,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 9,
       "contextChars": 13721,
       "routeKind": "index"
     },
@@ -3835,11 +3780,11 @@
       "id": "q281",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
+      "expectedLatency": "model",
       "actualLatencyMs": 7,
       "contextChars": 8430,
       "routeKind": "chunk"
@@ -3861,11 +3806,11 @@
       "id": "q283",
       "question": "How did the errors in turn 14 affect the rest of the session?",
       "difficulty": "very-hard",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "turn-lookup",
       "actualFamily": "turn-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 0,
       "contextChars": 2879,
       "routeKind": "index"
@@ -3905,7 +3850,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 0,
       "contextChars": 4001,
       "routeKind": "chunk"
     },
@@ -3918,7 +3863,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 3999,
       "routeKind": "chunk"
     },
@@ -3931,7 +3876,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 3999,
       "routeKind": "chunk"
     },
@@ -4030,11 +3975,11 @@
       "id": "q296",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
+      "expectedLatency": "instant",
       "actualLatencyMs": 0,
       "contextChars": 5991,
       "routeKind": "index"
@@ -4043,11 +3988,11 @@
       "id": "q297",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
+      "expectedLatency": "model",
       "actualLatencyMs": 1,
       "contextChars": 4030,
       "routeKind": "chunk"
@@ -4061,7 +4006,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 4037,
       "routeKind": "chunk"
     },
@@ -4100,7 +4045,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 4792,
       "routeKind": "chunk"
     },
@@ -4113,7 +4058,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4794,
       "routeKind": "chunk"
     },
@@ -4126,7 +4071,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 5450,
       "routeKind": "index"
     },
@@ -4178,7 +4123,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 4781,
       "routeKind": "chunk"
     },
@@ -4191,7 +4136,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4799,
       "routeKind": "chunk"
     },
@@ -4204,7 +4149,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 5764,
       "routeKind": "chunk"
     },
@@ -4217,7 +4162,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 5500,
       "routeKind": "index"
     },
@@ -4225,12 +4170,12 @@
       "id": "q311",
       "question": "What tools were used in the last 5 turns?",
       "difficulty": "medium",
-      "expectedFamily": "session-summary",
+      "expectedFamily": "tool-lookup",
       "actualFamily": "tool-lookup",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": true,
-      "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "expectedLatency": "instant",
+      "actualLatencyMs": 0,
       "contextChars": 8032,
       "routeKind": "index"
     },
@@ -4238,11 +4183,11 @@
       "id": "q312",
       "question": "What was the slowest operation in this session and why did it take so long?",
       "difficulty": "medium",
-      "expectedFamily": "metric",
+      "expectedFamily": "session-summary",
       "actualFamily": "session-summary",
-      "routingMatch": false,
+      "routingMatch": true,
       "deterministic": false,
-      "expectedLatency": "fast",
+      "expectedLatency": "model",
       "actualLatencyMs": 0,
       "contextChars": 4823,
       "routeKind": "chunk"
@@ -4269,7 +4214,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 5,
       "contextChars": 8383,
       "routeKind": "metric"
     },
@@ -4282,8 +4227,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 0,
-      "contextChars": 8038,
+      "actualLatencyMs": 3,
+      "contextChars": 11857,
       "routeKind": "metric"
     },
     {
@@ -4295,8 +4240,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 0,
-      "contextChars": 4061,
+      "actualLatencyMs": 5,
+      "contextChars": 13252,
       "routeKind": "metric"
     },
     {
@@ -4308,8 +4253,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 7,
-      "contextChars": 11649,
+      "actualLatencyMs": 6,
+      "contextChars": 7674,
       "routeKind": "index"
     },
     {
@@ -4321,8 +4266,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 7,
-      "contextChars": 14016,
+      "actualLatencyMs": 3,
+      "contextChars": 10017,
       "routeKind": "index"
     },
     {
@@ -4334,8 +4279,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 5,
-      "contextChars": 11939,
+      "actualLatencyMs": 6,
+      "contextChars": 11649,
       "routeKind": "index"
     },
     {
@@ -4347,9 +4292,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 14408,
-      "routeKind": "index"
+      "actualLatencyMs": 0,
+      "contextChars": 1442,
+      "routeKind": "model"
     },
     {
       "id": "q321",
@@ -4360,8 +4305,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 7,
-      "contextChars": 10995,
+      "actualLatencyMs": 3,
+      "contextChars": 7706,
       "routeKind": "index"
     },
     {
@@ -4373,8 +4318,8 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 8,
-      "contextChars": 16685,
+      "actualLatencyMs": 4,
+      "contextChars": 14767,
       "routeKind": "index"
     },
     {
@@ -4399,8 +4344,8 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 0,
-      "contextChars": 4790,
+      "actualLatencyMs": 2,
+      "contextChars": 7936,
       "routeKind": "chunk"
     },
     {
@@ -4413,7 +4358,7 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 2,
-      "contextChars": 7399,
+      "contextChars": 8420,
       "routeKind": "chunk"
     },
     {
@@ -4425,8 +4370,8 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
-      "contextChars": 7772,
+      "actualLatencyMs": 6,
+      "contextChars": 7543,
       "routeKind": "chunk"
     },
     {
@@ -4451,8 +4396,8 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
-      "contextChars": 7943,
+      "actualLatencyMs": 8,
+      "contextChars": 9136,
       "routeKind": "chunk"
     },
     {
@@ -4464,8 +4409,8 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 8422,
+      "actualLatencyMs": 8,
+      "contextChars": 7310,
       "routeKind": "chunk"
     },
     {
@@ -4477,8 +4422,8 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 8747,
+      "actualLatencyMs": 2,
+      "contextChars": 8338,
       "routeKind": "chunk"
     },
     {
@@ -4504,7 +4449,7 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 2,
-      "contextChars": 8477,
+      "contextChars": 7440,
       "routeKind": "chunk"
     }
   ],
