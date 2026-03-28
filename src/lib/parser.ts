@@ -246,6 +246,7 @@ function extractEventsFromRecord(raw: RawRecord, syntheticTime: number, issues: 
             text: String(block.name || "tool") + "(" + formatToolInput(block.input) + ")",
             toolName: typeof block.name === "string" ? block.name : undefined,
             toolInput: block.input,
+            toolCallId: typeof block.id === "string" ? block.id : null,
             duration: 2,
             intensity: 0.9,
             raw: block,
@@ -262,6 +263,9 @@ function extractEventsFromRecord(raw: RawRecord, syntheticTime: number, issues: 
             agent: "assistant",
             track: "context",
             text: "Result: " + truncate(resultText, 200),
+            toolCallId: typeof block.tool_use_id === "string" ? block.tool_use_id : null,
+            toolResultText: truncate(resultText, 200),
+            toolResultIsError: hasError,
             duration: 1,
             intensity: hasError ? 1.0 : 0.5,
             raw: block,
@@ -331,6 +335,7 @@ function extractEventsFromRecord(raw: RawRecord, syntheticTime: number, issues: 
       text: String(toolName) + "(" + formatToolInput(raw.input || raw.parameters || {}) + ")",
       toolName: String(toolName),
       toolInput: raw.input || raw.parameters,
+      toolCallId: typeof raw.id === "string" ? raw.id : null,
       duration: 2,
       intensity: 0.9,
       raw,
@@ -346,6 +351,9 @@ function extractEventsFromRecord(raw: RawRecord, syntheticTime: number, issues: 
       agent: "assistant",
       track: "context",
       text: "Result: " + truncate(resultText, 200),
+      toolCallId: typeof raw.tool_use_id === "string" ? raw.tool_use_id : null,
+      toolResultText: truncate(resultText, 200),
+      toolResultIsError: hasError,
       duration: 1,
       intensity: hasError ? 1.0 : 0.5,
       raw,
@@ -379,6 +387,33 @@ function computeDurations(events: NormalizedEvent[]): void {
       if (gap >= 0.1 && gap < 300) {
         events[index].duration = gap;
       }
+    }
+  }
+}
+
+function linkToolResults(events: NormalizedEvent[]): void {
+  const toolCallsById: Record<string, NormalizedEvent> = {};
+
+  for (let index = 0; index < events.length; index += 1) {
+    const event = events[index];
+    if (event.track === "tool_call" && typeof event.toolCallId === "string" && event.toolCallId) {
+      toolCallsById[event.toolCallId] = event;
+    }
+  }
+
+  for (let index = 0; index < events.length; index += 1) {
+    const event = events[index];
+    if (event.track !== "context" || typeof event.toolCallId !== "string" || !event.toolCallId) continue;
+
+    const toolCall = toolCallsById[event.toolCallId];
+    if (!toolCall) continue;
+
+    if (!toolCall.toolResultText && event.toolResultText) {
+      toolCall.toolResultText = event.toolResultText;
+    }
+
+    if (typeof event.toolResultIsError === "boolean" && toolCall.toolResultIsError !== true) {
+      toolCall.toolResultIsError = event.toolResultIsError;
     }
   }
 }
@@ -522,6 +557,7 @@ export function parseClaudeCodeJSONL(text: string): ParsedSession | null {
   }
 
   if (hasRealTimestamps) computeDurations(events);
+  linkToolResults(events);
 
   const turns = buildTurns(events);
   const metadata = buildMetadata(events, turns, issues);

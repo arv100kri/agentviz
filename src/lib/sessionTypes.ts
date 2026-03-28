@@ -21,6 +21,9 @@ export interface NormalizedEvent {
   intensity: number;
   toolName?: string;
   toolInput?: unknown;
+  toolCallId?: string | null;
+  toolResultText?: string | null;
+  toolResultIsError?: boolean;
   raw?: unknown;
   turnIndex?: number;
   isError: boolean;
