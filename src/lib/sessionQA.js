@@ -2311,8 +2311,8 @@ export function routeSessionQAQuestion(question, artifacts, options) {
     } catch (searchErr) {}
   }
 
-  // If search found relevant turns, use them to build focused context
-  if (searchResults && searchResults.length > 0 && !questionProfile.broadSummary) {
+  // If search found relevant turns with good scores, use them to build focused context
+  if (searchResults && searchResults.length > 0 && searchResults[0].score > 0.5) {
     return {
       kind: "search",
       phase: "searching-index",
