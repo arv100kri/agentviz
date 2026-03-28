@@ -37,15 +37,17 @@ test.describe("Playback interactions", () => {
   });
 
   test("timeline bar is interactive", async ({ page }) => {
-    // The timeline component should be visible
-    // Look for the timeline bar area (it's a div that handles click/drag)
-    const timeline = page.locator('[data-testid="timeline"]').or(
-      // Fallback: look for the timeline container with progress-like behavior
-      page.locator("#root"),
-    );
+    const timeline = page.locator('[data-testid="timeline-bar"]');
     await expect(timeline).toBeVisible();
-    // No crash after interaction
-    await expect(page.locator("#root")).toBeVisible();
+
+    // Click on the timeline to simulate a seek interaction
+    const box = await timeline.boundingBox();
+    if (box) {
+      await timeline.click({ position: { x: box.width / 2, y: box.height / 2 } });
+    }
+
+    // Timeline should still be visible after interaction (no crash)
+    await expect(timeline).toBeVisible();
   });
 });
 

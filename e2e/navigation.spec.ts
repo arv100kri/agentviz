@@ -47,18 +47,13 @@ test.describe("Navigation", () => {
     await page.keyboard.press("Control+k");
     await page.waitForTimeout(500);
 
-    // Command palette should show an input for searching
-    const paletteInput = page.locator(
-      'input[placeholder*="Search" i], input[placeholder*="command" i], input[type="text"]',
-    );
-    // At least one search-like input should be visible
-    const visible = await paletteInput.first().isVisible().catch(() => false);
+    // Command palette should show its dedicated search input
+    const paletteInput = page.getByPlaceholder("Search events, turns, tools...");
+    await expect(paletteInput).toBeVisible();
 
     // Close the palette
     await page.keyboard.press("Escape");
-
-    // We just verify no crash occurred
-    await expect(page.locator("#root")).toBeVisible();
+    await expect(paletteInput).not.toBeVisible();
   });
 
   test("search input filters events in replay view", async ({ page }) => {

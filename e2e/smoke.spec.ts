@@ -1,17 +1,14 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
-// Collect console errors during each test
-const consoleErrors: string[] = [];
-
-test.beforeEach(async ({ page }) => {
-  consoleErrors.length = 0;
-  page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text());
-  });
-});
+// Console error collection is scoped per test to avoid shared mutable state
+// with fullyParallel mode.
 
 test.describe("Landing page", () => {
   test("loads without errors", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(msg.text());
+    });
     await page.goto("/");
     await expect(page.locator("#root")).toBeVisible();
     // The landing page should show the brand and file uploader

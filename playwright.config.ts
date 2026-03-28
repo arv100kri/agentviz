@@ -18,7 +18,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npx vite --port 3000",
+    command: "npx vite --port 3000 --strictPort",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
