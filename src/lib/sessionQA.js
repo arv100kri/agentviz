@@ -51,6 +51,8 @@ var BROAD_SUMMARY_TERMS = buildLookup([
   "approach", "overall", "summary", "summarize", "recap", "timeline", "story",
   "happened", "doing", "did", "goal", "intent",
 ]);
+var EARLY_SESSION_TERMS = buildLookup(["first", "early", "initially", "start", "started", "began", "beginning", "initial", "opening"]);
+var LATE_SESSION_TERMS = buildLookup(["last", "final", "end", "ended", "eventually", "concluded", "outcome", "result", "finish", "finished", "closing"]);
 var QUERY_HINT_TERMS = buildLookup([
   "search", "searched", "grep", "rg", "query", "queries", "kusto", "lookup", "find",
 ]);
@@ -1593,7 +1595,7 @@ export function buildSessionSummaryChunks(events, turns, options) {
   return chunks;
 }
 
-function scoreSummaryChunkForQuestion(chunk, questionProfile) {
+function scoreSummaryChunkForQuestion(chunk, questionProfile, totalChunks) {
   if (!chunk || !questionProfile || !questionProfile.normalizedQuestion) return 0;
   var normalizedSearch = chunk.searchTextNormalized || "";
   var score = 0;
@@ -1614,30 +1616,160 @@ function scoreSummaryChunkForQuestion(chunk, questionProfile) {
     if (normalizedSearch.indexOf(token) !== -1) score += token.length >= 6 ? 2 : 1;
   }
 
-  if (questionProfile.broadSummary) score += 1;
+  if (questionProfile.broadSummary) {
+    score += 1;
+    // Position-diversity bonus: middle and late chunks get +2 to counteract
+    // the early-first tie-break that would otherwise always favor early chunks
+    var tc = typeof totalChunks === "number" && totalChunks > 0 ? totalChunks : 1;
+    var chunkPos = typeof chunk.chunkIndex === "number" ? chunk.chunkIndex / tc : 0;
+    if (chunkPos >= 0.25) score += 2;
+  }
+
+  // Temporal signal scoring
+  var tc2 = typeof totalChunks === "number" && totalChunks > 0 ? totalChunks : 1;
+  var chunkPos2 = typeof chunk.chunkIndex === "number" ? chunk.chunkIndex / tc2 : 0;
+  if (questionProfile.wantsLateSession && chunkPos2 >= 0.75) score += 4;
+  if (questionProfile.wantsEarlySession && chunkPos2 < 0.25) score += 4;
+
   return score;
 }
 
 function selectRelevantSummaryChunks(artifacts, questionProfile, limit) {
   if (!artifacts || !Array.isArray(artifacts.summaryChunks)) return [];
   var maxCount = typeof limit === "number" && limit > 0 ? limit : MAX_SUMMARY_CHUNK_RESULTS;
+  var totalChunks = artifacts.summaryChunks.length;
   var scored = [];
 
-  for (var i = 0; i < artifacts.summaryChunks.length; i++) {
-    var score = scoreSummaryChunkForQuestion(artifacts.summaryChunks[i], questionProfile);
+  for (var i = 0; i < totalChunks; i++) {
+    var score = scoreSummaryChunkForQuestion(artifacts.summaryChunks[i], questionProfile, totalChunks);
     if (score <= 0 && !questionProfile.broadSummary) continue;
     scored.push({ chunk: artifacts.summaryChunks[i], score: score });
   }
 
   scored.sort(function (a, b) {
     if (b.score !== a.score) return b.score - a.score;
-    return a.chunk.startTurn - b.chunk.startTurn;
+    // Spread ties across the session: prefer chunks closer to the middle,
+    // then alternate early/late to avoid always favoring early chunks.
+    var aPos = totalChunks > 0 ? a.chunk.chunkIndex / totalChunks : 0;
+    var bPos = totalChunks > 0 ? b.chunk.chunkIndex / totalChunks : 0;
+    var aDist = Math.abs(aPos - 0.5);
+    var bDist = Math.abs(bPos - 0.5);
+    return aDist - bDist;
   });
 
+  // Diversity filter: prevent adjacent same-score chunks from dominating
   var results = [];
+  var maxTurnsPerChunk = MAX_SUMMARY_CHUNK_TURNS;
   for (var resultIndex = 0; resultIndex < scored.length && results.length < maxCount; resultIndex++) {
-    results.push(scored[resultIndex].chunk);
+    var candidate = scored[resultIndex];
+    if (results.length > 0 && questionProfile.broadSummary) {
+      var minSelectedScore = results[results.length - 1].score;
+      if (candidate.score === minSelectedScore) {
+        var isAdjacent = false;
+        for (var si = 0; si < results.length; si++) {
+          if (Math.abs(candidate.chunk.startTurn - results[si].chunk.startTurn) <= maxTurnsPerChunk) {
+            isAdjacent = true;
+            break;
+          }
+        }
+        if (isAdjacent) continue;
+      }
+    }
+    results.push(candidate);
   }
+
+  // For broad-summary questions, ensure at least one chunk from the last
+  // third of the session is included if any scored > 0
+  if (questionProfile.broadSummary && results.length > 0) {
+    var lastThirdStart = Math.floor(totalChunks * 2 / 3);
+    var hasLateChunk = false;
+    for (var li = 0; li < results.length; li++) {
+      if (results[li].chunk.chunkIndex >= lastThirdStart) {
+        hasLateChunk = true;
+        break;
+      }
+    }
+    if (!hasLateChunk) {
+      var bestLateChunk = null;
+      for (var lci = 0; lci < scored.length; lci++) {
+        if (scored[lci].chunk.chunkIndex >= lastThirdStart && scored[lci].score > 0) {
+          bestLateChunk = scored[lci];
+          break;
+        }
+      }
+      if (bestLateChunk) {
+        results[results.length - 1] = bestLateChunk;
+      }
+    }
+  }
+
+  var finalResults = [];
+  for (var fi = 0; fi < results.length && finalResults.length < maxCount; fi++) {
+    finalResults.push(results[fi].chunk);
+  }
+  return finalResults;
+}
+
+export function generateBroadQueryRewrites(question, questionProfile) {
+  if (!questionProfile || !questionProfile.broadSummary) return [];
+  var rewrites = [];
+  var q = typeof question === "string" ? question.trim() : "";
+  if (!q) return [];
+
+  // Intent paraphrase
+  rewrites.push("What was the main goal and how was it achieved in this session?");
+  // Outcome paraphrase
+  rewrites.push("What was the final outcome and what changed by the end of this session?");
+  // Evidence paraphrase
+  rewrites.push("What were the key decisions, errors, and tools used throughout this session?");
+
+  return rewrites;
+}
+
+export function selectDiverseChunksFromRewrites(artifacts, questionProfile, rewrites, limit) {
+  if (!artifacts || !Array.isArray(artifacts.summaryChunks) || artifacts.summaryChunks.length === 0) {
+    return selectRelevantSummaryChunks(artifacts, questionProfile, limit);
+  }
+
+  var maxCount = typeof limit === "number" && limit > 0 ? limit : MAX_SUMMARY_CHUNK_RESULTS;
+  var allProfiles = [questionProfile];
+
+  for (var i = 0; i < rewrites.length; i++) {
+    allProfiles.push(classifySessionQAQuestion(rewrites[i], { artifacts: artifacts }));
+  }
+
+  // Score each chunk against all profiles, take the max score per chunk
+  var totalChunks = artifacts.summaryChunks.length;
+  var scored = [];
+  for (var ci = 0; ci < totalChunks; ci++) {
+    var chunk = artifacts.summaryChunks[ci];
+    var bestScore = 0;
+    for (var pi = 0; pi < allProfiles.length; pi++) {
+      var s = scoreSummaryChunkForQuestion(chunk, allProfiles[pi], totalChunks);
+      if (s > bestScore) bestScore = s;
+    }
+    if (bestScore > 0 || questionProfile.broadSummary) {
+      scored.push({ chunk: chunk, score: bestScore });
+    }
+  }
+
+  scored.sort(function (a, b) {
+    if (b.score !== a.score) return b.score - a.score;
+    var aPos = totalChunks > 0 ? a.chunk.chunkIndex / totalChunks : 0;
+    var bPos = totalChunks > 0 ? b.chunk.chunkIndex / totalChunks : 0;
+    return Math.abs(aPos - 0.5) - Math.abs(bPos - 0.5);
+  });
+
+  // Deduplicate and diversify
+  var results = [];
+  var selectedIndices = {};
+  for (var ri = 0; ri < scored.length && results.length < maxCount; ri++) {
+    var idx = scored[ri].chunk.chunkIndex;
+    if (selectedIndices[idx]) continue;
+    selectedIndices[idx] = true;
+    results.push(scored[ri].chunk);
+  }
+
   return results;
 }
 
@@ -1708,9 +1840,14 @@ function buildMetricQuestionMatch(questionProfile, metricCatalog) {
   }
 
   if (normalizedQuestion.indexOf("turn") !== -1 && hasAnyTerm(normalizedQuestion, ["how many", "total", "number of"])) {
+    var turnCount = metricCatalog.totalTurns;
+    var turnAnswer = "The session has " + formatMetricCount(turnCount, "turn") + ".";
+    if (typeof turnCount === "number" && turnCount > 0) {
+      turnAnswer += " Turn indices are zero-based (0 through " + (turnCount - 1) + ").";
+    }
     return {
       key: "total-turns",
-      answer: "The session has " + formatMetricCount(metricCatalog.totalTurns, "turn") + ".",
+      answer: turnAnswer,
       references: [],
       detail: "Matched the total turn count from the precomputed metrics catalog.",
     };
@@ -1997,6 +2134,7 @@ export function compileSessionQAQueryProgram(question, artifacts, options) {
       ? "exact"
       : (slots.broadSummary ? "summary" : "structured"),
     slots: slots,
+    totalTurns: metricCatalog && typeof metricCatalog.totalTurns === "number" ? metricCatalog.totalTurns : null,
     metricMatch: metricMatch ? {
       key: metricMatch.key || null,
       answer: metricMatch.answer || "",
@@ -2099,16 +2237,22 @@ export function routeSessionQAQuestion(question, artifacts, options) {
   }
 
   if (questionProfile.broadSummary) {
+    var rewrites = generateBroadQueryRewrites(question, questionProfile);
+    var relevantChunksForBroad = rewrites.length > 0
+      ? selectDiverseChunksFromRewrites(artifacts, questionProfile, rewrites, MAX_SUMMARY_CHUNK_RESULTS)
+      : selectRelevantSummaryChunks(artifacts, questionProfile, MAX_SUMMARY_CHUNK_RESULTS);
     return {
       kind: "chunk",
       phase: "scanning-summary-chunks",
       status: "Scanning summary chunks...",
-      detail: "Using bounded session summary chunks instead of the full session timeline.",
+      detail: rewrites.length > 0
+        ? "Using rewrite-expanded retrieval across precomputed summary chunks."
+        : "Using bounded session summary chunks instead of the full session timeline.",
       profile: questionProfile,
       relevantEntries: relevantEntries,
       relevantChunks: relevantChunks.length > 0
         ? relevantChunks
-        : selectRelevantSummaryChunks(artifacts, questionProfile, MAX_SUMMARY_CHUNK_RESULTS),
+        : relevantChunksForBroad,
       queryProgram: queryProgram,
     };
   }
@@ -2127,14 +2271,22 @@ export function routeSessionQAQuestion(question, artifacts, options) {
   }
 
   if (relevantChunks.length > 0 || questionProfile.broadSummary) {
+    var fallbackRewrites = questionProfile.broadSummary ? generateBroadQueryRewrites(question, questionProfile) : [];
+    var fallbackChunks = relevantChunks.length > 0
+      ? relevantChunks
+      : (fallbackRewrites.length > 0
+        ? selectDiverseChunksFromRewrites(artifacts, questionProfile, fallbackRewrites, MAX_SUMMARY_CHUNK_RESULTS)
+        : selectRelevantSummaryChunks(artifacts, questionProfile, MAX_SUMMARY_CHUNK_RESULTS));
     return {
       kind: "chunk",
       phase: "scanning-summary-chunks",
       status: "Scanning summary chunks...",
-      detail: "Using bounded session summary chunks instead of the full session timeline.",
+      detail: fallbackRewrites.length > 0
+        ? "Using rewrite-expanded retrieval across precomputed summary chunks."
+        : "Using bounded session summary chunks instead of the full session timeline.",
       profile: questionProfile,
       relevantEntries: relevantEntries,
-      relevantChunks: relevantChunks,
+      relevantChunks: fallbackChunks,
       queryProgram: queryProgram,
     };
   }
@@ -2548,9 +2700,13 @@ export function classifySessionQAQuestion(question, options) {
   var wantsCommands = false;
   var wantsQueries = false;
   var wantsPaths = false;
+  var wantsEarlySession = false;
+  var wantsLateSession = false;
 
   for (var i = 0; i < tokens.length; i++) {
     var token = tokens[i];
+    if (EARLY_SESSION_TERMS[token]) wantsEarlySession = true;
+    if (LATE_SESSION_TERMS[token]) wantsLateSession = true;
     if (QUERY_HINT_TERMS[token]) {
       wantsQueries = true;
       pushUniqueValue(bucketHints, "query");
@@ -2682,6 +2838,8 @@ export function classifySessionQAQuestion(question, options) {
     wantsCommands: wantsCommands,
     wantsQueries: wantsQueries,
     wantsPaths: wantsPaths,
+    wantsEarlySession: wantsEarlySession,
+    wantsLateSession: wantsLateSession,
     requiresExactEvidence: requiresExactEvidence,
     confidence: confidence,
   };

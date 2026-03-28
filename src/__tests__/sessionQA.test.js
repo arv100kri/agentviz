@@ -22,6 +22,8 @@ import {
   compileSessionQAQueryProgram,
   routeSessionQAQuestion,
   scanRawJsonlQuestionMatches,
+  generateBroadQueryRewrites,
+  selectDiverseChunksFromRewrites,
 } from "../../src/lib/sessionQA.js";
 
 var SAMPLE_EVENTS = [
@@ -570,6 +572,67 @@ describe("routeSessionQAQuestion", function () {
     expect(route.kind).toBe("raw-targeted");
     expect(route.relevantEntries[0].toolName).toBe("bash");
     expect(route.relevantEntries[0].rawSlice.text).toContain("\"toolCallId\":\"call-1\"");
+  });
+});
+
+describe("turn-range and chunk diversity", function () {
+  it("classifies out-of-range turn hints", function () {
+    var artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    var program = compileSessionQAQueryProgram("What happened in Turn 99?", artifacts);
+    expect(program.family).toBe("turn-lookup");
+    expect(program.slots.turnHints).toEqual([99]);
+  });
+
+  it("detects early-session intent in question profile", function () {
+    var profile = classifySessionQAQuestion("What happened first in this session?");
+    expect(profile.wantsEarlySession).toBe(true);
+    expect(profile.wantsLateSession).toBeFalsy();
+  });
+
+  it("detects late-session intent in question profile", function () {
+    var profile = classifySessionQAQuestion("What was the final outcome?");
+    expect(profile.wantsLateSession).toBe(true);
+    expect(profile.wantsEarlySession).toBeFalsy();
+  });
+
+  it("generates broad query rewrites only for broad-summary questions", function () {
+    var broadProfile = classifySessionQAQuestion("What was the overall approach?");
+    var rewrites = generateBroadQueryRewrites("What was the overall approach?", broadProfile);
+    expect(rewrites.length).toBeGreaterThan(0);
+
+    var narrowProfile = classifySessionQAQuestion("What error occurred in Turn 1?");
+    var narrowRewrites = generateBroadQueryRewrites("What error occurred in Turn 1?", narrowProfile);
+    expect(narrowRewrites).toEqual([]);
+  });
+
+  it("selects diverse chunks from rewrites without duplicates", function () {
+    var events = [];
+    var turns = [];
+    // Build a synthetic session with 20 turns across 4 chunks
+    for (var i = 0; i < 20; i++) {
+      events.push({ t: i * 10, agent: i % 5 === 0 ? "user" : "assistant", track: i % 3 === 0 ? "tool_call" : "reasoning", text: "Event " + i, duration: 5, intensity: 0.5, isError: i === 15, turnIndex: i, toolName: i % 3 === 0 ? "bash" : undefined, toolInput: i % 3 === 0 ? { command: "test " + i } : undefined });
+      turns.push({ index: i, startTime: i * 10, endTime: i * 10 + 9, eventIndices: [i], userMessage: "Turn " + i + " message", toolCount: i % 3 === 0 ? 1 : 0, hasError: i === 15 });
+    }
+    var metadata = { totalEvents: 20, totalTurns: 20, totalToolCalls: 7, errorCount: 1, duration: 200, format: "copilot-cli" };
+    var artifacts = buildSessionQAArtifacts(events, turns, metadata);
+    expect(artifacts.summaryChunks.length).toBeGreaterThan(1);
+
+    var profile = classifySessionQAQuestion("What was the overall approach?", { artifacts: artifacts });
+    var rewrites = generateBroadQueryRewrites("What was the overall approach?", profile);
+    var chunks = selectDiverseChunksFromRewrites(artifacts, profile, rewrites, 4);
+
+    // Should not have duplicate chunk indices
+    var indices = chunks.map(function (c) { return c.chunkIndex; });
+    var uniqueIndices = indices.filter(function (v, i, a) { return a.indexOf(v) === i; });
+    expect(uniqueIndices.length).toBe(indices.length);
+  });
+
+  it("includes metric turn-count answer with zero-based guidance", function () {
+    var artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    var route = routeSessionQAQuestion("How many turns are in this session?", artifacts);
+    expect(route.kind).toBe("metric");
+    expect(route.directAnswer).toContain("2 turns");
+    expect(route.directAnswer).toContain("zero-based");
   });
 });
 

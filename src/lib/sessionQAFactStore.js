@@ -398,6 +398,11 @@ function loadTurnSummary(db, turnIndex) {
   return db.prepare("SELECT * FROM turns WHERE turn_index = ?").get(Number(turnIndex));
 }
 
+function loadMaxTurnIndex(db) {
+  var row = db.prepare("SELECT MAX(turn_index) AS max_turn FROM turns").get();
+  return row && typeof row.max_turn === "number" ? row.max_turn : null;
+}
+
 function loadTurnToolCalls(db, turnIndex, limit) {
   return db.prepare(
     "SELECT tool_name, duration, is_error FROM tool_calls WHERE turn_index = ? ORDER BY event_index LIMIT ?"
@@ -596,7 +601,17 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
     if (queryProgram.family === "turn-lookup" && queryProgram.slots.turnHints.length > 0) {
       var turnIndex = queryProgram.slots.turnHints[0];
       var turnRow = loadTurnSummary(db, turnIndex);
-      if (!turnRow) return null;
+      if (!turnRow) {
+        var maxTurn = loadMaxTurnIndex(db);
+        if (maxTurn !== null) {
+          return {
+            answer: "Turn " + turnIndex + " is out of range. This session uses zero-based turn indexing, so valid turns are 0 through " + maxTurn + ". Try asking about Turn " + maxTurn + " to see the last turn, or Turn 0 to see the first.",
+            references: [],
+            model: "AGENTVIZ turn-range guard",
+          };
+        }
+        return null;
+      }
       var toolRows = loadTurnToolCalls(db, turnIndex, 6);
       return Object.assign(buildTurnLookupAnswer(turnRow, toolRows), {
         model: "AGENTVIZ SQLite fact store",

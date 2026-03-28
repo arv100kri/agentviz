@@ -445,4 +445,32 @@ describe("Q&A fact store", function () {
 
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
+
+  it("returns a deterministic out-of-range answer for invalid turn indices", async function () {
+    var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "agentviz-qa-oor-"));
+    var cache = createSessionQACacheStore();
+    var saved = saveSessionQACacheEntry(cache, "session-key", {
+      events: [
+        { t: 1, agent: "assistant", track: "tool_call", text: "test output", duration: 4, toolName: "bash", toolInput: { command: "npm test" }, isError: false, turnIndex: 0 },
+      ],
+      turns: [
+        { index: 0, eventIndices: [0], startTime: 0, endTime: 4, userMessage: "Run tests", toolCount: 1, hasError: false },
+      ],
+      metadata: { totalEvents: 1, totalTurns: 1, totalToolCalls: 1, errorCount: 0, duration: 4, format: "copilot-cli" },
+      rawText: "{\"type\":\"tool.execution_start\"}\n",
+    });
+
+    var precomputed = ensureSessionQAPrecomputed(saved, { homeDir: tempDir });
+    var factStore = await ensureSessionQAFactStore(saved, precomputed, { homeDir: tempDir });
+    var program = compileSessionQAQueryProgram("What happened in Turn 99?", precomputed.artifacts);
+    var result = await querySessionQAFactStore(program, factStore, {});
+
+    expect(result).toBeTruthy();
+    expect(result.answer).toContain("out of range");
+    expect(result.answer).toContain("zero-based");
+    expect(result.answer).toContain("0");
+    expect(result.model).toBe("AGENTVIZ turn-range guard");
+
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
 });
