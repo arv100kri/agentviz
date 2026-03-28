@@ -108,6 +108,8 @@ Agent types: user, assistant, system
 - `npm run test:e2e` - Run Playwright E2E tests (smoke, navigation, interaction)
 - `npm run typecheck` - TypeScript type checking
 
+Before running `npm run test:e2e` for the first time, install Playwright browsers with `npx playwright install chromium`.
+
 For full functionality in dev mode, run BOTH `node bin/agentviz.js` and `npm run dev`.
 Vite proxies `/api/*` to the backend automatically.
 

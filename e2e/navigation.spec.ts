@@ -16,10 +16,16 @@ test.describe("Navigation", () => {
       const tab = page.getByRole("button", { name: label, exact: true });
       await tab.click();
       await page.waitForTimeout(300);
-      // Verify the tab appears active (has a non-transparent background)
+      // Verify the tab and app remain visible after the click
       await expect(tab).toBeVisible();
       await expect(page.locator("#root")).toBeVisible();
     }
+
+    // Also verify Graph tab (has "exp" suffix in label)
+    const graphTab = page.getByRole("button", { name: /Graph/i });
+    await graphTab.click();
+    await page.waitForTimeout(300);
+    await expect(graphTab).toBeVisible();
   });
 
   test("keyboard shortcuts 1-5 switch views", async ({ page }) => {
@@ -33,6 +39,16 @@ test.describe("Navigation", () => {
 
     // Press '2' for Tracks
     await page.keyboard.press("2");
+    await page.waitForTimeout(300);
+    await expect(page.locator("#agentviz-search")).toBeVisible();
+
+    // Press '3' for Waterfall
+    await page.keyboard.press("3");
+    await page.waitForTimeout(300);
+    await expect(page.locator("#agentviz-search")).toBeVisible();
+
+    // Press '4' for Graph
+    await page.keyboard.press("4");
     await page.waitForTimeout(300);
     await expect(page.locator("#root")).toBeVisible();
 

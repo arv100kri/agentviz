@@ -13,6 +13,8 @@ test.describe("Landing page", () => {
     await expect(page.locator("#root")).toBeVisible();
     // The landing page should show the brand and file uploader
     await expect(page.getByText("AGENTVIZ", { exact: false })).toBeVisible();
+    // Wait for async effects to settle before checking console errors
+    await page.waitForLoadState("networkidle");
     // Filter out expected API errors (backend not running in CI/test)
     const unexpectedErrors = consoleErrors.filter(
       (e) => !e.includes("Failed to load resource"),
@@ -51,6 +53,7 @@ test.describe("Demo session", () => {
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /Stats/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Coach/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Graph/i })).toBeVisible();
   });
 
   test("dynamically discovers all view tabs", async ({ page }) => {
@@ -67,8 +70,8 @@ test.describe("Demo session", () => {
         viewTabLabels.push(trimmed);
       }
     }
-    // Should discover at least the 6 known views
-    expect(viewTabLabels.length).toBeGreaterThanOrEqual(5);
+    // Should discover all 6 known views
+    expect(viewTabLabels.length).toBeGreaterThanOrEqual(6);
     expect(viewTabLabels).toContain("Replay");
     expect(viewTabLabels).toContain("Stats");
   });

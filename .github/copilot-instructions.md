@@ -17,6 +17,8 @@ npm run test:e2e     # Run Playwright E2E tests
 npm run typecheck    # tsc --noEmit
 ```
 
+Before running `npm run test:e2e` for the first time, install Playwright browsers with `npx playwright install chromium`.
+
 ## Rules
 - Search existing code before writing new abstractions.
 - Run tests after every non-trivial change.
