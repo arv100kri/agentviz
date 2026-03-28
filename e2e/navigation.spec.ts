@@ -10,7 +10,7 @@ test.describe("Navigation", () => {
   });
 
   test("clicking each tab switches the active view", async ({ page }) => {
-    const viewTabs = ["Replay", "Tracks", "Waterfall", "Stats", "Coach"];
+    const viewTabs = ["Replay", "Tracks", "Waterfall", "Stats", "Coach", "Q&A"];
 
     for (const label of viewTabs) {
       const tab = page.getByRole("button", { name: label, exact: true });
