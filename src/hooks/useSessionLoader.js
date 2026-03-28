@@ -143,6 +143,10 @@ export default function useSessionLoader(options) {
     setShowHero(false);
   }, []);
 
+  var getRawText = useCallback(function () {
+    return rawTextRef.current || "";
+  }, []);
+
   // When served by the CLI (server.js), /api/meta tells us the filename
   // and /api/file provides the initial content. Bootstrap from there.
   useEffect(function () {
@@ -209,6 +213,6 @@ export default function useSessionLoader(options) {
     loadSample: loadSample,
     resetSession: resetSession,
     dismissHero: dismissHero,
-    getRawText: function () { return rawTextRef.current; },
+    getRawText: getRawText,
   };
 }

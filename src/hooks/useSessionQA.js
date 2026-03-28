@@ -22,6 +22,12 @@ var MAX_QA_SESSION_RECAP_MESSAGE_CHARS = 280;
 var MAX_QA_SESSION_RECAP_CHARS = 3200;
 var STATUS_PHASE_MAP = {
   "Building session index...": "precomputing-session",
+  "Compiling query program...": "compiling-query-program",
+  "Checking paraphrase-aware cache...": "checking-paraphrase-cache",
+  "Querying SQLite fact store...": "querying-fact-store",
+  "Launching fallback route...": "launching-fallback-route",
+  "Canceling slower route...": "canceling-slower-route",
+  "Using cached program answer...": "using-cached-program-answer",
   "Using precomputed metrics...": "using-precomputed-metrics",
   "Searching tool and query index...": "searching-index",
   "Scanning summary chunks...": "scanning-summary-chunks",

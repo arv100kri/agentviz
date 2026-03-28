@@ -1806,6 +1806,228 @@ function buildMetricQuestionMatch(questionProfile, metricCatalog) {
   return null;
 }
 
+function questionAsksForCount(normalizedQuestion) {
+  if (!normalizedQuestion) return false;
+  return hasAnyTerm(normalizedQuestion, ["how many", "count", "number of", "total"]);
+}
+
+function questionAsksForSummary(normalizedQuestion) {
+  if (!normalizedQuestion) return false;
+  return hasAnyTerm(normalizedQuestion, [
+    "what happened",
+    "what did",
+    "summarize",
+    "summary",
+    "overall approach",
+    "walk me through",
+  ]);
+}
+
+function normalizeProgramSlotValues(values) {
+  if (!Array.isArray(values) || values.length === 0) return [];
+  var normalized = [];
+  for (var i = 0; i < values.length; i++) {
+    var value = normalizeSearchValue(values[i]);
+    if (!value) continue;
+    pushUniqueValue(normalized, value);
+  }
+  return normalized.sort();
+}
+
+function buildSessionQAQueryProgramSlots(questionProfile, metricMatch) {
+  var safeProfile = questionProfile && typeof questionProfile === "object" ? questionProfile : {};
+  var turnHints = Array.isArray(safeProfile.turnHints)
+    ? safeProfile.turnHints
+      .map(function (value) { return Number(value); })
+      .filter(function (value) { return Number.isFinite(value) && value >= 0; })
+      .sort(function (left, right) { return left - right; })
+    : [];
+
+  return {
+    metricKey: metricMatch ? metricMatch.key : null,
+    turnHints: turnHints,
+    toolNames: normalizeProgramSlotValues(safeProfile.matchedToolNames),
+    pathTerms: normalizeProgramSlotValues(safeProfile.pathTerms),
+    commandTerms: normalizeProgramSlotValues(safeProfile.commandTerms),
+    queryTerms: normalizeProgramSlotValues(safeProfile.queryTerms),
+    repoTerms: normalizeProgramSlotValues(safeProfile.entities && safeProfile.entities.repos),
+    identifierTerms: normalizeProgramSlotValues(safeProfile.entities && safeProfile.entities.identifiers),
+    wantsErrors: Boolean(safeProfile.wantsErrors),
+    wantsCommands: Boolean(safeProfile.wantsCommands),
+    wantsQueries: Boolean(safeProfile.wantsQueries),
+    wantsPaths: Boolean(safeProfile.wantsPaths),
+    wantsTools: Boolean(safeProfile.wantsTools),
+    broadSummary: Boolean(safeProfile.broadSummary),
+    requiresExactEvidence: Boolean(safeProfile.requiresExactEvidence),
+  };
+}
+
+function determineSessionQAProgramFamily(questionProfile, metricMatch) {
+  var normalizedQuestion = questionProfile && questionProfile.normalizedQuestion
+    ? questionProfile.normalizedQuestion
+    : "";
+
+  if (metricMatch) {
+    return {
+      family: "metric",
+      intent: metricMatch.key || "metric-lookup",
+      routePreference: "metric",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+    };
+  }
+
+  if (questionProfile && questionProfile.requiresExactEvidence) {
+    return {
+      family: "exact-raw-evidence",
+      intent: "exact-evidence",
+      routePreference: questionMentionsRawJsonl(questionProfile) ? "raw-full" : "raw-targeted",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+    };
+  }
+
+  if (questionProfile && questionProfile.turnHints && questionProfile.turnHints.length > 0) {
+    return {
+      family: "turn-lookup",
+      intent: questionAsksForCount(normalizedQuestion) ? "turn-count" : "turn-summary",
+      routePreference: "index",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+    };
+  }
+
+  if (questionProfile && questionProfile.matchedToolNames && questionProfile.matchedToolNames.length > 0) {
+    return {
+      family: "tool-lookup",
+      intent: questionAsksForCount(normalizedQuestion) ? "tool-count" : "tool-summary",
+      routePreference: "index",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+    };
+  }
+
+  if (questionProfile && questionProfile.pathTerms && questionProfile.pathTerms.length > 0) {
+    return {
+      family: "file-lookup",
+      intent: questionAsksForCount(normalizedQuestion) ? "file-count" : "file-summary",
+      routePreference: "index",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+    };
+  }
+
+  if (questionProfile && (questionProfile.wantsCommands || questionProfile.wantsQueries)) {
+    return {
+      family: "command-query-lookup",
+      intent: questionAsksForCount(normalizedQuestion) ? "query-count" : "query-summary",
+      routePreference: "index",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+    };
+  }
+
+  if (questionProfile && questionProfile.wantsErrors) {
+    return {
+      family: "error-diagnosis",
+      intent: "error-diagnosis",
+      routePreference: "index",
+      canAnswerFromFactStore: true,
+      deterministic: false,
+      needsModel: true,
+      raceEligible: true,
+    };
+  }
+
+  if (questionProfile && questionProfile.broadSummary) {
+    return {
+      family: "session-summary",
+      intent: questionAsksForSummary(normalizedQuestion) ? "summary" : "broad-summary",
+      routePreference: "chunk",
+      canAnswerFromFactStore: true,
+      deterministic: false,
+      needsModel: true,
+      raceEligible: true,
+    };
+  }
+
+  return {
+    family: "broad-synthesis",
+    intent: "structured-synthesis",
+    routePreference: "model",
+    canAnswerFromFactStore: true,
+    deterministic: false,
+    needsModel: true,
+    raceEligible: true,
+  };
+}
+
+export function compileSessionQAQueryProgram(question, artifacts, options) {
+  var opts = options && typeof options === "object" ? options : {};
+  var questionProfile = opts.questionProfile || buildQAQuestionProfile(question, { artifacts: artifacts });
+  var metricCatalog = artifacts && artifacts.metricCatalog ? artifacts.metricCatalog : null;
+  var metricMatch = opts.metricMatch || buildMetricQuestionMatch(questionProfile, metricCatalog);
+  var familyInfo = determineSessionQAProgramFamily(questionProfile, metricMatch);
+  var slots = buildSessionQAQueryProgramSlots(questionProfile, metricMatch);
+
+  return {
+    family: familyInfo.family,
+    intent: familyInfo.intent,
+    routePreference: familyInfo.routePreference,
+    canAnswerFromFactStore: familyInfo.canAnswerFromFactStore,
+    deterministic: familyInfo.deterministic,
+    needsModel: familyInfo.needsModel,
+    raceEligible: familyInfo.raceEligible,
+    confidence: questionProfile.confidence || "low",
+    question: questionProfile.question || "",
+    normalizedQuestion: questionProfile.normalizedQuestion || "",
+    evidenceMode: slots.requiresExactEvidence
+      ? "exact"
+      : (slots.broadSummary ? "summary" : "structured"),
+    slots: slots,
+    metricMatch: metricMatch ? {
+      key: metricMatch.key || null,
+      answer: metricMatch.answer || "",
+      references: Array.isArray(metricMatch.references) ? metricMatch.references : [],
+      detail: metricMatch.detail || "",
+    } : null,
+    questionProfile: questionProfile,
+  };
+}
+
+export function buildSessionQAProgramCacheKey(program, options) {
+  if (!program || typeof program !== "object") return "";
+  var opts = options && typeof options === "object" ? options : {};
+  return stableSerialize({
+    version: 1,
+    fingerprint: opts.fingerprint ? String(opts.fingerprint) : "",
+    family: program.family || "",
+    intent: program.intent || "",
+    routePreference: program.routePreference || "",
+    evidenceMode: program.evidenceMode || "",
+    slots: program.slots || {},
+  });
+}
+
+export function describeSessionQAQueryProgram(program) {
+  if (!program || typeof program !== "object") return "the structured session router";
+  var family = String(program.family || "").trim();
+  if (!family) return "the structured session router";
+  return family.replace(/-/g, " ");
+}
+
 function questionMentionsRawJsonl(questionProfile) {
   if (!questionProfile || !questionProfile.normalizedQuestion) return false;
   return hasAnyTerm(questionProfile.normalizedQuestion, [
@@ -1821,9 +2043,9 @@ function questionMentionsRawJsonl(questionProfile) {
 
 export function routeSessionQAQuestion(question, artifacts, options) {
   var opts = options && typeof options === "object" ? options : {};
-  var questionProfile = opts.questionProfile || buildQAQuestionProfile(question, { artifacts: artifacts });
-  var metricCatalog = artifacts && artifacts.metricCatalog ? artifacts.metricCatalog : null;
-  var metricMatch = buildMetricQuestionMatch(questionProfile, metricCatalog);
+  var queryProgram = opts.queryProgram || compileSessionQAQueryProgram(question, artifacts, opts);
+  var questionProfile = queryProgram.questionProfile || opts.questionProfile || buildQAQuestionProfile(question, { artifacts: artifacts });
+  var metricMatch = queryProgram.metricMatch || null;
   if (metricMatch) {
     return {
       kind: "metric",
@@ -1834,6 +2056,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
       directAnswer: metricMatch.answer,
       references: metricMatch.references || [],
       metricKey: metricMatch.key,
+      queryProgram: queryProgram,
     };
   }
 
@@ -1858,6 +2081,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
       profile: questionProfile,
       relevantEntries: relevantEntries,
       relevantChunks: relevantChunks,
+      queryProgram: queryProgram,
     };
   }
 
@@ -1870,6 +2094,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
       profile: questionProfile,
       relevantEntries: exactRawEntries,
       relevantChunks: relevantChunks,
+      queryProgram: queryProgram,
     };
   }
 
@@ -1884,6 +2109,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
       relevantChunks: relevantChunks.length > 0
         ? relevantChunks
         : selectRelevantSummaryChunks(artifacts, questionProfile, MAX_SUMMARY_CHUNK_RESULTS),
+      queryProgram: queryProgram,
     };
   }
 
@@ -1896,6 +2122,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
       profile: questionProfile,
       relevantEntries: relevantEntries,
       relevantChunks: relevantChunks,
+      queryProgram: queryProgram,
     };
   }
 
@@ -1908,6 +2135,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
       profile: questionProfile,
       relevantEntries: relevantEntries,
       relevantChunks: relevantChunks,
+      queryProgram: queryProgram,
     };
   }
 
@@ -1920,6 +2148,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
       profile: questionProfile,
       relevantEntries: relevantEntries,
       relevantChunks: relevantChunks,
+      queryProgram: queryProgram,
     };
   }
 
@@ -1931,6 +2160,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
     profile: questionProfile,
     relevantEntries: relevantEntries,
     relevantChunks: relevantChunks,
+    queryProgram: queryProgram,
   };
 }
 
@@ -2887,7 +3117,7 @@ function buildSummaryChunkSection(chunks, charBudget, maxCount) {
   return lines.length > 1 ? lines.join("\n") : "";
 }
 
-function buildRawSliceSection(entries, charBudget, maxCount) {
+function buildRawSliceSection(entries, charBudget, maxCount, rawText) {
   if (!Array.isArray(entries) || entries.length === 0 || charBudget <= 0) return "";
   var lines = ["=== MATCHING RAW JSONL SLICES ==="];
   var remainingBudget = charBudget - lines[0].length - 1;
@@ -2903,8 +3133,11 @@ function buildRawSliceSection(entries, charBudget, maxCount) {
     }
     var blockLines = [header];
     if (entry.inputText) blockLines.push("    Input: " + truncate(entry.inputText, 260));
-    if (entry.rawSlice.text) {
-      blockLines.push("    Raw: " + truncate(entry.rawSlice.text.replace(/\s+/g, " "), MAX_RAW_MATCH_PREVIEW_CHARS));
+    var rawSliceText = entry.rawSlice.text
+      ? entry.rawSlice.text
+      : (rawText ? sliceRawJsonlRange(rawText, entry.rawSlice) : "");
+    if (rawSliceText) {
+      blockLines.push("    Raw: " + truncate(rawSliceText.replace(/\s+/g, " "), MAX_RAW_MATCH_PREVIEW_CHARS));
     } else if (entry.outputText) {
       blockLines.push("    Output: " + truncate(entry.outputText, MAX_RAW_MATCH_PREVIEW_CHARS));
     }
@@ -2978,6 +3211,9 @@ function buildChunkQAContext(events, turns, metadata, qaArtifacts, route) {
 function buildRawSliceQAContext(events, turns, metadata, qaArtifacts, route) {
   if (!route || !route.profile || !Array.isArray(route.relevantEntries) || route.relevantEntries.length === 0) return "";
   var turnRecords = Array.isArray(qaArtifacts.turnRecords) ? qaArtifacts.turnRecords : buildTurnRecords(events, turns);
+  var rawText = qaArtifacts && qaArtifacts.rawLookup && typeof qaArtifacts.rawLookup.rawText === "string"
+    ? qaArtifacts.rawLookup.rawText
+    : "";
   var parts = buildContextPreamble(turnRecords, metadata, qaArtifacts, {
     includeToolUsage: true,
     includeFiles: true,
@@ -3001,7 +3237,12 @@ function buildRawSliceQAContext(events, turns, metadata, qaArtifacts, route) {
     note: "Using exact raw JSONL slices for the best matching tool calls.",
   }));
   pushBlock(buildRelevantToolCallSection(route.relevantEntries, Math.min(remainingBudget, 3200), MAX_RAW_SLICE_RESULTS));
-  pushBlock(buildRawSliceSection(route.relevantEntries, Math.min(remainingBudget, MAX_RAW_SLICE_CONTEXT_CHARS), MAX_RAW_SLICE_RESULTS));
+  pushBlock(buildRawSliceSection(
+    route.relevantEntries,
+    Math.min(remainingBudget, MAX_RAW_SLICE_CONTEXT_CHARS),
+    MAX_RAW_SLICE_RESULTS,
+    rawText
+  ));
   return parts.join("\n");
 }
 

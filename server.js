@@ -16,10 +16,18 @@ import {
   buildQAContext,
   buildQAPrompt,
   buildRawJsonlRecordIndex,
+  buildSessionQAProgramCacheKey,
   buildSessionQAArtifacts,
+  buildToolCallSearchIndex,
+  compileSessionQAQueryProgram,
+  describeSessionQAQueryProgram,
   routeSessionQAQuestion,
   scanRawJsonlQuestionMatches,
 } from "./src/lib/sessionQA.js";
+import {
+  ensureSessionQAFactStore,
+  querySessionQAFactStore,
+} from "./src/lib/sessionQAFactStore.js";
 var MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
@@ -169,6 +177,8 @@ function cloneJsonValue(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+var SESSION_QA_PRECOMPUTE_VERSION = 2;
+
 export function getSessionQAPrecomputeCacheDir(homeDir) {
   return path.join(homeDir || os.homedir(), ".agentviz", "session-qa-cache");
 }
@@ -222,28 +232,67 @@ function getSessionQARawText(entry, fsModule) {
   }
 }
 
-function sanitizePersistedSessionQAArtifacts(artifacts, options) {
-  var cloned = cloneJsonValue(artifacts);
-  var opts = options && typeof options === "object" ? options : {};
+function copyPersistedRawSlice(rawSlice) {
+  if (!rawSlice || typeof rawSlice !== "object") return null;
+  return {
+    strategy: rawSlice.strategy || "unknown",
+    lineStart: typeof rawSlice.lineStart === "number" ? rawSlice.lineStart : null,
+    lineEnd: typeof rawSlice.lineEnd === "number" ? rawSlice.lineEnd : null,
+    charStart: typeof rawSlice.charStart === "number" ? rawSlice.charStart : null,
+    charEnd: typeof rawSlice.charEnd === "number" ? rawSlice.charEnd : null,
+    startRecordIndex: typeof rawSlice.startRecordIndex === "number" ? rawSlice.startRecordIndex : null,
+    endRecordIndex: typeof rawSlice.endRecordIndex === "number" ? rawSlice.endRecordIndex : null,
+    toolCallId: rawSlice.toolCallId || null,
+    toolUseId: rawSlice.toolUseId || null,
+  };
+}
+
+function copyPersistedLedgerEntry(entry) {
+  var cloned = cloneJsonValue(entry);
   if (!cloned || typeof cloned !== "object") return null;
-
-  if (cloned.rawLookup) {
-    if (!opts.includeRawText) cloned.rawLookup.rawText = "";
-    cloned.rawLookup.rawIndex = null;
-  }
-
-  if (cloned.rawIndex && !opts.includeRawText) {
-    cloned.rawIndex = null;
-  }
-
+  if (cloned.rawSlice) cloned.rawSlice = copyPersistedRawSlice(cloned.rawSlice);
   return cloned;
+}
+
+function sanitizePersistedSessionQAArtifacts(artifacts) {
+  if (!artifacts || typeof artifacts !== "object") return null;
+  var ledger = Array.isArray(artifacts.ledger)
+    ? artifacts.ledger.map(copyPersistedLedgerEntry).filter(Boolean)
+    : [];
+
+  return {
+    turnRecords: Array.isArray(artifacts.turnRecords) ? cloneJsonValue(artifacts.turnRecords) : [],
+    ledger: ledger,
+    turnSummaries: Array.isArray(artifacts.turnSummaries) ? cloneJsonValue(artifacts.turnSummaries) : [],
+    summaryChunks: Array.isArray(artifacts.summaryChunks) ? cloneJsonValue(artifacts.summaryChunks) : [],
+    stats: artifacts.stats && typeof artifacts.stats === "object" ? cloneJsonValue(artifacts.stats) : null,
+    metricCatalog: artifacts.metricCatalog && typeof artifacts.metricCatalog === "object"
+      ? cloneJsonValue(artifacts.metricCatalog)
+      : null,
+    metadata: artifacts.metadata && typeof artifacts.metadata === "object" ? cloneJsonValue(artifacts.metadata) : null,
+    rawLookup: artifacts.rawLookup && typeof artifacts.rawLookup === "object"
+      ? { matchedCount: Number(artifacts.rawLookup.matchedCount) || 0 }
+      : null,
+    rawIndex: null,
+  };
 }
 
 function hydratePersistedSessionQAArtifacts(artifacts, rawText) {
   var cloned = cloneJsonValue(artifacts);
   if (!cloned || typeof cloned !== "object") return null;
-  if (rawText && cloned.rawLookup && !cloned.rawLookup.rawText) cloned.rawLookup.rawText = rawText;
-  if (rawText && cloned.rawIndex && !cloned.rawIndex.rawText) cloned.rawIndex.rawText = rawText;
+  var ledger = Array.isArray(cloned.ledger) ? cloned.ledger : [];
+  if (!cloned.ledgerIndex && ledger.length > 0) {
+    cloned.ledgerIndex = buildToolCallSearchIndex(ledger);
+  }
+  cloned.rawIndex = null;
+  if (cloned.rawLookup || rawText) {
+    cloned.rawLookup = Object.assign({}, cloned.rawLookup || {}, {
+      rawText: rawText || "",
+      rawIndex: null,
+      ledger: ledger,
+      ledgerIndex: cloned.ledgerIndex || null,
+    });
+  }
   return cloned;
 }
 
@@ -293,15 +342,21 @@ export function buildSessionQAPrecomputeEntry(entry, options) {
 
   for (var candidateIndex = 0; candidateIndex < candidatePaths.length; candidateIndex++) {
     var existing = readSessionQAPrecompute(candidatePaths[candidateIndex].path, targetFs);
-    if (!existing || existing.fingerprint !== fingerprint || !existing.artifacts) continue;
+    if (
+      !existing ||
+      existing.version !== SESSION_QA_PRECOMPUTE_VERSION ||
+      existing.fingerprint !== fingerprint ||
+      !existing.artifacts
+    ) continue;
+    var persistedRawText = typeof existing.rawText === "string" ? existing.rawText : rawText;
     return {
       fingerprint: fingerprint,
       storage: candidatePaths[candidateIndex].storage,
       path: candidatePaths[candidateIndex].path,
       builtAt: existing.builtAt || existing.updatedAt || null,
       reused: true,
-      artifacts: hydratePersistedSessionQAArtifacts(existing.artifacts, rawText),
-      rawText: rawText || null,
+      artifacts: hydratePersistedSessionQAArtifacts(existing.artifacts, persistedRawText),
+      rawText: persistedRawText || null,
     };
   }
 
@@ -309,11 +364,12 @@ export function buildSessionQAPrecomputeEntry(entry, options) {
   var artifacts = buildSessionQAArtifacts(entry && entry.events, entry && entry.turns, entry && entry.metadata, artifactOptions);
   var builtAt = new Date().toISOString();
   var record = {
-    version: 1,
+    version: SESSION_QA_PRECOMPUTE_VERSION,
     fingerprint: fingerprint,
     builtAt: builtAt,
     sessionFilePath: entry && entry.sessionFilePath ? String(entry.sessionFilePath) : null,
-    artifacts: sanitizePersistedSessionQAArtifacts(artifacts, { includeRawText: includeRawText }),
+    rawText: includeRawText ? rawText : null,
+    artifacts: sanitizePersistedSessionQAArtifacts(artifacts),
   };
   var persistedStorage = "memory";
   var persistedPath = null;
@@ -325,13 +381,15 @@ export function buildSessionQAPrecomputeEntry(entry, options) {
     break;
   }
 
+  var hydratedArtifacts = hydratePersistedSessionQAArtifacts(record.artifacts, rawText);
+
   return {
     fingerprint: fingerprint,
     storage: persistedStorage,
     path: persistedPath,
     builtAt: builtAt,
     reused: false,
-    artifacts: artifacts,
+    artifacts: hydratedArtifacts || artifacts,
     rawText: rawText || null,
   };
 }
@@ -349,6 +407,13 @@ export function ensureSessionQAPrecomputed(entry, options) {
   if (!entry.questionCache || entry.questionCacheFingerprint !== built.fingerprint) {
     entry.questionCache = {};
     entry.questionCacheFingerprint = built.fingerprint;
+  }
+  if (!entry.programCache || entry.programCacheFingerprint !== built.fingerprint) {
+    entry.programCache = {};
+    entry.programCacheFingerprint = built.fingerprint;
+  }
+  if (entry.factStore && entry.factStore.fingerprint !== built.fingerprint) {
+    entry.factStore = null;
   }
   return built;
 }
@@ -371,6 +436,13 @@ export function sanitizeSessionQACacheEntry(entry) {
       ? entry.questionCache
       : {},
     questionCacheFingerprint: entry && entry.questionCacheFingerprint ? String(entry.questionCacheFingerprint) : null,
+    programCache: entry && entry.programCache && typeof entry.programCache === "object"
+      ? entry.programCache
+      : {},
+    programCacheFingerprint: entry && entry.programCacheFingerprint ? String(entry.programCacheFingerprint) : null,
+    factStore: entry && entry.factStore && typeof entry.factStore === "object"
+      ? entry.factStore
+      : null,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -390,6 +462,15 @@ export function saveSessionQACacheEntry(cache, sessionKey, entry) {
     if (!saved.questionCacheFingerprint && existing.questionCacheFingerprint) {
       saved.questionCacheFingerprint = existing.questionCacheFingerprint;
     }
+  }
+  if (existing && existing.programCache && Object.keys(existing.programCache).length > 0) {
+    saved.programCache = existing.programCache;
+    if (!saved.programCacheFingerprint && existing.programCacheFingerprint) {
+      saved.programCacheFingerprint = existing.programCacheFingerprint;
+    }
+  }
+  if (existing && existing.factStore && !saved.factStore) {
+    saved.factStore = existing.factStore;
   }
   cache.set(String(sessionKey), saved);
   return saved;
@@ -516,6 +597,70 @@ function describeQAContextRetrieval(resolvedSession) {
   return source + " Raw session file access is available if the model needs exact output.";
 }
 
+function describeSessionQAProgramCompilation(queryProgram) {
+  if (!queryProgram) return "Compiling the question into a structured session query.";
+  var family = describeSessionQAQueryProgram(queryProgram);
+  if (queryProgram.deterministic && !queryProgram.needsModel) {
+    return "Compiled the question into the " + family + " family so AGENTVIZ can avoid the model if possible.";
+  }
+  return "Compiled the question into the " + family + " family before choosing the fastest route.";
+}
+
+function describeSessionQAFactStoreLookup(queryProgram, factStore) {
+  var family = describeSessionQAQueryProgram(queryProgram);
+  if (factStore && factStore.storage === "sidecar") {
+    return "Querying the SQLite fact-store sidecar for the " + family + " family.";
+  }
+  return "Querying the SQLite fact store for the " + family + " family.";
+}
+
+function shouldLaunchSessionQARace(queryProgram) {
+  return Boolean(queryProgram && queryProgram.raceEligible && queryProgram.canAnswerFromFactStore);
+}
+
+function buildSessionQARoutePlan(question, events, turns, metadata, qaArtifacts, options) {
+  var opts = options && typeof options === "object" ? options : {};
+  var route = routeSessionQAQuestion(question, qaArtifacts, {
+    rawText: opts.rawText,
+    rawIndex: opts.rawIndex,
+    sessionFilePath: opts.sessionFilePath,
+    queryProgram: opts.queryProgram,
+    questionProfile: opts.queryProgram && opts.queryProgram.questionProfile
+      ? opts.queryProgram.questionProfile
+      : null,
+  });
+  var rawIndex = opts.rawIndex || null;
+
+  if (route && route.kind === "raw-full" && rawIndex) {
+    route.rawMatches = scanRawJsonlQuestionMatches(rawIndex, question, {
+      questionProfile: route.profile,
+      artifacts: qaArtifacts,
+    });
+  } else if (route && route.kind === "raw-full" && opts.rawText) {
+    rawIndex = buildRawJsonlRecordIndex(opts.rawText);
+    if (qaArtifacts && !qaArtifacts.rawIndex) qaArtifacts.rawIndex = rawIndex;
+    route.rawMatches = scanRawJsonlQuestionMatches(rawIndex, question, {
+      questionProfile: route.profile,
+      artifacts: qaArtifacts,
+    });
+  }
+
+  var context = "";
+  if (route && route.kind !== "metric") {
+    context = buildQAContext(events, turns, metadata, {
+      question: question,
+      artifacts: qaArtifacts,
+      route: route,
+    });
+  }
+
+  return {
+    route: route,
+    context: context,
+    rawIndex: rawIndex,
+  };
+}
+
 function describeQAToolDetail(toolName) {
   var name = String(toolName || "").trim();
   return name ? "Tool: " + name : null;
@@ -527,6 +672,12 @@ export function getQAProgressStatus(phase, options) {
   if (phase === "tool-running") return describeQAToolStatus(opts.toolName, "start");
   if (phase === "tool-finished") return describeQAToolStatus(opts.toolName, "complete");
   if (phase === "precomputing-session") return "Building session index...";
+  if (phase === "compiling-query-program") return "Compiling query program...";
+  if (phase === "checking-paraphrase-cache") return "Checking paraphrase-aware cache...";
+  if (phase === "querying-fact-store") return "Querying SQLite fact store...";
+  if (phase === "launching-fallback-route") return "Launching fallback route...";
+  if (phase === "canceling-slower-route") return "Canceling slower route...";
+  if (phase === "using-cached-program-answer") return "Using cached program answer...";
   if (phase === "using-precomputed-metrics") return "Using precomputed metrics...";
   if (phase === "searching-index") return "Searching tool and query index...";
   if (phase === "scanning-summary-chunks") return "Scanning summary chunks...";
@@ -939,7 +1090,7 @@ export function createServer({ sessionFile, distDir }) {
 
       var qaCacheBody = "";
       req.on("data", function (chunk) { qaCacheBody += chunk; });
-      req.on("end", function () {
+      req.on("end", async function () {
         try {
           var cachePayload = JSON.parse(qaCacheBody || "{}");
           if (!cachePayload.sessionKey) {
@@ -953,6 +1104,7 @@ export function createServer({ sessionFile, distDir }) {
             cachePayload
           );
           var precomputed = ensureSessionQAPrecomputed(savedSession);
+          var factStore = await ensureSessionQAFactStore(savedSession, precomputed, { homeDir: os.homedir() });
           res.writeHead(200);
           res.end(JSON.stringify({
             success: true,
@@ -963,6 +1115,11 @@ export function createServer({ sessionFile, distDir }) {
               storage: precomputed.storage,
               builtAt: precomputed.builtAt,
               reused: precomputed.reused,
+            } : null,
+            factStore: factStore ? {
+              storage: factStore.storage,
+              builtAt: factStore.builtAt,
+              reused: factStore.reused,
             } : null,
           }));
         } catch (error) {
@@ -1038,11 +1195,10 @@ export function createServer({ sessionFile, distDir }) {
             : getSessionQARawText(resolvedSession);
           var rawIndex = qaArtifacts && qaArtifacts.rawIndex
             ? qaArtifacts.rawIndex
-            : (rawText ? buildRawJsonlRecordIndex(rawText) : null);
+            : null;
           if (qaArtifacts && qaArtifacts.rawLookup && rawText && !qaArtifacts.rawLookup.rawText) {
             qaArtifacts.rawLookup.rawText = rawText;
           }
-          if (qaArtifacts && !qaArtifacts.rawIndex && rawIndex) qaArtifacts.rawIndex = rawIndex;
 
           var currentProgress = null;
           var lastProgressSignature = "";
@@ -1096,6 +1252,7 @@ export function createServer({ sessionFile, distDir }) {
           var context = "";
           var prompt = null;
           var route = null;
+          var queryProgram = null;
 
           if (payload.requestKind === "detail-fetch") {
             sendProgress("detail-fetch", {
@@ -1108,37 +1265,153 @@ export function createServer({ sessionFile, distDir }) {
             });
             prompt = buildQAPrompt(question, context, { sessionFilePath: sessionFilePath });
           } else {
-            var questionCacheKey = String(question || "").trim().toLowerCase();
-            var cachedQuestionPlan = questionCacheKey && resolvedSession.questionCache
-              ? resolvedSession.questionCache[questionCacheKey]
+            queryProgram = compileSessionQAQueryProgram(question, qaArtifacts);
+            var programCacheKey = buildSessionQAProgramCacheKey(queryProgram, {
+              fingerprint: precomputed ? precomputed.fingerprint : null,
+            });
+            var cachedProgramPlan = programCacheKey && resolvedSession.programCache
+              ? resolvedSession.programCache[programCacheKey]
               : null;
 
-            if (cachedQuestionPlan && cachedQuestionPlan.fingerprint === (precomputed && precomputed.fingerprint)) {
-              route = cachedQuestionPlan.route || null;
-              context = cachedQuestionPlan.context || "";
+            sendProgress("compiling-query-program", {
+              detail: describeSessionQAProgramCompilation(queryProgram),
+              force: true,
+            });
+
+            sendProgress("checking-paraphrase-cache", {
+              detail: cachedProgramPlan && cachedProgramPlan.fingerprint === (precomputed && precomputed.fingerprint)
+                ? "Found a paraphrase-aware cache hit for this question family."
+                : "No paraphrase-aware cache hit yet, so AGENTVIZ will evaluate the live session facts.",
+              force: true,
+            });
+
+            if (cachedProgramPlan && cachedProgramPlan.fingerprint === (precomputed && precomputed.fingerprint)) {
+              if (cachedProgramPlan.directAnswer) {
+                sendProgress("using-cached-program-answer", {
+                  detail: "Reusing the cached " + describeSessionQAQueryProgram(queryProgram) + " answer.",
+                  force: true,
+                });
+                stopProgressHeartbeat();
+                sseSend(buildQADonePayload(
+                  cachedProgramPlan.directAnswer,
+                  cachedProgramPlan.references || [],
+                  cachedProgramPlan.model || "AGENTVIZ cached program answer",
+                  qaSessionId,
+                  qaRequestStartedAt,
+                  Date.now()
+                ));
+                res.end();
+                return;
+              }
+              route = cachedProgramPlan.route || null;
+              context = cachedProgramPlan.context || "";
             }
 
-            if (!route) {
-              route = routeSessionQAQuestion(question, qaArtifacts, {
+            if (!route && queryProgram.family === "metric") {
+              var metricPlan = buildSessionQARoutePlan(question, events, turns, metadata, qaArtifacts, {
                 rawText: rawText,
                 rawIndex: rawIndex,
                 sessionFilePath: sessionFilePath,
+                queryProgram: queryProgram,
               });
-              if (route && route.kind === "raw-full" && rawIndex) {
-                route.rawMatches = scanRawJsonlQuestionMatches(rawIndex, question, {
-                  questionProfile: route.profile,
-                  artifacts: qaArtifacts,
+              route = metricPlan.route;
+              context = metricPlan.context || "";
+              rawIndex = metricPlan.rawIndex || rawIndex;
+            }
+
+            var fallbackPlanPromise = null;
+            if (!route && shouldLaunchSessionQARace(queryProgram)) {
+              sendProgress("launching-fallback-route", {
+                detail: "Launching the existing router in parallel while AGENTVIZ checks the SQLite fact store.",
+                force: true,
+              });
+              fallbackPlanPromise = Promise.resolve().then(function () {
+                return buildSessionQARoutePlan(question, events, turns, metadata, qaArtifacts, {
+                  rawText: rawText,
+                  rawIndex: rawIndex,
+                  sessionFilePath: sessionFilePath,
+                  queryProgram: queryProgram,
                 });
-              }
-              if (route && route.kind !== "metric") {
-                context = buildQAContext(events, turns, metadata, {
-                  question: question,
-                  artifacts: qaArtifacts,
-                  route: route,
+              });
+              fallbackPlanPromise.catch(function () {});
+            }
+
+            if (!route && queryProgram.canAnswerFromFactStore) {
+              var factStore = await ensureSessionQAFactStore(resolvedSession, precomputed, { homeDir: os.homedir() });
+              if (factStore && factStore.path) {
+                sendProgress("querying-fact-store", {
+                  detail: describeSessionQAFactStoreLookup(queryProgram, factStore),
+                  force: true,
                 });
+                var factStoreResult = await querySessionQAFactStore(queryProgram, factStore, { rawText: rawText });
+                if (factStoreResult && typeof factStoreResult.answer === "string" && factStoreResult.answer.trim()) {
+                  if (programCacheKey) {
+                    resolvedSession.programCache[programCacheKey] = {
+                      fingerprint: precomputed ? precomputed.fingerprint : null,
+                      directAnswer: factStoreResult.answer,
+                      references: factStoreResult.references || [],
+                      model: factStoreResult.model || "AGENTVIZ SQLite fact store",
+                    };
+                  }
+                  if (fallbackPlanPromise) {
+                    sendProgress("canceling-slower-route", {
+                      detail: "The fact-store route answered the question, so AGENTVIZ skipped the slower fallback path.",
+                      force: true,
+                    });
+                  }
+                  stopProgressHeartbeat();
+                  sseSend(buildQADonePayload(
+                    factStoreResult.answer,
+                    factStoreResult.references || [],
+                    factStoreResult.model || "AGENTVIZ SQLite fact store",
+                    qaSessionId,
+                    qaRequestStartedAt,
+                    Date.now()
+                  ));
+                  res.end();
+                  return;
+                }
+                if (factStoreResult && typeof factStoreResult.context === "string" && factStoreResult.context.trim()) {
+                  route = {
+                    kind: "fact-store",
+                    phase: "querying-fact-store",
+                    status: "Using SQLite fact store...",
+                    detail: factStoreResult.detail || describeSessionQAFactStoreLookup(queryProgram, factStore),
+                    profile: queryProgram.questionProfile,
+                    queryProgram: queryProgram,
+                  };
+                  context = factStoreResult.context;
+                  if (programCacheKey) {
+                    resolvedSession.programCache[programCacheKey] = {
+                      fingerprint: precomputed ? precomputed.fingerprint : null,
+                      route: cloneJsonValue(route),
+                      context: context,
+                    };
+                  }
+                  if (fallbackPlanPromise) {
+                    sendProgress("canceling-slower-route", {
+                      detail: "The fact-store route produced enough context, so AGENTVIZ skipped the slower fallback path.",
+                      force: true,
+                    });
+                  }
+                }
               }
-              if (questionCacheKey) {
-                resolvedSession.questionCache[questionCacheKey] = {
+            }
+
+            if (!route) {
+              var preparedPlan = fallbackPlanPromise
+                ? await fallbackPlanPromise
+                : buildSessionQARoutePlan(question, events, turns, metadata, qaArtifacts, {
+                  rawText: rawText,
+                  rawIndex: rawIndex,
+                  sessionFilePath: sessionFilePath,
+                  queryProgram: queryProgram,
+                });
+              route = preparedPlan.route;
+              context = preparedPlan.context || "";
+              rawIndex = preparedPlan.rawIndex || rawIndex;
+              if (programCacheKey && route) {
+                resolvedSession.programCache[programCacheKey] = {
                   fingerprint: precomputed ? precomputed.fingerprint : null,
                   route: cloneJsonValue(route),
                   context: context || "",
@@ -1155,6 +1428,14 @@ export function createServer({ sessionFile, distDir }) {
             }
 
             if (route && route.kind === "metric") {
+              if (programCacheKey) {
+                resolvedSession.programCache[programCacheKey] = {
+                  fingerprint: precomputed ? precomputed.fingerprint : null,
+                  directAnswer: route.directAnswer,
+                  references: route.references || [],
+                  model: "AGENTVIZ precomputed metrics",
+                };
+              }
               stopProgressHeartbeat();
               sseSend(buildQADonePayload(
                 route.directAnswer,

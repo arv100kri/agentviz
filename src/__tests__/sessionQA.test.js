@@ -17,7 +17,9 @@ import {
   buildSessionSummaryChunks,
   buildTurnSummaries,
   buildSessionQAArtifacts,
+  buildSessionQAProgramCacheKey,
   classifySessionQAQuestion,
+  compileSessionQAQueryProgram,
   routeSessionQAQuestion,
   scanRawJsonlQuestionMatches,
 } from "../../src/lib/sessionQA.js";
@@ -496,6 +498,46 @@ describe("classifySessionQAQuestion", function () {
   });
 });
 
+describe("compileSessionQAQueryProgram", function () {
+  it("compiles metric questions into stable metric-family programs", function () {
+    var artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    var firstProgram = compileSessionQAQueryProgram(
+      "How long was the longest autonomous agent run in this session?",
+      artifacts
+    );
+    var paraphrasedProgram = compileSessionQAQueryProgram(
+      "What was the duration of the longest autonomous run?",
+      artifacts
+    );
+
+    expect(firstProgram.family).toBe("metric");
+    expect(firstProgram.slots.metricKey).toBe("longest-autonomous-run");
+    expect(
+      buildSessionQAProgramCacheKey(firstProgram, { fingerprint: "session-1" })
+    ).toBe(
+      buildSessionQAProgramCacheKey(paraphrasedProgram, { fingerprint: "session-1" })
+    );
+  });
+
+  it("compiles turn lookups with deterministic slots", function () {
+    var artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    var program = compileSessionQAQueryProgram("What happened in Turn 1?", artifacts);
+
+    expect(program.family).toBe("turn-lookup");
+    expect(program.deterministic).toBe(true);
+    expect(program.slots.turnHints).toEqual([1]);
+  });
+
+  it("marks broad summaries as race-eligible fact-store programs", function () {
+    var artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    var program = compileSessionQAQueryProgram("What was the overall approach?", artifacts);
+
+    expect(program.family).toBe("session-summary");
+    expect(program.canAnswerFromFactStore).toBe(true);
+    expect(program.raceEligible).toBe(true);
+  });
+});
+
 describe("routeSessionQAQuestion", function () {
   it("routes longest-autonomous-run questions to precomputed metrics", function () {
     var artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
@@ -704,6 +746,48 @@ describe("buildQAContext", function () {
     expect(context).toContain("Route: targeted raw slices");
     expect(context).toContain("MATCHING RAW JSONL SLICES");
     expect(context).toContain("call-1");
+  });
+
+  it("re-slices raw JSONL when hydrated artifacts omit inline raw slice text", function () {
+    var artifacts = buildSessionQAArtifacts(RAW_DETAIL_EVENTS, RAW_DETAIL_TURNS, null, {
+      rawText: RAW_DETAIL_JSONL,
+    });
+    var route = routeSessionQAQuestion("What exact output did npm test produce in Turn 0?", artifacts, {
+      rawText: RAW_DETAIL_JSONL,
+      rawIndex: artifacts.rawIndex,
+    });
+    var compactLedger = artifacts.ledger.map(function (entry) {
+      var cloned = JSON.parse(JSON.stringify(entry));
+      if (cloned.rawSlice) delete cloned.rawSlice.text;
+      return cloned;
+    });
+    var compactArtifacts = {
+      turnRecords: artifacts.turnRecords,
+      ledger: compactLedger,
+      ledgerIndex: buildToolCallSearchIndex(compactLedger),
+      turnSummaries: artifacts.turnSummaries,
+      summaryChunks: artifacts.summaryChunks,
+      stats: artifacts.stats,
+      metricCatalog: artifacts.metricCatalog,
+      rawLookup: {
+        rawText: RAW_DETAIL_JSONL,
+        ledger: compactLedger,
+        ledgerIndex: buildToolCallSearchIndex(compactLedger),
+      },
+      rawIndex: null,
+    };
+    var compactRoute = Object.assign({}, route, {
+      relevantEntries: [compactLedger[0]],
+    });
+    var context = buildQAContext(RAW_DETAIL_EVENTS, RAW_DETAIL_TURNS, null, {
+      question: "What exact output did npm test produce in Turn 0?",
+      artifacts: compactArtifacts,
+      route: compactRoute,
+    });
+
+    expect(context).toContain("MATCHING RAW JSONL SLICES");
+    expect(context).toContain("\"tool.execution_start\"");
+    expect(context).toContain("\"tool.execution_complete\"");
   });
 });
 

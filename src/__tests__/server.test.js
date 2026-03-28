@@ -10,14 +10,15 @@ import {
   buildSessionQAPrecomputeEntry,
   buildSessionQAPrecomputeFingerprint,
   describeQAToolStatus,
-  ensureSessionQAPrecomputed,
-  getCompleteJsonlLines,
-  getSessionQACacheEntry,
-  getSessionQAPrecomputeCacheDir,
-  getSessionQASidecarFilePath,
-  getQAEventText,
-  getJsonlStreamChunk,
-  getSessionQAHistoryEntry,
+    ensureSessionQAPrecomputed,
+    getCompleteJsonlLines,
+    getSessionQACacheEntry,
+    getSessionQAPrecomputeCacheDir,
+    getSessionQASidecarFilePath,
+    readSessionQAPrecompute,
+    getQAEventText,
+    getJsonlStreamChunk,
+    getSessionQAHistoryEntry,
   getSessionQAHistoryFilePath,
   readSessionQAHistoryStore,
   removeSessionQAHistoryEntry,
@@ -26,6 +27,13 @@ import {
   saveSessionQAHistoryEntry,
   writeSessionQAPrecompute,
 } from "../../server.js";
+import {
+  ensureSessionQAFactStore,
+  getManagedSessionQAFactStorePath,
+  getSessionQAFactStoreSidecarPath,
+  querySessionQAFactStore,
+} from "../../src/lib/sessionQAFactStore.js";
+import { compileSessionQAQueryProgram } from "../../src/lib/sessionQA.js";
 
 describe("server live JSONL helpers", function () {
   it("ignores a trailing partial Claude record until it is newline-terminated", function () {
@@ -253,23 +261,53 @@ describe("Q&A precompute persistence", function () {
     var sessionDir = path.join(tempDir, "sessions");
     var sessionFile = path.join(sessionDir, "events.jsonl");
     fs.mkdirSync(sessionDir, { recursive: true });
-    fs.writeFileSync(sessionFile, "{\"type\":\"assistant\",\"message\":{\"content\":\"hello\"}}\n", "utf8");
+    fs.writeFileSync(
+      sessionFile,
+      [
+        "{\"type\":\"tool.execution_start\",\"data\":{\"toolName\":\"bash\",\"toolInput\":{\"command\":\"npm test\"},\"toolCallId\":\"call-1\"}}",
+        "{\"type\":\"tool.execution_complete\",\"data\":{\"toolCallId\":\"call-1\",\"result\":\"FAIL src/auth.test.js\"}}",
+      ].join("\n") + "\n",
+      "utf8"
+    );
 
     var entry = {
-      events: [{ t: 1, agent: "assistant", track: "output", text: "hello" }],
+      events: [
+        {
+          t: 1,
+          agent: "assistant",
+          track: "tool_call",
+          text: "npm test",
+          duration: 1,
+          toolName: "bash",
+          toolInput: { command: "npm test" },
+          turnIndex: 0,
+        },
+      ],
       turns: [{ index: 0, eventIndices: [0], startTime: 0, endTime: 1, userMessage: "hello" }],
-      metadata: { totalEvents: 1, totalTurns: 1, totalToolCalls: 0, duration: 1, format: "copilot-cli" },
+      metadata: { totalEvents: 1, totalTurns: 1, totalToolCalls: 1, duration: 1, format: "copilot-cli" },
       sessionFilePath: sessionFile,
     };
 
     var first = buildSessionQAPrecomputeEntry(entry, { homeDir: tempDir });
     var second = buildSessionQAPrecomputeEntry(entry, { homeDir: tempDir });
+    var persisted = readSessionQAPrecompute(getSessionQASidecarFilePath(sessionFile));
 
     expect(first.storage).toBe("sidecar");
     expect(first.reused).toBe(false);
     expect(fs.existsSync(getSessionQASidecarFilePath(sessionFile))).toBe(true);
     expect(second.reused).toBe(true);
     expect(second.fingerprint).toBe(first.fingerprint);
+    expect(persisted.version).toBe(2);
+    expect(persisted.rawText).toBeNull();
+    expect(persisted.artifacts.rawIndex).toBeNull();
+    expect(persisted.artifacts.ledgerIndex).toBeUndefined();
+    expect(persisted.artifacts.rawLookup).toEqual({ matchedCount: expect.any(Number) });
+    expect(
+      !persisted.artifacts.ledger[0].rawSlice ||
+      persisted.artifacts.ledger[0].rawSlice.text === undefined
+    ).toBe(true);
+    expect(second.artifacts.rawLookup.rawText).toContain("\"tool.execution_start\"");
+    expect(second.artifacts.ledgerIndex.entriesById[second.artifacts.ledger[0].id].toolName).toBe("bash");
 
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
@@ -289,6 +327,121 @@ describe("Q&A precompute persistence", function () {
 
     expect(first).toBe(second);
     expect(first.artifacts.metricCatalog.totalTurns).toBe(1);
+
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+});
+
+describe("Q&A fact store", function () {
+  it("builds sidecar and managed fact-store paths", function () {
+    expect(getSessionQAFactStoreSidecarPath("C:\\sessions\\events.jsonl")).toBe("C:\\sessions\\events.agentviz-qa.sqlite");
+    var managedPath = getManagedSessionQAFactStorePath("fingerprint-1", "C:\\tmp\\agentviz-home");
+    expect(path.dirname(managedPath)).toBe(path.join("C:\\tmp\\agentviz-home", ".agentviz", "session-qa-cache"));
+    expect(path.basename(managedPath)).toMatch(/^session-\d+\.sqlite$/);
+  });
+
+  it("answers deterministic turn lookups from the SQLite fact store", async function () {
+    var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "agentviz-qa-fact-store-"));
+    var cache = createSessionQACacheStore();
+    var rawText = [
+      "{\"type\":\"tool.execution_start\",\"data\":{\"toolCallId\":\"call-1\",\"toolName\":\"bash\",\"arguments\":{\"command\":\"npm test\"}}}",
+      "{\"type\":\"tool.execution_complete\",\"data\":{\"toolCallId\":\"call-1\",\"result\":{\"content\":\"FAIL src/auth.test.js\"}}}",
+    ].join("\n") + "\n";
+    var saved = saveSessionQACacheEntry(cache, "session-key", {
+      events: [
+        {
+          t: 1,
+          agent: "assistant",
+          track: "tool_call",
+          text: "FAIL src/auth.test.js",
+          duration: 4,
+          toolName: "bash",
+          toolInput: { command: "npm test" },
+          isError: true,
+          turnIndex: 0,
+        },
+      ],
+      turns: [
+        {
+          index: 0,
+          eventIndices: [0],
+          startTime: 0,
+          endTime: 4,
+          userMessage: "Run npm test",
+          toolCount: 1,
+          hasError: true,
+        },
+      ],
+      metadata: {
+        totalEvents: 1,
+        totalTurns: 1,
+        totalToolCalls: 1,
+        errorCount: 1,
+        duration: 4,
+        format: "copilot-cli",
+      },
+      rawText: rawText,
+    });
+
+    var precomputed = ensureSessionQAPrecomputed(saved, { homeDir: tempDir });
+    var factStore = await ensureSessionQAFactStore(saved, precomputed, { homeDir: tempDir });
+    var program = compileSessionQAQueryProgram("What happened in Turn 0?", precomputed.artifacts);
+    var result = await querySessionQAFactStore(program, factStore, { rawText: rawText });
+
+    expect(factStore.path).toBeTruthy();
+    expect(fs.existsSync(factStore.path)).toBe(true);
+    expect(result.answer).toContain("Turn 0 ran 1 tool call");
+    expect(result.references).toEqual([{ turnIndex: 0 }]);
+
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("builds compact summary context for model-backed questions", async function () {
+    var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "agentviz-qa-fact-store-summary-"));
+    var cache = createSessionQACacheStore();
+    var saved = saveSessionQACacheEntry(cache, "session-key", {
+      events: [
+        {
+          t: 1,
+          agent: "assistant",
+          track: "tool_call",
+          text: "Viewed src/auth.js",
+          duration: 1,
+          toolName: "view",
+          toolInput: { path: "src/auth.js" },
+          turnIndex: 0,
+        },
+        {
+          t: 3,
+          agent: "assistant",
+          track: "tool_call",
+          text: "Edited src/auth.js",
+          duration: 1,
+          toolName: "edit",
+          toolInput: { path: "src/auth.js" },
+          turnIndex: 1,
+        },
+      ],
+      turns: [
+        { index: 0, eventIndices: [0], startTime: 0, endTime: 1, userMessage: "Inspect auth", toolCount: 1, hasError: false },
+        { index: 1, eventIndices: [1], startTime: 2, endTime: 3, userMessage: "Patch auth", toolCount: 1, hasError: false },
+      ],
+      metadata: {
+        totalEvents: 2,
+        totalTurns: 2,
+        totalToolCalls: 2,
+        duration: 3,
+        format: "copilot-cli",
+      },
+    });
+
+    var precomputed = ensureSessionQAPrecomputed(saved, { homeDir: tempDir });
+    var factStore = await ensureSessionQAFactStore(saved, precomputed, { homeDir: tempDir });
+    var program = compileSessionQAQueryProgram("What was the overall approach?", precomputed.artifacts);
+    var result = await querySessionQAFactStore(program, factStore, {});
+
+    expect(result.context).toContain("FACT STORE SESSION SUMMARY");
+    expect(result.context).toContain("Turns 0-1");
 
     fs.rmSync(tempDir, { recursive: true, force: true });
   });

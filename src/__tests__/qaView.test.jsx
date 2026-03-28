@@ -445,15 +445,19 @@ describe("Q&A view integration", function () {
       return findByText(app.container, "First chunk");
     }, "expected first streamed chunk");
 
-    expect(findByText(app.container, "First chunk and more")).toBeFalsy();
-
     await waitFor(function () {
       return findByText(app.container, "First chunk and more");
     }, "expected final streamed answer", 5000);
 
-    expect(findByText(app.container, "Waiting for model response...")).toBeFalsy();
-    expect(findByText(app.container, "Composing the final answer.")).toBeFalsy();
-    expect(findByPattern(app.container, /^Elapsed /)).toBeFalsy();
+    await waitFor(function () {
+      return !findByText(app.container, "Waiting for model response...");
+    }, "expected waiting progress to clear");
+    await waitFor(function () {
+      return !findByText(app.container, "Composing the final answer.");
+    }, "expected streaming detail to clear");
+    await waitFor(function () {
+      return !findByPattern(app.container, /^Elapsed /);
+    }, "expected elapsed label to clear");
 
     await app.unmount();
   });
@@ -514,9 +518,100 @@ describe("Q&A view integration", function () {
       return findByText(app.container, "The longest autonomous run lasted 7s in [Turn 0].");
     }, "expected direct metric answer");
 
-    expect(findByText(app.container, "Using precomputed metrics...")).toBeFalsy();
-    expect(findByText(app.container, "Matched the longest autonomous run from the precomputed metrics catalog.")).toBeFalsy();
+    await waitFor(function () {
+      return !findByText(app.container, "Using precomputed metrics...");
+    }, "expected router progress label to clear");
+    await waitFor(function () {
+      return !findByText(app.container, "Matched the longest autonomous run from the precomputed metrics catalog.");
+    }, "expected router progress detail to clear");
     expect(findByText(app.container, "Powered by AGENTVIZ precomputed metrics")).toBeTruthy();
+
+    await app.unmount();
+  });
+
+  it("renders query-program and fact-store progress updates before the model answers", async function () {
+    var qaServer = createSessionQAHistoryFetch(async function (url) {
+      if (String(url).includes("/api/qa")) {
+        return createChunkedSSEResponse([
+          {
+            status: "Compiling query program...",
+            phase: "compiling-query-program",
+            detail: "Compiled the question into the session summary family before choosing the fastest route.",
+            elapsedMs: 35,
+          },
+          {
+            status: "Checking paraphrase-aware cache...",
+            phase: "checking-paraphrase-cache",
+            detail: "No paraphrase-aware cache hit yet, so AGENTVIZ will evaluate the live session facts.",
+            elapsedMs: 60,
+          },
+          {
+            status: "Querying SQLite fact store...",
+            phase: "querying-fact-store",
+            detail: "Querying the SQLite fact store for the session summary family.",
+            elapsedMs: 95,
+          },
+          {
+            status: "Canceling slower route...",
+            phase: "canceling-slower-route",
+            detail: "The fact-store route produced enough context, so AGENTVIZ skipped the slower fallback path.",
+            elapsedMs: 120,
+          },
+          {
+            status: "Waiting for model response...",
+            phase: "waiting-for-model",
+            detail: "Prompt sent. Waiting for the first model response.",
+            elapsedMs: 180,
+          },
+          {
+            done: true,
+            answer: "The session focused on inspecting and then editing auth.js.",
+            references: [],
+            model: "gpt-5.4",
+          },
+        ], [40, 40, 40, 40, 40, 0]);
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("fixture.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(qaServer.fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected landing inbox to render");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findByText(app.container, "fixture.jsonl");
+    }, "expected stored session to open");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A view to render");
+
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "What was the overall approach?");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Compiling query program...");
+    }, "expected query-program progress label");
+
+    await waitFor(function () {
+      return findByText(app.container, "Querying SQLite fact store...");
+    }, "expected fact-store progress label");
+
+    await waitFor(function () {
+      return findByText(app.container, "The session focused on inspecting and then editing auth.js.");
+    }, "expected final answer");
+
+    await waitFor(function () {
+      return !findByText(app.container, "Querying SQLite fact store...");
+    }, "expected fact-store progress label to clear");
 
     await app.unmount();
   });
