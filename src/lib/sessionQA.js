@@ -1,4 +1,5 @@
 import { estimateCost } from "./pricing.js";
+import { buildSessionSearchIndex } from "./sessionSearchIndex.js";
 
 /**
  * Session Q&A helpers for compact, retrievable session context.
@@ -2302,6 +2303,29 @@ export function routeSessionQAQuestion(question, artifacts, options) {
     };
   }
 
+  // For low-confidence questions, use the full-text search index to find relevant turns
+  var searchResults = null;
+  if (artifacts && artifacts.searchIndex && questionProfile.confidence !== "high" && relevantEntries.length === 0) {
+    try {
+      searchResults = artifacts.searchIndex.search(question, { limit: 8 });
+    } catch (searchErr) {}
+  }
+
+  // If search found relevant turns, use them to build focused context
+  if (searchResults && searchResults.length > 0 && !questionProfile.broadSummary) {
+    return {
+      kind: "search",
+      phase: "searching-index",
+      status: "Searching session index...",
+      detail: "Found " + searchResults.length + " relevant matches via full-text search.",
+      profile: questionProfile,
+      relevantEntries: relevantEntries,
+      relevantChunks: relevantChunks,
+      searchResults: searchResults,
+      queryProgram: queryProgram,
+    };
+  }
+
   if (questionProfile.broadSummary) {
     var rewrites = generateBroadQueryRewrites(question, questionProfile);
     var relevantChunksForBroad = rewrites.length > 0
@@ -2571,7 +2595,15 @@ export function buildSessionQAArtifacts(events, turns, metadata, options) {
     metadata: metadata || null,
     rawLookup: rawLookup,
     rawIndex: rawLookup ? rawLookup.rawIndex : (opts && opts.rawIndex ? opts.rawIndex : null),
+    searchIndex: null,
   };
+
+  // Build the full-text search index (lunr.js) for domain-specific queries
+  try {
+    artifacts.searchIndex = buildSessionSearchIndex(artifacts);
+  } catch (searchErr) {
+    // Search index is optional; fall back gracefully
+  }
 
   return storeCachedArtifacts(safeEvents, safeTurns, fingerprint, artifacts);
 }
@@ -3674,6 +3706,72 @@ function buildFullQAContext(events, turns, metadata, qaArtifacts) {
   return parts.join("\n");
 }
 
+function buildSearchQAContext(events, turns, metadata, qaArtifacts, route) {
+  if (!route || !Array.isArray(route.searchResults) || route.searchResults.length === 0) return "";
+  var turnRecords = Array.isArray(qaArtifacts.turnRecords) ? qaArtifacts.turnRecords : buildTurnRecords(events, turns);
+  var parts = buildContextPreamble(turnRecords, metadata, qaArtifacts, {
+    includeToolUsage: true,
+    includeFiles: true,
+    includeErrors: true,
+    toolLimit: MAX_FALLBACK_TOOL_RANKING,
+    fileLimit: MAX_FALLBACK_FILE_ENTRIES,
+    errorLimit: MAX_FALLBACK_ERRORS,
+  });
+  var remainingBudget = MAX_FOCUSED_CONTEXT_CHARS - parts.join("\n").length;
+
+  function pushBlock(block) {
+    if (!block) return false;
+    if (remainingBudget - block.length - 2 < 0) return false;
+    parts.push(block);
+    remainingBudget -= block.length + 2;
+    return true;
+  }
+
+  pushBlock(buildQuestionFocusBlock(route.profile, {
+    routeLabel: "full-text search",
+    note: "AGENTVIZ found relevant matches via the session search index.",
+  }));
+
+  // Build focused turn context from search results
+  var searchTurnIndices = [];
+  for (var ri = 0; ri < route.searchResults.length; ri++) {
+    var turnIdx = route.searchResults[ri].turnIndex;
+    if (turnIdx >= 0 && searchTurnIndices.indexOf(turnIdx) === -1) {
+      searchTurnIndices.push(turnIdx);
+    }
+  }
+
+  if (searchTurnIndices.length > 0) {
+    pushBlock(buildSelectedTurnSummarySection(
+      qaArtifacts.turnSummaries,
+      searchTurnIndices,
+      "SEARCH-MATCHED TURNS",
+      Math.min(remainingBudget, 6000),
+      MAX_FOCUSED_NEIGHBOR_SUMMARIES
+    ));
+  }
+
+  // Add nearby turns for context
+  var nearbyTurns = [];
+  for (var ni = 0; ni < searchTurnIndices.length; ni++) {
+    var before = searchTurnIndices[ni] - 1;
+    var after = searchTurnIndices[ni] + 1;
+    if (before >= 0 && searchTurnIndices.indexOf(before) === -1 && nearbyTurns.indexOf(before) === -1) nearbyTurns.push(before);
+    if (searchTurnIndices.indexOf(after) === -1 && nearbyTurns.indexOf(after) === -1) nearbyTurns.push(after);
+  }
+  if (nearbyTurns.length > 0) {
+    pushBlock(buildSelectedTurnSummarySection(
+      qaArtifacts.turnSummaries,
+      nearbyTurns,
+      "NEARBY TURNS",
+      Math.min(remainingBudget, 2600),
+      6
+    ));
+  }
+
+  return parts.join("\n");
+}
+
 /**
  * Build a compact text context from parsed session data.
  */
@@ -3692,6 +3790,11 @@ export function buildQAContext(events, turns, metadata, options) {
   if (route && route.kind === "chunk") {
     var chunkContext = buildChunkQAContext(safeEvents, safeTurns, metadata, qaArtifacts, route);
     if (chunkContext) return chunkContext;
+  }
+
+  if (route && route.kind === "search" && Array.isArray(route.searchResults) && route.searchResults.length > 0) {
+    var searchContext = buildSearchQAContext(safeEvents, safeTurns, metadata, qaArtifacts, route);
+    if (searchContext) return searchContext;
   }
 
   if (route && route.kind === "raw-targeted") {
