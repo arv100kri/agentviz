@@ -2016,7 +2016,8 @@ function determineSessionQAProgramFamily(questionProfile, metricMatch) {
     };
   }
 
-  if (questionProfile && questionProfile.requiresExactEvidence) {
+  if (questionProfile && questionProfile.requiresExactEvidence &&
+      !(questionProfile.wantsPaths && (!questionProfile.pathTerms || questionProfile.pathTerms.length === 0) && questionProfile.matchers.length === 0)) {
     return {
       family: "exact-raw-evidence",
       intent: "exact-evidence",
@@ -2056,6 +2057,18 @@ function determineSessionQAProgramFamily(questionProfile, metricMatch) {
     return {
       family: "file-lookup",
       intent: questionAsksForCount(normalizedQuestion) ? "file-count" : "file-summary",
+      routePreference: "index",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+    };
+  }
+
+  if (questionProfile && questionProfile.wantsPaths && questionProfile.pathTerms.length === 0) {
+    return {
+      family: "file-lookup",
+      intent: "file-list",
       routePreference: "index",
       canAnswerFromFactStore: true,
       deterministic: true,

@@ -637,6 +637,23 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
       return fileResult ? Object.assign(fileResult, { model: "AGENTVIZ SQLite fact store" }) : null;
     }
 
+    if (queryProgram.family === "file-lookup" && queryProgram.slots.pathTerms.length === 0 && queryProgram.slots.wantsPaths) {
+      var allFileRows = db.prepare(
+        "SELECT entity_value, COUNT(*) AS ref_count, COUNT(DISTINCT turn_index) AS turn_count FROM tool_call_entities WHERE entity_type = 'paths' GROUP BY entity_value ORDER BY ref_count DESC LIMIT 15"
+      ).all();
+      if (allFileRows && allFileRows.length > 0) {
+        var fileLines = allFileRows.map(function (row) {
+          return "- " + row.entity_value + " (" + pluralize(row.ref_count, "reference") + " across " + pluralize(row.turn_count, "turn") + ")";
+        });
+        return {
+          answer: "The session referenced " + pluralize(allFileRows.length, "file") + ":\n" + fileLines.join("\n"),
+          references: [],
+          detail: "Listed all file references from the SQLite fact store.",
+          model: "AGENTVIZ SQLite fact store",
+        };
+      }
+    }
+
     if (queryProgram.family === "command-query-lookup") {
       if (queryProgram.slots.commandTerms.length > 0) {
         var commandResult = lookupEntityUsage(
