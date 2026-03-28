@@ -1,0 +1,2367 @@
+[
+  {
+    "id": "8a86a63f-3963-430e-91a4-fbc9864c41c9",
+    "label": "AgentViz Q&A",
+    "fullId": "copilot-cli:8a86a63f-3963-430e-91a4-fbc9864c41c9:events.jsonl",
+    "sizeBytes": 49399801,
+    "sizeLabel": "huge",
+    "truncatedParse": true,
+    "turnCount": 640,
+    "eventCount": 1543,
+    "toolCallCount": 777,
+    "errorCount": 6,
+    "duration": 70542.19299983978,
+    "primaryModel": "claude-opus-4.6-1m",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "powershell",
+        253
+      ],
+      [
+        "view",
+        237
+      ],
+      [
+        "edit",
+        94
+      ],
+      [
+        "grep",
+        68
+      ],
+      [
+        "report_intent",
+        40
+      ],
+      [
+        "glob",
+        13
+      ],
+      [
+        "create",
+        13
+      ],
+      [
+        "sql",
+        13
+      ],
+      [
+        "read_powershell",
+        8
+      ],
+      [
+        "exit_plan_mode",
+        6
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\src\\agentviz\\server.js",
+        49
+      ],
+      [
+        "C:\\src\\agentviz\\bin\\agentviz.js",
+        39
+      ],
+      [
+        "C:\\src\\agentviz\\src\\App.jsx",
+        36
+      ],
+      [
+        "C:\\src\\agentviz\\src\\lib\\sessionQA.js",
+        34
+      ],
+      [
+        "C:\\src\\agentviz\\src\\components\\QAView.jsx",
+        32
+      ],
+      [
+        "C:\\src\\agentviz\\src\\__tests__\\qaView.test.jsx",
+        32
+      ],
+      [
+        "C:\\src\\agentviz\\src\\hooks\\useSessionQA.js",
+        19
+      ],
+      [
+        "C:\\Users\\arjagann\\.copilot\\session-state\\8a86a63f-3963-430e-91a4-fbc9864c41c9\\plan.md",
+        13
+      ],
+      [
+        "C:\\src\\agentviz\\src\\lib\\sessionQAFactStore.js",
+        12
+      ],
+      [
+        "C:\\src\\agentviz",
+        11
+      ]
+    ],
+    "sampleCommands": [
+      "cd C:\\src\\agentviz && git --no-pager log -1 --stat",
+      "cd C:\\src\\agentviz && git --no-pager diff HEAD~1 HEAD -- bin/agentviz.js",
+      "Get-ChildItem -Path \"C:\\src\\agentviz\\src\\__tests__\" -Filter \"*.test.js\" -o Name | Measure-Object -Line",
+      "Get-ChildItem -Path \"C:\\src\\agentviz\\src\\__tests__\" -Filter \"*.test.js\" | Measure-Object | Select-Object Count",
+      "cd C:\\src\\agentviz && Get-ChildItem dist\\assets\\index-*.js -Name 2>$null; Get-ChildItem test-files -Name 2>$null",
+      "cd C:\\src\\agentviz && head -5 test-files\\test-copilot.jsonl",
+      "cd C:\\src\\agentviz && Get-Content test-files\\test-copilot.jsonl -TotalCount 3",
+      "cd C:\\src\\agentviz && npx vitest run src/__tests__/cliExport.test.js 2>&1",
+      "cd C:\\src\\agentviz && npx vitest run 2>&1 | Select-Object -Last 15",
+      "cd C:\\src\\agentviz && git add src/__tests__/cliExport.test.js && git --no-pager diff --cached --stat",
+      "cd C:\\src\\agentviz && git commit -m \"test: add 15 tests for CLI --export feature\n\nCover argument validation, HTML out...",
+      "cd C:\\src\\agentviz && git push --set-upstream origin feature/cli-export",
+      "cd C:\\src\\agentviz && git --no-pager log main..feature/cli-export --oneline",
+      "cd C:\\src\\agentviz && gh pr create --base main --head feature/cli-export --title \"feat: add --export flag for headles...",
+      "cd C:\\src\\agentviz && git remote get-url origin"
+    ],
+    "errorTurns": [
+      191,
+      244,
+      366,
+      423,
+      567
+    ],
+    "longestToolCall": {
+      "toolName": "view",
+      "duration": 204.96800017356873,
+      "turnIndex": 35,
+      "text": "view: C:\\Users\\arjagann\\.copilot\\session-state\\224334e2-d474-4925-af37-a30a3c1f5860\\files\\proposa..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Can you add tests for the feature that was added in the most recent commit"
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 213,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 214,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 215,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 426,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 427,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 428,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 640
+  },
+  {
+    "id": "224334e2-d474-4925-af37-a30a3c1f5860",
+    "label": "Explore Repository And Run App",
+    "fullId": "copilot-cli:224334e2-d474-4925-af37-a30a3c1f5860:events.jsonl",
+    "sizeBytes": 4292199,
+    "sizeLabel": "medium",
+    "truncatedParse": false,
+    "turnCount": 138,
+    "eventCount": 712,
+    "toolCallCount": 372,
+    "errorCount": 4,
+    "duration": 78761.51900006294,
+    "primaryModel": "claude-opus-4.6-1m",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        151
+      ],
+      [
+        "powershell",
+        56
+      ],
+      [
+        "edit",
+        54
+      ],
+      [
+        "report_intent",
+        25
+      ],
+      [
+        "glob",
+        19
+      ],
+      [
+        "read_agent",
+        19
+      ],
+      [
+        "grep",
+        17
+      ],
+      [
+        "task",
+        11
+      ],
+      [
+        "sql",
+        9
+      ],
+      [
+        "read_powershell",
+        3
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\scripts\\export-context.ps1",
+        28
+      ],
+      [
+        "C:\\Users\\arjagann\\.copilot\\session-state\\224334e2-d474-4925-af37-a30a3c1f5860\\files\\proposal.md",
+        23
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-receive\\scripts\\import-context.ps1",
+        18
+      ],
+      [
+        "C:\\Users\\arjagann\\.copilot\\session-state\\224334e2-d474-4925-af37-a30a3c1f5860\\files\\proposal-agentviz.md",
+        11
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\SKILL.md",
+        10
+      ],
+      [
+        "C:\\src\\agentviz\\bin\\agentviz.js",
+        10
+      ],
+      [
+        "C:\\src\\agentviz",
+        9
+      ],
+      [
+        "C:\\src\\agentviz/server.js",
+        9
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\references\\reference.md",
+        9
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-receive\\SKILL.md",
+        8
+      ]
+    ],
+    "sampleCommands": [
+      "npm install --quiet 2>&1 | Select-Object -Last 5",
+      "npm run build 2>&1 | Select-Object -Last 10",
+      "node bin/agentviz.js",
+      "Get-Content \"$env:TEMP\\copilot-detached-agentviz-1774641174932.log\"",
+      "Get-Content \"$env:USERPROFILE\\.copilot\\session-state\\224334e2-d474-4925-af37-a30a3c1f5860\\events.jsonl\" -Head 3 | For...",
+      "# Show a tool.execution_start and tool.execution_complete example\n$events = Get-Content \"$env:USERPROFILE\\.copilot\\se...",
+      "Get-ChildItem -Recurse \"C:\\src\\agentviz/src\" -Include \"*.ts\", \"*.tsx\", \"*.js\", \"*.jsx\" | Select-Object -First 50 Full...",
+      "Get-ChildItem -Path \"C:\\src\\agentviz/src/lib\" | Select-Object Name",
+      "Get-ChildItem -Path \"C:\\src\\agentviz/src/components\" | Select-Object Name | Where-Object {$_.Name -match 'View|Replay...",
+      "Get-ChildItem -Path C:\\src\\agentviz -Recurse -ErrorAction SilentlyContinue | Where-Object {$_.PSIsContainer -eq $fals...",
+      "cd C:\\src\\agentviz && npm run build 2>&1 | Select-Object -First 50",
+      "Get-ChildItem -Path C:\\src\\agentviz\\dist -Recurse | Select-Object FullName, @{Name=\"SizeKB\";Expression={[math]::Round...",
+      "Get-ChildItem -Path C:\\src\\agentviz\\dist -Recurse | Measure-Object -Property Length -Sum | Select-Object @{Name=\"Tota...",
+      "ls C:\\src\\agentviz\\test-files",
+      "cd C:\\src\\agentviz && git --no-pager status --short && echo \"---\" && git --no-pager branch"
+    ],
+    "errorTurns": [
+      17,
+      21,
+      55,
+      133
+    ],
+    "longestToolCall": {
+      "toolName": "exit_plan_mode",
+      "duration": 677.1210000514984,
+      "turnIndex": 95,
+      "text": "exit_plan_mode: summary=## dev-fax × AgentViz Integration Plan\n\n..., actions, recommendedAction=a..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Hey tell me about this repo, and I'd like to play with the app. What do I do?"
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "Before that, how do I share a copilot session with it?"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 46,
+        "message": "Can you describe the flow for AgentViz integration for the sender and receiver once again?"
+      },
+      {
+        "turnIndex": 47,
+        "message": "Ok show me the improvements that we'll make to dev-fax. ANd show me the ones that I rejected"
+      },
+      {
+        "turnIndex": 48,
+        "message": "Wait for planning, I have more suggestions. Write this to a proposal.md file in the session."
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 92,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 93,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 94,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 138
+  },
+  {
+    "id": "ecdc9dab-5ccf-405f-b9e3-631c3cc686b9",
+    "label": "Create Automated UX Testing Skill",
+    "fullId": "copilot-cli:ecdc9dab-5ccf-405f-b9e3-631c3cc686b9:events.jsonl",
+    "sizeBytes": 2593488,
+    "sizeLabel": "medium",
+    "truncatedParse": false,
+    "turnCount": 161,
+    "eventCount": 541,
+    "toolCallCount": 286,
+    "errorCount": 5,
+    "duration": 8345.235000133514,
+    "primaryModel": "claude-opus-4.6-1m",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "powershell",
+        68
+      ],
+      [
+        "view",
+        67
+      ],
+      [
+        "glob",
+        38
+      ],
+      [
+        "edit",
+        31
+      ],
+      [
+        "report_intent",
+        22
+      ],
+      [
+        "grep",
+        14
+      ],
+      [
+        "github-mcp-server-pull_request_read",
+        12
+      ],
+      [
+        "create",
+        9
+      ],
+      [
+        "stop_powershell",
+        5
+      ],
+      [
+        "task",
+        4
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\src\\agentviz1\\e2e\\smoke.spec.ts",
+        15
+      ],
+      [
+        "C:\\src\\agentviz1\\.github\\copilot-instructions.md",
+        8
+      ],
+      [
+        "C:\\src\\agentviz1/vite.config.js",
+        6
+      ],
+      [
+        "C:\\src\\agentviz1\\e2e\\navigation.spec.ts",
+        6
+      ],
+      [
+        "C:\\src\\agentviz1\\CLAUDE.md",
+        6
+      ],
+      [
+        "C:\\src\\agentviz1",
+        5
+      ],
+      [
+        "C:\\src\\agentviz1/package.json",
+        5
+      ],
+      [
+        "C:\\src\\agentviz1/docs/ui-ux-style-guide.md",
+        5
+      ],
+      [
+        "C:\\Users\\arjagann\\AppData\\Local\\Temp\\1774687546256-copilot-tool-output-pckuii.txt",
+        5
+      ],
+      [
+        "C:\\src\\agentviz1\\src\\components\\Timeline.jsx",
+        4
+      ]
+    ],
+    "sampleCommands": [
+      "Get-ChildItem -Path C:\\src\\agentviz1 -Name | grep -E \"vitest|jest|test\" | head -20",
+      "Get-ChildItem -Path C:\\src\\agentviz1 -File -Name | Select-String -Pattern \"vitest|jest|test|setup\" | head -20",
+      "(Get-ChildItem -Path C:\\src\\agentviz1\\src\\__tests__ -File).Count",
+      "Get-ChildItem -Path C:\\src\\agentviz1 -File | Select-Object Name",
+      "Get-ChildItem -Path \"C:\\src\\agentviz1\" -Name -Filter \"vite*\" -ErrorAction SilentlyContinue",
+      "Get-ChildItem -Path \"C:\\src\\agentviz1/src/__tests__\" -Name -ErrorAction SilentlyContinue | Select-Object -First 10",
+      "cd C:\\src\\agentviz1 && npm install -D @playwright/test 2>&1",
+      "cd C:\\src\\agentviz1 && npx playwright install chromium 2>&1",
+      "cd C:\\src\\agentviz1 && New-Item -ItemType Directory -Path e2e -Force | Out-Null; New-Item -ItemType Directory -Path ....",
+      "cd C:\\src\\agentviz1 && npx playwright test 2>&1",
+      "cd C:\\src\\agentviz1 && npm test 2>&1 | Select-Object -Last 10",
+      "cd C:\\src\\agentviz1 && npm test 2>&1 | Select-Object -Last 5",
+      "cd C:\\src\\agentviz1 && git --no-pager diff --cached --name-status",
+      "cd C:\\src\\agentviz1 && git --no-pager diff --name-status",
+      "cd C:\\src\\agentviz1 && git --no-pager status --short"
+    ],
+    "errorTurns": [
+      12,
+      26,
+      49
+    ],
+    "longestToolCall": {
+      "toolName": "powershell",
+      "duration": 121.19099998474121,
+      "turnIndex": 93,
+      "text": "powershell: cd C:\\src\\agentviz1 && npx playwright test 2>&1"
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Ok so this repo is in npm and typescript/javascript and there's lot of UX involved. I often find myself making changes and then killing and re-launching the app followed by manually testing the UX ..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 53,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 54,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 55,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 107,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 108,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 109,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 161
+  },
+  {
+    "id": "4efe7267-186a-4640-9f2b-b7630959bda0",
+    "label": "AgentViz CLI mode",
+    "fullId": "copilot-cli:4efe7267-186a-4640-9f2b-b7630959bda0:events.jsonl",
+    "sizeBytes": 4600076,
+    "sizeLabel": "medium",
+    "truncatedParse": false,
+    "turnCount": 121,
+    "eventCount": 543,
+    "toolCallCount": 312,
+    "errorCount": 3,
+    "duration": 8825.200999975204,
+    "primaryModel": "gpt-5.4",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        87
+      ],
+      [
+        "powershell",
+        79
+      ],
+      [
+        "report_intent",
+        61
+      ],
+      [
+        "apply_patch",
+        21
+      ],
+      [
+        "rg",
+        14
+      ],
+      [
+        "sql",
+        12
+      ],
+      [
+        "grep",
+        11
+      ],
+      [
+        "ask_user",
+        5
+      ],
+      [
+        "write_powershell",
+        5
+      ],
+      [
+        "read_agent",
+        4
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\src\\agentviz1",
+        13
+      ],
+      [
+        "C:\\src\\agentviz1\\bin\\agentviz.js",
+        11
+      ],
+      [
+        "C:\\src\\agentviz1\\package.json",
+        7
+      ],
+      [
+        "C:\\src\\agentviz1\\src\\lib\\sessionDigestAgent.js",
+        6
+      ],
+      [
+        "C:\\src\\agentviz1\\src\\lib\\sessionInsights.js",
+        6
+      ],
+      [
+        "C:\\src\\agentviz1\\README.md",
+        4
+      ],
+      [
+        "C:\\src\\agentviz1\\src\\lib\\copilotCliParser.ts",
+        4
+      ],
+      [
+        "C:\\src\\agentviz1\\src\\lib\\parser.ts",
+        4
+      ],
+      [
+        "C:\\src\\agentviz1\\src\\__tests__\\copilotCliParser.test.js",
+        3
+      ],
+      [
+        "C:\\src\\agentviz1\\src\\__tests__",
+        3
+      ]
+    ],
+    "sampleCommands": [
+      "git --no-pager branch --show-current && git --no-pager remote -v && git --no-pager status --short",
+      "git remote show origin | Select-String -Pattern 'HEAD branch|Remote branch' -Context 0,0",
+      "cd C:\\src\\agentviz1 && npm test; npm run build; npm run typecheck",
+      "npm install",
+      "npx vitest run src/__tests__/cliArgs.test.js src/__tests__/sessionInsights.test.js src/__tests__/sessionDigestAgent.t...",
+      "npm test; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; npm run build; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCO...",
+      "node bin/agentviz.js --help; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; node bin/agentviz.js --stats test-files...",
+      "Remove-Item -LiteralPath C:\\Users\\arjagann\\.copilot\\session-state\\4efe7267-186a-4640-9f2b-b7630959bda0\\files\\smoke-di...",
+      "node bin/agentviz.js --stats test-files\\test-copilot.jsonl",
+      "git --no-pager status --short && git --no-pager diff --stat",
+      "Test-Path .gitignore",
+      "git --no-pager status --short",
+      "$ErrorActionPreference = 'Stop'\n$branch = 'feature/cli-digest-stats'\n$local = git branch --list $branch\n$remote = git...",
+      "git --no-pager diff --unified=20 -- package-lock.json",
+      "git add package-lock.json && git commit -m \"Sync package lockfile`n`nCo-authored-by: Copilot <223556219+Copilot@users..."
+    ],
+    "errorTurns": [
+      1,
+      37,
+      71
+    ],
+    "longestToolCall": {
+      "toolName": "ask_user",
+      "duration": 193.52100014686584,
+      "turnIndex": 6,
+      "text": "ask_user: message=I saved a draft plan to `C:\\Users\\arjaga..., requestedSchema"
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Plan how to implement the proposal for new features here: @C:\\Users\\arjagann\\.copilot\\session-state\\224334e2-d474-4925-af37-a30a3c1f5860\\files\\proposal-agentviz.md Features should be packaged into ..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 40,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 41,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 42,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 80,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 81,
+        "message": "I think you can do better with a more detailed description of the PR. Include more details on what was done, *why* it was done."
+      },
+      {
+        "turnIndex": 82,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 121
+  },
+  {
+    "id": "8cfb77ae-8988-4273-82da-eace3b28d7f7",
+    "label": "Secure IPS-SC Communication",
+    "fullId": "copilot-cli:8cfb77ae-8988-4273-82da-eace3b28d7f7:events.jsonl",
+    "sizeBytes": 101737259,
+    "sizeLabel": "huge",
+    "truncatedParse": true,
+    "turnCount": 241,
+    "eventCount": 1246,
+    "toolCallCount": 640,
+    "errorCount": 14,
+    "duration": 3055245.2969999406,
+    "primaryModel": "claude-opus-4.6-1m",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        224
+      ],
+      [
+        "grep",
+        167
+      ],
+      [
+        "edit",
+        58
+      ],
+      [
+        "glob",
+        51
+      ],
+      [
+        "powershell",
+        49
+      ],
+      [
+        "report_intent",
+        32
+      ],
+      [
+        "task",
+        18
+      ],
+      [
+        "read_powershell",
+        7
+      ],
+      [
+        "sql",
+        6
+      ],
+      [
+        "ask_user",
+        5
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Runtime\\Deployment\\Automation\\Stamps\\EV22\\Actions\\ZeroTouchCoreRegionBuildoutAction.cs",
+        73
+      ],
+      [
+        "C:\\Users\\arjagann\\.copilot\\session-state\\8cfb77ae-8988-4273-82da-eace3b28d7f7\\files\\ips-sc-auth-options.md",
+        56
+      ],
+      [
+        "C:\\src\\Azure-Express-Docs\\src\\documentation",
+        19
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch",
+        18
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Runtime\\Deployment\\Automation\\Stamps\\EV22\\Actions\\ZeroTouchCoreStampBuildoutAction.cs",
+        15
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch/Source",
+        14
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Runtime\\Deployment\\Automation\\Stamps\\EV22\\Actions\\EnsureStampInfrastructureAction.cs",
+        12
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch/Source/StampController",
+        10
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement\\Product\\IndexPlacement.Application\\ClusterManagement\\ClusterGroupAutoScalingHandler.cs",
+        8
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Context\\Stamps\\EV22\\Actions\\BuildoutActionConstants.cs",
+        8
+      ]
+    ],
+    "sampleCommands": [
+      "\n# Try to read the docx file - extract text content\n$docxPath = \"C:\\Users\\arjagann\\.copilot\\session-state\\8cfb77ae-89...",
+      "Get-Content \"C:\\Users\\arjagann\\.copilot\\session-state\\8cfb77ae-8988-4273-82da-eace3b28d7f7\\files\\ips-sc-auth-options....",
+      "Select-String -Path \"C:\\Users\\arjagann\\AppData\\Local\\Temp\\1771641817983-copilot-tool-output-yi7ily.txt\" -Pattern \"opt...",
+      "Get-Content \"C:\\src\\EngSys-MDA-GenevaDocs\\documentation\\actions\\How Do I\\RunOperationViaEv2.md\" | Select-String -Patt...",
+      "Get-Content \"C:\\src\\EngSys-MDA-GenevaDocs\\documentation\\actions\\How Do I\\RunOperationViaEv2.md\" | Select-String -Patt...",
+      "cd C:\\azs\\repos\\AzureSearch\ndotnet build Source/Runtime/Deployment/Automation/Automation.csproj -c Debug --no-restore...",
+      "cd C:\\azs\\repos\\AzureSearch\ngit add -u\ngit commit --amend --no-edit",
+      "cd C:\\azs\\repos\\AzureSearch; git --no-pager diff main...arjagann/ev2-skip --stat",
+      "cd C:\\azs\\repos\\AzureSearch; git --no-pager diff main...arjagann/ev2-skip",
+      "Get-ChildItem -Path \"C:\\src\\Azure-Express-Docs\" -Recurse -Name | Select-String -Pattern \"arm|template|function\" | hea...",
+      "Get-ChildItem -Path \"C:\\src\\Azure-Express-Docs\\src\\documentation\" -Directory",
+      "Get-Content -Path \"C:\\src\\Azure-Express-Docs\\README.md\" -ErrorAction SilentlyContinue | head -30",
+      "\n# Test the regex pattern from BaseInputOutputParser.cs against our scope binding string\n$pattern = '\\$((serviceResou...",
+      "cd C:\\azs\\repos\\AzureSearch; git --no-pager diff main...arjagann/ev2-skip -- \"Source/Runtime/Deployment/Automation/St...",
+      "cd C:\\azs\\repos\\AzureSearch; git --no-pager diff main...arjagann/ev2-skip -- \"Source/Runtime/Deployment/Automation/St..."
+    ],
+    "errorTurns": [
+      43,
+      51,
+      73,
+      126,
+      137,
+      139,
+      148,
+      149,
+      166,
+      167
+    ],
+    "longestToolCall": {
+      "toolName": "exit_plan_mode",
+      "duration": 327.92900013923645,
+      "turnIndex": 124,
+      "text": "exit_plan_mode: summary=Updated Phase 1 of the plan so the SC ap..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "You are an expert software engineer who also understands security fundamentals at a deep level. You are given access to a report about how the index placement service (IPS) communicates with the st..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 80,
+        "message": "In the document let's call the new role we are talking about as \"IndexPlacementService\" not cluster manager"
+      },
+      {
+        "turnIndex": 81,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 82,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 160,
+        "message": "You have ev2 file names in the description. PR reviewers might not have context/access. So instead just use plain language to describe things"
+      },
+      {
+        "turnIndex": 161,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 162,
+        "message": "What do you think about this comment?\n\nhttps://msdata.visualstudio.com/DefaultCollection/Azure%20Search/_git/AzureSearch/pullRequest/2015454?discussionId=32165376#1774644224"
+      }
+    ],
+    "totalUserMessages": 241
+  },
+  {
+    "id": "9707a0f7-8b30-4faa-866d-003d4ca7348e",
+    "label": "Consolidate ClusterGroup Controllers",
+    "fullId": "copilot-cli:9707a0f7-8b30-4faa-866d-003d4ca7348e:events.jsonl",
+    "sizeBytes": 5318640,
+    "sizeLabel": "large",
+    "truncatedParse": false,
+    "turnCount": 232,
+    "eventCount": 1006,
+    "toolCallCount": 549,
+    "errorCount": 33,
+    "duration": 12976.28999997139,
+    "primaryModel": "claude-opus-4.6-1m",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        135
+      ],
+      [
+        "grep",
+        130
+      ],
+      [
+        "powershell",
+        99
+      ],
+      [
+        "edit",
+        60
+      ],
+      [
+        "glob",
+        36
+      ],
+      [
+        "report_intent",
+        27
+      ],
+      [
+        "read_powershell",
+        17
+      ],
+      [
+        "read_agent",
+        15
+      ],
+      [
+        "sql",
+        7
+      ],
+      [
+        "stop_powershell",
+        7
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore\\Controllers\\2013-11-22-Preview\\ClusterGroups20131122PreviewController.cs",
+        37
+      ],
+      [
+        "C:\\src\\AzureSearch1",
+        28
+      ],
+      [
+        "C:\\src\\AzureSearch1\\Source\\StampController",
+        23
+      ],
+      [
+        "C:\\src\\AzureSearch1\\Source\\StampController\\Tests\\StampController.Tests\\MiseV2AuthenticationTests.cs",
+        22
+      ],
+      [
+        "C:\\src\\AzureSearch1\\Source\\IndexPlacement\\Tests\\IndexPlacement.UnitTests\\Infrastructure\\ClusterManagement\\ClusterGroupAutoScalerTests.cs",
+        16
+      ],
+      [
+        "C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore.Hosting.Windows\\StampControllerDependencyRegistrar.cs",
+        14
+      ],
+      [
+        "C:\\src\\AzureSearch1\\Source",
+        13
+      ],
+      [
+        "C:\\src\\AzureSearch1\\Source\\Common\\Product\\AzureSearch.Http",
+        10
+      ],
+      [
+        "C:\\src\\AzureSearch1\\Source\\IndexPlacement\\Product\\IndexPlacement.Infrastructure\\ClusterManagement\\BackendClusterClient.cs",
+        9
+      ],
+      [
+        "C:\\src\\AzureSearch1\\Source\\StampController\\Tests\\StampController.Tests\\Controllers\\ClusterGroups20131122PreviewControllerTests.cs",
+        8
+      ]
+    ],
+    "sampleCommands": [
+      "Remove-Item \"C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore\\Controllers\\2013-11-22-Preview\\In...",
+      "Rename-Item \"C:\\src\\AzureSearch1\\Source\\StampController\\Tests\\StampController.Tests\\Auth\\IndexPlacementClusterGroupsC...",
+      "& C:\\src\\AzureSearch1\\.github\\skills\\dev-dotnet\\scripts\\build-project.ps1 -ProjectFile \"C:\\src\\AzureSearch1\\Source\\St...",
+      "Select-String -Path \"C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore.Hosting.Windows\\StampCont...",
+      "Get-Content \"C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore.Hosting.Windows\\StampControllerDe...",
+      "@\"\nClusterGroupOperations References Summary:\n==========================================\n\"@\n\n# Count all references\n$...",
+      "Write-Host \"Summary prepared for token-based authorization documentation\"",
+      "Remove-Item \"C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore\\Services\\ClusterGroupOperations.cs\"",
+      "Remove-Item \"C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore\\Auth\\TokenClusterGroupNameResolve...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch1\\Source\\StampController\" -Recurse -Filter \"*ClusterGroupOperations*\" -ErrorAc...",
+      "grep -r \"^.*class ClusterGroupOperations\" \"C:\\src\\AzureSearch1\\Source\\StampController\" --include=\"*.cs\" 2>&1 | head -20",
+      "Select-String -Path \"C:\\src\\AzureSearch1\\Source\\StampController\\**\\*.cs\" -Pattern \"class ClusterGroupOperations\" -Rec...",
+      "Select-String -Path \"C:\\src\\AzureSearch1\\Source\\StampController\\**\\*.cs\" -Pattern \"class ClusterGroupOperations\" -Rec...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch1\\Source\\StampController\" -Filter \"*.cs\" -File -Recurse | Select-String -Patte...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch1\\Source\" -Filter \"*.cs\" -File -Recurse | Select-String -Pattern \"class Cluste..."
+    ],
+    "errorTurns": [
+      9,
+      11,
+      16,
+      21,
+      22,
+      49,
+      52,
+      56,
+      59,
+      63
+    ],
+    "longestToolCall": {
+      "toolName": "ask_user",
+      "duration": 297.31900000572205,
+      "turnIndex": 30,
+      "text": "ask_user: message=Before I start implementing, a couple of..., requestedSchema"
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Hey so look at @C:\\src\\AzureSearch1\\Source\\StampController\\Product\\StampControllerCore\\Controllers\\2013-11-22-Preview\\ClusterGroups20131122PreviewController.cs and @C:\\src\\AzureSearch1\\Source\\Stamp..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 77,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 78,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 79,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 154,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 155,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 156,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 232
+  },
+  {
+    "id": "13a21ef7-caa8-4af8-ac81-2911c5c2745f",
+    "label": "FE to BE communication",
+    "fullId": "copilot-cli:13a21ef7-caa8-4af8-ac81-2911c5c2745f:events.jsonl",
+    "sizeBytes": 17668210,
+    "sizeLabel": "large",
+    "truncatedParse": true,
+    "turnCount": 130,
+    "eventCount": 1231,
+    "toolCallCount": 810,
+    "errorCount": 86,
+    "duration": 1423948.7869999504,
+    "primaryModel": "claude-haiku-4.5",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "grep",
+        295
+      ],
+      [
+        "view",
+        266
+      ],
+      [
+        "powershell",
+        83
+      ],
+      [
+        "glob",
+        82
+      ],
+      [
+        "report_intent",
+        21
+      ],
+      [
+        "edit",
+        20
+      ],
+      [
+        "task",
+        11
+      ],
+      [
+        "ado-wit_get_work_item",
+        4
+      ],
+      [
+        "create",
+        4
+      ],
+      [
+        "web_search",
+        4
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch",
+        126
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Context\\AboveClusterCoreSettingsExtensions.cs",
+        29
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source",
+        19
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\FrontendRepo\\Serverless\\Product\\SearchCore.Serverless",
+        19
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Context\\Secrets\\Definitions\\CertificateDefinitions.cs",
+        17
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\FrontendRepo",
+        14
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\FrontendRepo\\Serverless\\Product\\SearchCore.Serverless\\Services\\Serverless\\ServerlessBackendService.cs",
+        14
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Search\\Product\\SearchCore.Classic\\Services\\ElasticSearch\\ElasticSearchClient.cs",
+        14
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\FrontendRepo\\Serverless\\Product\\SearchCore.Serverless\\Services\\Serverless\\ServerlessSearchEngine.cs",
+        13
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Context",
+        13
+      ]
+    ],
+    "sampleCommands": [
+      "cd \"C:\\Users\\arjagann\\.copilot\\session-state\\8cfb77ae-8988-4273-82da-eace3b28d7f7\\files\"\n# Try to extract text from t...",
+      "Get-Content \"C:\\Users\\arjagann\\AppData\\Local\\Temp\\copilot-tool-output-1773132285207-t25jjy.txt\" | Select-Object -Firs...",
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\\FrontendRepo\\Serverless\\Product\\SearchCore.Serverless\\Services\\Serverle...",
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\\FrontendRepo\" -Recurse -Filter \"*Backend*grpc*\" -ErrorAction SilentlyCo...",
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\\FrontendRepo\" -Recurse -Filter \"*ServerlessBackend*\" -ErrorAction Silen...",
+      "Write-Output \"Summary of Azure Search Unlimited Frontend Communication Paths:`n\" ; Get-Content \"C:\\azs\\repos\\AzureSea...",
+      "Select-String -Path \"C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Context\\AboveClusterCoreSettingsExten...",
+      "cd C:\\azs\\repos\\AzureSearch && git log --oneline --all -S \"plugins.security.disabled\" --since=\"2024-01-01\" | head -20",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --oneline --all -S \"plugins.security.disabled\" --since=\"2024-01-01\"...",
+      "Get-Content \"C:\\Users\\arjagann\\AppData\\Local\\Temp\\copilot-tool-output-1773132285207-t25jjy.txt\" | Select-Object -Firs...",
+      "Get-ChildItem -Path 'C:\\azs\\repos\\AzureSearch' -Filter '*.proto' -Recurse -ErrorAction SilentlyContinue | Select-Obje...",
+      "Get-ChildItem -Path 'C:\\azs\\repos\\AzureSearch' -Include '*.proto' -Recurse | ForEach-Object { $_.FullName }",
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\" -Recurse -Name -Include \"*Protocol*\" -Type Directory | Select-Object -...",
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\" -Recurse | Where-Object {$_.Name -like \"*Protocol*\"} | Select-Object -...",
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\" -Recurse -Filter \"*.csproj\" | xargs grep -l \"ServerlessBackend\\|Protoc..."
+    ],
+    "errorTurns": [
+      2,
+      4,
+      5,
+      14,
+      15,
+      25,
+      33,
+      48,
+      96,
+      122
+    ],
+    "longestToolCall": {
+      "toolName": "task",
+      "duration": 496.12800002098083,
+      "turnIndex": 14,
+      "text": "task: I need to understand the infrastructure and deployment model of the Azure Search Unlimited ..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "You are an expert security researcher and a software engineer who understands key details of architecture, authentication and authorization (AuthNZ) as well as the Azure AI Search codebase.\n\nYou ha..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "You are an expert security researcher and a software engineer who understands key details of architecture, authentication and authorization (AuthNZ) as well as the Azure AI Search codebase. You can..."
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 43,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 44,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 45,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 86,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 87,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 88,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 130
+  },
+  {
+    "id": "db97d47c-efe8-4c83-a626-dc16e940651d",
+    "label": "Assess YARP Integration With OpenSearch",
+    "fullId": "copilot-cli:db97d47c-efe8-4c83-a626-dc16e940651d:events.jsonl",
+    "sizeBytes": 3468446,
+    "sizeLabel": "medium",
+    "truncatedParse": false,
+    "turnCount": 45,
+    "eventCount": 545,
+    "toolCallCount": 351,
+    "errorCount": 39,
+    "duration": 111327.53999991417,
+    "primaryModel": "claude-haiku-4.5",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        157
+      ],
+      [
+        "grep",
+        134
+      ],
+      [
+        "glob",
+        28
+      ],
+      [
+        "read_agent",
+        9
+      ],
+      [
+        "powershell",
+        8
+      ],
+      [
+        "task",
+        6
+      ],
+      [
+        "report_intent",
+        5
+      ],
+      [
+        "microsoft-docs-mcp-microsoft_docs_search",
+        1
+      ],
+      [
+        "create",
+        1
+      ],
+      [
+        "stop_powershell",
+        1
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch",
+        34
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Setup.Windows\\Setup\\OpenSearchTlsSetup.cs",
+        22
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Runtime\\Product\\SetupHost\\SetupHostProgram.cs",
+        18
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.DataPlane\\Setup\\OpenSearchEnvironment.cs",
+        15
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Search\\Product\\SearchCore.Classic\\FrontendApplication.cs",
+        14
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source",
+        13
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Setup.Windows\\Setup\\OpenSearchSetup.cs",
+        11
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Search\\Product\\SearchCore.Classic",
+        11
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Setup.Windows\\Setup",
+        6
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Search\\Product\\SearchCore.Classic\\Services\\ElasticSearch\\ElasticSearchClient.cs",
+        6
+      ]
+    ],
+    "sampleCommands": [
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\\Source\\Product\\Deployment\\RollingBuild\\DeployScripts\\Common\\Bicep\\Templ...",
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\\Source\\Product\\Deployment\\RollingBuild\\DeployScripts\\Common\\Bicep\\Templ...",
+      "Select-String -Path \"C:\\azs\\repos\\AzureSearch\\Source\\Runtime\\Product\\SetupHost\\SetupHostProgram.cs\" -Pattern \"private...",
+      "Get-ChildItem -Path \"C:\\azs\\repos\\AzureSearch\" -Filter \"*.cs\" -Recurse | Select-String -Pattern \"9305|GetElasticSearc...",
+      "Select-String -Path \"C:\\azs\\repos\\AzureSearch\\Source\\Runtime\\Product\\SetupHost\\SetupHostProgram.cs\" -Pattern \"private...",
+      "Select-String -Path \"C:\\azs\\repos\\AzureSearch\\Source\\Runtime\\Product\\SetupHost\\SetupHostProgram.cs\" -Pattern \"private...",
+      "Select-String -Path \"C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.DataPlane\\Setup\\OpenSearchEnvironment...",
+      "Select-String -Path \"C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.DataPlane\\Setup\\OpenSearchEnvironment..."
+    ],
+    "errorTurns": [
+      2,
+      5,
+      7,
+      8,
+      19,
+      23,
+      24,
+      28,
+      29
+    ],
+    "longestToolCall": {
+      "toolName": "lsp",
+      "duration": 60.07800006866455,
+      "turnIndex": 28,
+      "text": "lsp: 4 args\n[object Object]"
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Crawl through the codebase and let me know what you find about the search unlimited backend nodes? They are windows VMs in an Azure VMSS, I'd like to know how hard would it be to add YARP https://l..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 15,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 16,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 17,
+        "message": "Show me how the BE -> Be traffic is encrypted on the TCP connection"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 30,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 31,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 32,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 45
+  },
+  {
+    "id": "1554ef53-f5e2-4458-9fc2-0c322e770245",
+    "label": "Diagnose EV2 Deployment Failure",
+    "fullId": "copilot-cli:1554ef53-f5e2-4458-9fc2-0c322e770245:events.jsonl",
+    "sizeBytes": 4986897,
+    "sizeLabel": "medium",
+    "truncatedParse": false,
+    "turnCount": 162,
+    "eventCount": 832,
+    "toolCallCount": 491,
+    "errorCount": 30,
+    "duration": 53533.71999998092,
+    "primaryModel": "claude-haiku-4.5",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        163
+      ],
+      [
+        "grep",
+        125
+      ],
+      [
+        "powershell",
+        70
+      ],
+      [
+        "glob",
+        28
+      ],
+      [
+        "kusto-public-prod-execute_query",
+        25
+      ],
+      [
+        "report_intent",
+        18
+      ],
+      [
+        "task",
+        10
+      ],
+      [
+        "read_agent",
+        9
+      ],
+      [
+        "edit",
+        9
+      ],
+      [
+        "sql",
+        5
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\StampController\\Tests\\StampController.Tests\\MiseV2AuthenticationTests.cs",
+        21
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\StampController",
+        19
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch",
+        19
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment\\Stamps\\Models\\StampMetadata.cs",
+        17
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\StampController\\Tests\\StampController.Tests\\MiseV2ProductionLevelTests.cs",
+        13
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment\\Stamps\\Stamps.cs",
+        10
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment",
+        9
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\AzureSearch.Http.AspNetCore.MISEv2\\MiseV2ClientCertificateAuthenticationExtensions.cs",
+        8
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment\\Stamps\\Models\\EnvironmentProperties.cs",
+        8
+      ],
+      [
+        "C:\\src\\AzureSearch-TSG",
+        5
+      ]
+    ],
+    "sampleCommands": [
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\" -Recurse -File | Select-Object FullName",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\" -Recurse -File | Measure-Object | Select-Object Count",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\" -Recurse -File | Where-Object {$_.Extension -match '\\.(md|txt|ps1|json)$...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\" -Recurse -File | Where-Object {$_.Extension -match '\\.(md|txt|ps1|json)$...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\" -Recurse -File | Where-Object {$_.FullName -match 'EV2|Deployment|Deploy...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\" -Recurse -Directory | Where-Object {$_.Name -match 'EV2|Deployment'}",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\\Books\\Azure-Search\\content\\DRI-Playbook\\DevEx\\Engineering-Foundations\\Dep...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\\Books\\Azure-Search\\content\\Troubleshooting-Guide-(TSG)\\DevEx\\Engineering-...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\\Books\\Azure-Search\\content\\DRI-Playbook\\IDC\\Buildout\\Stamp-Provisioning\\I...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\\Books\\Azure-Search\\content\\DRI-Playbook\\DevEx\\Engineering-Foundations\\Dep...",
+      "Get-ChildItem -Path \"C:\\src\\AzureSearch-TSG\\Books\\Azure-Search\\content\\DRI-Playbook\\DevEx\\Engineering-Foundations\\Dep...",
+      ".show tables | where TableName has_any (\"ev2\", \"deploy\", \"rollout\", \"stamp\", \"build\", \"Ev2\", \"Deploy\", \"Rollout\", \"St...",
+      ".show tables",
+      ".show functions | where Name has_any (\"CloudDeployment\", \"Bootstrap\", \"StampHealth\", \"Straggler\", \"DeploymentTag\", \"I...",
+      ".show functions | where Name has_any (\"Stamp\", \"Deploy\", \"Boot\", \"Health\", \"Strag\", \"Image\", \"Version\", \"Tag\")"
+    ],
+    "errorTurns": [
+      0,
+      18,
+      23,
+      31,
+      41,
+      44,
+      45,
+      47,
+      72,
+      76
+    ],
+    "longestToolCall": {
+      "toolName": "powershell",
+      "duration": 137.4579999446869,
+      "turnIndex": 149,
+      "text": "powershell: cd C:\\azs\\repos\\AzureSearch && az repos pr thread list --id 2015428 --org https://msd..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Hey deployment to the cusppe01 stamp failed in EV2. Our TSG is located @C:\\src\\AzureSearch-TSG\\ \nCan you diagnose what's the reason for deployment to fail?"
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 54,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 55,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 56,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 108,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 109,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 110,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 162
+  },
+  {
+    "id": "ba9ecfef-bdab-4484-abf1-75cb88ea9a04",
+    "label": "Collaborative Agent Technologies Research",
+    "fullId": "copilot-cli:ba9ecfef-bdab-4484-abf1-75cb88ea9a04:events.jsonl",
+    "sizeBytes": 10581137,
+    "sizeLabel": "large",
+    "truncatedParse": true,
+    "turnCount": 294,
+    "eventCount": 1034,
+    "toolCallCount": 559,
+    "errorCount": 9,
+    "duration": 583019.6970000362,
+    "primaryModel": "claude-opus-4.6",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        158
+      ],
+      [
+        "powershell",
+        148
+      ],
+      [
+        "edit",
+        111
+      ],
+      [
+        "report_intent",
+        47
+      ],
+      [
+        "web_search",
+        22
+      ],
+      [
+        "sql",
+        14
+      ],
+      [
+        "grep",
+        14
+      ],
+      [
+        "read_agent",
+        8
+      ],
+      [
+        "glob",
+        8
+      ],
+      [
+        "create",
+        7
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\SKILL.md",
+        54
+      ],
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\scripts\\export-context.ps1",
+        37
+      ],
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-receive\\scripts\\import-context.ps1",
+        31
+      ],
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-receive\\SKILL.md",
+        22
+      ],
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\scripts\\test-bundle-secrets.ps1",
+        19
+      ],
+      [
+        "C:\\src\\AzureSearch1",
+        16
+      ],
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-receive\\references\\reference.md",
+        10
+      ],
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\references\\reference.md",
+        10
+      ],
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\scripts\\send-email.ps1",
+        7
+      ],
+      [
+        "C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\plugin.json",
+        6
+      ]
+    ],
+    "sampleCommands": [
+      "New-Item -ItemType Directory -Path \"C:\\Users\\arjagann\\.copilot\\session-state\\ba9ecfef-bdab-4484-abf1-75cb88ea9a04\\res...",
+      "cd C:\\src\\AzureSearch1; git --no-pager log --oneline ff918e3f6574503b7a74170584f07149dad08c9a..HEAD",
+      "cd C:\\src\\AzureSearch1; git --no-pager branch --show-current",
+      "cd C:\\src\\AzureSearch1; git --no-pager log --format=\"%H %s%n%b---\" ff918e3f6574503b7a74170584f07149dad08c9a..HEAD",
+      "cd C:\\src\\AzureSearch1; git --no-pager diff --stat ff918e3f6574503b7a74170584f07149dad08c9a..HEAD",
+      "cd C:\\src\\AzureSearch1; git --no-pager diff ff918e3f6574503b7a74170584f07149dad08c9a..34f8130e020 --stat",
+      "cd C:\\src\\AzureSearch1; git --no-pager show 34f8130e020 --format=\"%s%n%b\" --stat | head -30",
+      "cd C:\\src\\AzureSearch1; git --no-pager show 34f8130e020 --format=\"%s%n%b\" --stat | Select-Object -First 30",
+      "Get-Content \"C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\SKILL.md\" -Raw | Select-String \"W...",
+      "cd C:\\src\\AzureSearch1; git --no-pager diff --stat",
+      "$null = [System.Management.Automation.Language.Parser]::ParseFile(\"C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax...",
+      "cd C:\\src\\AzureSearch1; git --no-pager diff -- \"*.ps1\" | Select-Object -First 120",
+      "Get-ChildItem \"C:\\Users\\$env:USERNAME\\Microsoft\" -ErrorAction SilentlyContinue | Select-Object Name",
+      "Get-ChildItem \"C:\\Users\\$env:USERNAME\" -Directory -Filter \"OneDrive*\" -ErrorAction SilentlyContinue | Select-Object N...",
+      "# Check if odopen:// protocol is registered (used for SharePoint sync-to-desktop)\nGet-ItemProperty \"HKCU:\\Software\\Cl..."
+    ],
+    "errorTurns": [
+      43,
+      47,
+      50,
+      101,
+      290,
+      292
+    ],
+    "longestToolCall": {
+      "toolName": "edit",
+      "duration": 155.4029998779297,
+      "turnIndex": 33,
+      "text": "edit: C:\\src\\AzureSearch1\\.github\\plugin\\plugins\\dev-fax\\skills\\dev-fax-send\\references\\templates..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Researching: What are some popular technologies or ways that will enable 2 humans working on projects with agents to collaborate with each other?"
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 98,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 99,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 100,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 196,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 197,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 198,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 294
+  },
+  {
+    "id": "257ec98b-948c-4b88-ab5e-acec5fdfe819",
+    "label": "Analyze Unlimited Cluster Provisioning",
+    "fullId": "copilot-cli:257ec98b-948c-4b88-ab5e-acec5fdfe819:events.jsonl",
+    "sizeBytes": 8784768,
+    "sizeLabel": "large",
+    "truncatedParse": false,
+    "turnCount": 281,
+    "eventCount": 1506,
+    "toolCallCount": 868,
+    "errorCount": 33,
+    "duration": 279955.58299995423,
+    "primaryModel": "claude-haiku-4.5",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        250
+      ],
+      [
+        "grep",
+        223
+      ],
+      [
+        "powershell",
+        202
+      ],
+      [
+        "edit",
+        57
+      ],
+      [
+        "glob",
+        47
+      ],
+      [
+        "report_intent",
+        40
+      ],
+      [
+        "task",
+        12
+      ],
+      [
+        "read_agent",
+        9
+      ],
+      [
+        "sql",
+        8
+      ],
+      [
+        "create",
+        5
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement\\Product\\IndexPlacement.Application\\ClusterManagement\\ClusterGroupAutoScalingHandler.cs",
+        79
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch",
+        66
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement\\Tests\\IndexPlacement.UnitTests\\Infrastructure\\ClusterManagement\\ClusterGroupAutoScalerTests.cs",
+        58
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment\\Stamps\\Models\\StampMetadata.cs",
+        17
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment\\Stamps\\StampDefinitions\\DeveloperStamps.cs",
+        17
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement\\Product",
+        14
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement\\Product\\IndexPlacement.Application\\ClusterManagement\\ClusterSyncOptions.cs",
+        13
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Common\\Product\\ClusterCore.Environment\\Stamps\\Models\\EnvironmentProperties.cs",
+        12
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement",
+        12
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Runtime\\Tests\\Deployment.Tests\\StampDefinitionTests.cs",
+        12
+      ]
+    ],
+    "sampleCommands": [
+      "cd C:\\azs\\repos\\AzureSearch && git branch --show-current",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --oneline -30",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --author=\"Carson\" --oneline -20",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --author=\"Giuliano\" --oneline -20",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager diff origin/main...HEAD --stat",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager diff origin/main...HEAD",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --oneline --grep=\"[Uu]nlimited\" -30",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --oneline --grep=\"cluster group\" -20",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --oneline --grep=\"self-heal\" -15",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --author=\"Carson\" --oneline -40",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --author=\"Giuliano\" --oneline -40",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --oneline --grep=\"Unlimited\" -40",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --oneline --grep=\"cluster group\" -40",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --all --oneline --grep=\"backend cluster\" -20",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager show 37fc5fc675e --stat"
+    ],
+    "errorTurns": [
+      4,
+      28,
+      32,
+      91,
+      108,
+      117,
+      120,
+      126,
+      128,
+      199
+    ],
+    "longestToolCall": {
+      "toolName": "powershell",
+      "duration": 1278.760999917984,
+      "turnIndex": 23,
+      "text": "powershell: $runner = \"C:\\Users\\arjagann\\.copilot\\session-state\\257ec98b-948c-4b88-ab5e-acec5fdfe..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "You need to analyze the codebase and understand how Unlimited architecture works with regards to cluster group provisioning and scale up. Look for commits by Joey Carson and Giuliano to understand ..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 93,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 94,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 95,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 187,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 188,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 189,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 281
+  },
+  {
+    "id": "801bfda3-9943-4796-b081-8c75ce0d298b",
+    "label": "Run Poly Pilot Application",
+    "fullId": "copilot-cli:801bfda3-9943-4796-b081-8c75ce0d298b:events.jsonl",
+    "sizeBytes": 135315,
+    "sizeLabel": "medium",
+    "truncatedParse": false,
+    "turnCount": 6,
+    "eventCount": 17,
+    "toolCallCount": 5,
+    "errorCount": 0,
+    "duration": 161.9179999923706,
+    "primaryModel": "claude-opus-4.6-1m",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "powershell",
+        2
+      ],
+      [
+        "read_powershell",
+        2
+      ],
+      [
+        "report_intent",
+        1
+      ]
+    ],
+    "topFiles": [],
+    "sampleCommands": [
+      "cd C:\\src\\PolyPilot\\PolyPilot && dotnet build -f net10.0-windows10.0.19041.0 2>&1 | Select-Object -Last 30",
+      "cd C:\\src\\PolyPilot\\PolyPilot && dotnet run -f net10.0-windows10.0.19041.0 2>&1"
+    ],
+    "errorTurns": [],
+    "longestToolCall": {
+      "toolName": "powershell",
+      "duration": 27.72000002861023,
+      "turnIndex": 1,
+      "text": "powershell: cd C:\\src\\PolyPilot\\PolyPilot && dotnet build -f net10.0-windows10.0.19041.0 2>&1 | S..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "How do I run the poly pilot application?"
+      },
+      {
+        "turnIndex": 1,
+        "message": "Can you run the commands for Windows and see if it worked?"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 3,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 4,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 5,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 6
+  },
+  {
+    "id": "9020d425-6513-414d-8859-96e36c4e9735",
+    "label": "Generate AGENTS.md Hierarchy",
+    "fullId": "copilot-cli:9020d425-6513-414d-8859-96e36c4e9735:events.jsonl",
+    "sizeBytes": 29899088,
+    "sizeLabel": "huge",
+    "truncatedParse": true,
+    "turnCount": 132,
+    "eventCount": 1832,
+    "toolCallCount": 1262,
+    "errorCount": 40,
+    "duration": 441242.8429999447,
+    "primaryModel": "claude-haiku-4.5",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        465
+      ],
+      [
+        "powershell",
+        283
+      ],
+      [
+        "glob",
+        148
+      ],
+      [
+        "sql",
+        95
+      ],
+      [
+        "grep",
+        85
+      ],
+      [
+        "report_intent",
+        76
+      ],
+      [
+        "task",
+        26
+      ],
+      [
+        "rg",
+        15
+      ],
+      [
+        "edit",
+        15
+      ],
+      [
+        "read_powershell",
+        10
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch",
+        90
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source",
+        10
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Telemetry",
+        9
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Tools",
+        9
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\StampController",
+        8
+      ],
+      [
+        "C:\\Users\\arjagann\\.copilot\\session-state\\9020d425-6513-414d-8859-96e36c4e9735\\files\\pr-corpus-summary.md",
+        7
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\README.md",
+        6
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Scripts",
+        6
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\Hosting",
+        6
+      ],
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\IndexPlacement",
+        6
+      ]
+    ],
+    "sampleCommands": [
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; git --no-pager remote -v; git --no-pager branch --show-current; git --no-pag...",
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; az repos pr list --repository AzureSearch --project 'Azure Search' --organiz...",
+      "az repos pr -h",
+      "az devops invoke -h",
+      "az devops invoke --query \"[?area=='git' && (contains(resource, 'pullRequest') || contains(resource, 'thread') || cont...",
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; az repos pr show --id 1986217 --organization 'https://msdata.visualstudio.co...",
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; az repos pr show --id 1986217 -o json",
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; az devops invoke --area git --resource pullRequests --route-parameters proje...",
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; az devops invoke --area git --resource pullRequestThreads --route-parameters...",
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; az repos pr list --target-branch main --status completed --top 3 --query \"[]...",
+      "python - <<'PY'\nimport json, pathlib\np=pathlib.Path(r'C:\\Users\\arjagann\\AppData\\Local\\Temp\\copilot-tool-output-177283...",
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; az repos pr list --target-branch main --status completed --top 1 --query \"[0...",
+      "Set-Location 'C:\\azs\\repos\\AzureSearch'; $json = az devops invoke --area git --resource pullRequestThreads --route-pa...",
+      "Get-ChildItem -Directory 'C:\\azs\\repos\\AzureSearch\\Source' | Select-Object -ExpandProperty Name | ConvertTo-Json",
+      "Get-ChildItem -Path 'C:\\azs\\repos\\AzureSearch\\Source' -Directory | Select-Object -ExpandProperty Name"
+    ],
+    "errorTurns": [
+      14,
+      25,
+      26,
+      31,
+      32,
+      33,
+      34,
+      120
+    ],
+    "longestToolCall": {
+      "toolName": "task",
+      "duration": 892.4360001087189,
+      "turnIndex": 26,
+      "text": "task: You are working in C:\\azs\\repos\\AzureSearch. Execute todo `collect-pr-corpus` for the share..."
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "Here's the task - this repo has 1 copilot instructions file, but we could be very specific and generate multiple AGENTS.md files at different levels of the hierarchy. We can start with an AGENTS.md..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 44,
+        "message": "Can you also examine the Common library and common extensions (like StringExtensions), test extensions etc., and update AGENTS.md with your findings from there. If you are unsure ask me questions t..."
+      },
+      {
+        "turnIndex": 45,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 46,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 88,
+        "message": "write this to a new section"
+      },
+      {
+        "turnIndex": 89,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 90,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 132
+  },
+  {
+    "id": "fb17b007-976a-4080-baa2-46e92a4767b9",
+    "label": "Ops RCA Critic",
+    "fullId": "copilot-cli:fb17b007-976a-4080-baa2-46e92a4767b9:events.jsonl",
+    "sizeBytes": 229819,
+    "sizeLabel": "medium",
+    "truncatedParse": false,
+    "turnCount": 9,
+    "eventCount": 24,
+    "toolCallCount": 13,
+    "errorCount": 0,
+    "duration": 135.30199981689452,
+    "primaryModel": "claude-opus-4.6-1m",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "view",
+        4
+      ],
+      [
+        "report_intent",
+        3
+      ],
+      [
+        "skill",
+        1
+      ],
+      [
+        "icm-get_incident_context",
+        1
+      ],
+      [
+        "icm-get_ai_summary",
+        1
+      ],
+      [
+        "icm-get_incident_details_by_id",
+        1
+      ],
+      [
+        "icm-get_incident_customer_impact",
+        1
+      ],
+      [
+        "icm-get_support_requests_crisit",
+        1
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch\\.github\\skills\\ops-rca-critic\\references\\examples.md",
+        4
+      ]
+    ],
+    "sampleCommands": [],
+    "errorTurns": [],
+    "longestToolCall": {
+      "toolName": "icm-get_incident_context",
+      "duration": 7.263999938964844,
+      "turnIndex": 6,
+      "text": "icm-get_incident_context: incidentId=21000000912052"
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "/ops-rca-critic"
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 3,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 4,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 5,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 6,
+        "message": "Here's the RCA\nExecutive Summary\nThis is a public Root Cause Analysis (RCA) for Incident ID: 21000000912052. On 2026-02-20 at 16:05 UTC, the Azure AI Search service \"ot-aisearch\" in the West US reg..."
+      },
+      {
+        "turnIndex": 7,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 8,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 9
+  },
+  {
+    "id": "d368cedb-32fd-43f2-a51c-4888197a35fb",
+    "label": "Cherry-Pick Commit Range",
+    "fullId": "copilot-cli:d368cedb-32fd-43f2-a51c-4888197a35fb:events.jsonl",
+    "sizeBytes": 113318,
+    "sizeLabel": "medium",
+    "truncatedParse": false,
+    "turnCount": 16,
+    "eventCount": 35,
+    "toolCallCount": 17,
+    "errorCount": 0,
+    "duration": 377.42200017929076,
+    "primaryModel": "claude-opus-4.6-1m",
+    "format": "copilot-cli",
+    "topTools": [
+      [
+        "powershell",
+        9
+      ],
+      [
+        "report_intent",
+        3
+      ],
+      [
+        "ask_user",
+        2
+      ],
+      [
+        "edit",
+        2
+      ],
+      [
+        "view",
+        1
+      ]
+    ],
+    "topFiles": [
+      [
+        "C:\\azs\\repos\\AzureSearch\\Source\\StampController\\Product\\StampControllerWebRole.AspNetCore\\Extensions\\MiseV2ClientAuthenticationExtensions.cs",
+        3
+      ]
+    ],
+    "sampleCommands": [
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager branch --show-current && git --no-pager log --oneline ada4a57e5b93a2164...",
+      "cd C:\\azs\\repos\\AzureSearch && git cherry-pick ada4a57e5b93a2164655a07dccef2b601e0d1f93^..7cc475d1b33f6565b6e36738909...",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager log --oneline 6fc7a86ef9ed79a143b1c91738ca65925c7de9a6^..01ee78ece98357...",
+      "cd C:\\azs\\repos\\AzureSearch && git cherry-pick 6fc7a86ef9ed79a143b1c91738ca65925c7de9a6^..01ee78ece983573068f26335152...",
+      "cd C:\\azs\\repos\\AzureSearch && git --no-pager diff --diff-filter=U",
+      "cd C:\\azs\\repos\\AzureSearch && git add Source/StampController/Product/StampControllerWebRole.AspNetCore/Extensions/Mi...",
+      "cd C:\\azs\\repos\\AzureSearch && git cherry-pick --skip"
+    ],
+    "errorTurns": [],
+    "longestToolCall": {
+      "toolName": "ask_user",
+      "duration": 93.93300008773804,
+      "turnIndex": 11,
+      "text": "ask_user: message=How should I resolve this conflict?, requestedSchema"
+    },
+    "earlyUserMessages": [
+      {
+        "turnIndex": 0,
+        "message": "I want to apply all the commits from ada4a57e5b93a2164655a07dccef2b601e0d1f93 to 7cc475d1b33f6565b6e367389092dd44454153dc, inclusive of both. I want you cherry pick those for me into the current br..."
+      },
+      {
+        "turnIndex": 1,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 2,
+        "message": "(continuation)"
+      }
+    ],
+    "middleUserMessages": [
+      {
+        "turnIndex": 5,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 6,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 7,
+        "message": "(continuation)"
+      }
+    ],
+    "lateUserMessages": [
+      {
+        "turnIndex": 10,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 11,
+        "message": "(continuation)"
+      },
+      {
+        "turnIndex": 12,
+        "message": "(continuation)"
+      }
+    ],
+    "totalUserMessages": 16
+  }
+]
