@@ -30,6 +30,7 @@ var STATUS_PHASE_MAP = {
   "Using cached program answer...": "using-cached-program-answer",
   "Using precomputed metrics...": "using-precomputed-metrics",
   "Searching tool and query index...": "searching-index",
+  "Searching session index...": "searching-index",
   "Scanning summary chunks...": "scanning-summary-chunks",
   "Reading targeted raw JSONL slices...": "reading-targeted-raw",
   "Reading full raw JSONL...": "reading-full-raw",
