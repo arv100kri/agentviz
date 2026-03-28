@@ -112,6 +112,7 @@ export async function exportSingleSession(rawText, filename) {
   var setupScript =
     "<script>\n" +
     "(function() {\n" +
+    "  window.__AGENTVIZ_EXPORTED__ = true;\n" +
     "  var _orig = window.fetch;\n" +
     "  var _meta = " + metaPayload + ";\n" +
     "  var _text = " + rawTextPayload + ";\n" +
@@ -139,7 +140,7 @@ export async function exportComparison(rawTextA, filenameA, rawTextB, filenameB)
   var comparePayload = jsonSafe({ a: { name: filenameA, text: rawTextA }, b: { name: filenameB, text: rawTextB } });
 
   var setupScript =
-    "<script>window.__AGENTVIZ_COMPARE__ = " + comparePayload + ";</" + "script>";
+    "<script>window.__AGENTVIZ_EXPORTED__ = true; window.__AGENTVIZ_COMPARE__ = " + comparePayload + ";</" + "script>";
 
   downloadHtml(buildHtml("AGENTVIZ - Comparison", setupScript, bundleText), "comparison-agentviz.html");
 }

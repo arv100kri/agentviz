@@ -191,6 +191,7 @@ if (exportMode) {
   var setupScript =
     "<script>\n" +
     "(function() {\n" +
+    "  window.__AGENTVIZ_EXPORTED__ = true;\n" +
     "  var _orig = window.fetch;\n" +
     "  var _meta = " + metaPayload + ";\n" +
     "  var _text = " + rawTextPayload + ";\n" +

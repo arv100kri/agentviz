@@ -126,6 +126,7 @@ function renderActiveView(activeView, props) {
 }
 
 export default function App() {
+  var isExported = Boolean(window.__AGENTVIZ_EXPORTED__);
   var [view, setView] = usePersistentState("agentviz:view", "replay");
   var [trackFilters, setTrackFilters] = usePersistentState("agentviz:track-filters", {});
   var [libraryEntries, setLibraryEntries] = useState(function () {
@@ -525,7 +526,7 @@ export default function App() {
       <AppHeader
         session={session}
         activeView={activeView}
-        views={APP_VIEWS}
+        views={isExported ? APP_VIEWS.filter(function (v) { return v.id !== "qa" && v.id !== "coach"; }) : APP_VIEWS}
         onSetView={setView}
         onReset={reset}
         search={search}
