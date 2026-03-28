@@ -1456,6 +1456,8 @@ export function createServer({ sessionFile, distDir }) {
                 force: true,
               });
             }
+            // Start SDK import in parallel with prompt building for model-required questions
+            var sdkImportPromise = import("@github/copilot-sdk");
             prompt = buildQAPrompt(question, context, { sessionFilePath: sessionFilePath });
             sendProgress("retrieving-context", {
               detail: route && route.kind !== "model"
@@ -1464,7 +1466,11 @@ export function createServer({ sessionFile, distDir }) {
             });
           }
 
-          var { CopilotClient, approveAll } = await import("@github/copilot-sdk");
+          var sdkModule = typeof sdkImportPromise !== "undefined"
+            ? await sdkImportPromise
+            : await import("@github/copilot-sdk");
+          var CopilotClient = sdkModule.CopilotClient;
+          var approveAll = sdkModule.approveAll;
           var client = new CopilotClient();
           var answer = "";
           var returnedSessionId = qaSessionId;
