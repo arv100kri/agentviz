@@ -9,7 +9,7 @@ test.describe("Q&A view", () => {
     });
   });
 
-  test("Q&A tab is discoverable and renders empty state", async ({ page }) => {
+  test("Q&A tab is discoverable and renders the view", async ({ page }) => {
     // The Q&A tab should be present among the view tabs
     const qaTab = page.getByRole("button", { name: "Q&A", exact: true });
     await expect(qaTab).toBeVisible();
@@ -18,25 +18,22 @@ test.describe("Q&A view", () => {
     await qaTab.click();
     await page.waitForTimeout(500);
 
-    // Should show the empty state with suggested questions
-    await expect(page.getByText("Ask about this session")).toBeVisible();
-    await expect(
-      page.getByText("What tools were used most frequently?"),
-    ).toBeVisible();
+    // Should show the Q&A header (always visible regardless of cached state)
+    await expect(page.getByText("Session Q&A")).toBeVisible();
   });
 
-  test("Q&A suggested questions are clickable", async ({ page }) => {
+  test("Q&A view has input and send button", async ({ page }) => {
     const qaTab = page.getByRole("button", { name: "Q&A", exact: true });
     await qaTab.click();
     await page.waitForTimeout(500);
 
-    // Verify at least one suggested question button is present and clickable
-    const suggestion = page.getByText("What tools were used most frequently?");
-    await expect(suggestion).toBeVisible();
-
-    // Click it -- in demo mode without a backend, this should not crash the app
-    await suggestion.click();
-    await page.waitForTimeout(500);
+    // Input and Send should always be visible
+    await expect(
+      page.getByPlaceholder("Ask a question about this session..."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Send" }),
+    ).toBeVisible();
 
     // The app should still be alive (no crash)
     await expect(page.locator("#root")).toBeVisible();
@@ -62,15 +59,15 @@ test.describe("Q&A view", () => {
     const qaTab = page.getByRole("button", { name: "Q&A", exact: true });
     await qaTab.click();
     await page.waitForTimeout(300);
-    await expect(page.getByText("Ask about this session")).toBeVisible();
+    await expect(page.getByText("Session Q&A")).toBeVisible();
 
     // Switch to Stats
     await page.getByRole("button", { name: /Stats/i }).click();
     await page.waitForTimeout(300);
 
-    // Switch back to Q&A -- should not crash and should show empty state again
+    // Switch back to Q&A -- should not crash
     await qaTab.click();
     await page.waitForTimeout(300);
-    await expect(page.getByText("Ask about this session")).toBeVisible();
+    await expect(page.getByText("Session Q&A")).toBeVisible();
   });
 });
