@@ -8,6 +8,7 @@
 
 import http from "http";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import url from "url";
 import { runCoachAgent } from "./src/lib/aiCoachAgent.js";
@@ -49,6 +50,133 @@ export function getJsonlStreamChunk(content, lastLineIdx) {
     lines: completeLines.slice(lastLineIdx),
     nextLineIdx: completeLines.length,
   };
+}
+
+export function buildQASessionConfig(promptSystem, onPermissionRequest) {
+  return {
+    onPermissionRequest: onPermissionRequest,
+    streaming: true,
+    systemMessage: {
+      mode: "replace",
+      content: promptSystem,
+    },
+  };
+}
+
+export function getSessionQAHistoryFilePath(homeDir) {
+  return path.join(homeDir || os.homedir(), ".agentviz", "session-qa-history.json");
+}
+
+export function sanitizeSessionQAMessages(messages) {
+  return Array.isArray(messages) ? messages
+    .filter(function (message) {
+      return message && typeof message.role === "string" &&
+        typeof message.content === "string" &&
+        (message.content || message.role !== "assistant");
+    })
+    .map(function (message) {
+      return {
+        role: message.role,
+        content: message.content,
+        references: Array.isArray(message.references) ? message.references : [],
+      };
+    }) : [];
+}
+
+export function sanitizeSessionQAHistoryEntry(entry) {
+  return {
+    messages: sanitizeSessionQAMessages(entry && entry.messages),
+    responseModel: entry && entry.responseModel ? String(entry.responseModel) : null,
+    qaSessionId: entry && entry.qaSessionId ? String(entry.qaSessionId) : null,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function readSessionQAHistoryStore(filePath, fsModule) {
+  var targetFs = fsModule || fs;
+  try {
+    var raw = targetFs.readFileSync(filePath, "utf8");
+    var parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return { version: 1, sessions: {} };
+    return {
+      version: 1,
+      sessions: parsed.sessions && typeof parsed.sessions === "object" ? parsed.sessions : {},
+    };
+  } catch (error) {
+    return { version: 1, sessions: {} };
+  }
+}
+
+export function writeSessionQAHistoryStore(filePath, store, fsModule) {
+  var targetFs = fsModule || fs;
+  targetFs.mkdirSync(path.dirname(filePath), { recursive: true });
+  targetFs.writeFileSync(filePath, JSON.stringify(store, null, 2), "utf8");
+}
+
+export function getSessionQAHistoryEntry(filePath, sessionKey, fsModule) {
+  if (!sessionKey) return null;
+  var store = readSessionQAHistoryStore(filePath, fsModule);
+  return store.sessions[sessionKey] || null;
+}
+
+export function saveSessionQAHistoryEntry(filePath, sessionKey, entry, fsModule) {
+  if (!sessionKey) return null;
+  var store = readSessionQAHistoryStore(filePath, fsModule);
+  store.sessions[sessionKey] = sanitizeSessionQAHistoryEntry(entry);
+  writeSessionQAHistoryStore(filePath, store, fsModule);
+  return store.sessions[sessionKey];
+}
+
+export function removeSessionQAHistoryEntry(filePath, sessionKey, fsModule) {
+  if (!sessionKey) return false;
+  var store = readSessionQAHistoryStore(filePath, fsModule);
+  if (!Object.prototype.hasOwnProperty.call(store.sessions, sessionKey)) return false;
+  delete store.sessions[sessionKey];
+  writeSessionQAHistoryStore(filePath, store, fsModule);
+  return true;
+}
+
+export function getQAEventText(data, isDelta) {
+  if (!data) return "";
+  if (isDelta && typeof data.deltaContent === "string") return data.deltaContent;
+  if (typeof data.text === "string") return data.text;
+  if (typeof data.content === "string") return data.content;
+  if (Array.isArray(data.content)) {
+    return data.content.map(function (item) {
+      if (typeof item === "string") return item;
+      if (!item || typeof item !== "object") return "";
+      return item.text || item.content || "";
+    }).join("");
+  }
+  if (data.content && typeof data.content === "object") {
+    return data.content.text || data.content.content || "";
+  }
+  if (typeof data.deltaContent === "string") return data.deltaContent;
+  return "";
+}
+
+export function getQAToolName(data) {
+  if (!data || typeof data !== "object") return "";
+  return data.toolName || data.name || (data.tool && data.tool.name) ||
+    (data.invocation && data.invocation.toolName) || "";
+}
+
+export function describeQAToolStatus(toolName, phase) {
+  var name = String(toolName || "").trim();
+  var lower = name.toLowerCase();
+  if (!lower) {
+    return phase === "complete" ? "Analyzing tool results..." : "Running tools...";
+  }
+  if (lower === "view" || lower === "read" || lower === "grep" || lower === "rg" || lower === "search_code") {
+    return phase === "complete" ? "Analyzing search results..." : "Searching the session...";
+  }
+  if (lower.indexOf("kusto") !== -1) {
+    return phase === "complete" ? "Analyzing Kusto results..." : "Running Kusto queries...";
+  }
+  if (lower === "powershell" || lower === "bash" || lower === "terminal") {
+    return phase === "complete" ? "Analyzing command output..." : "Running shell commands...";
+  }
+  return phase === "complete" ? "Analyzing " + name + " results..." : "Running " + name + "...";
 }
 
 function serveStatic(res, filePath) {
@@ -331,6 +459,66 @@ export function createServer({ sessionFile, distDir }) {
       return;
     }
 
+    if (pathname === "/api/session-qa-history") {
+      res.setHeader("Content-Type", "application/json");
+      var qaHistoryFile = getSessionQAHistoryFilePath();
+
+      if (req.method === "GET") {
+        var historySessionKey = parsed.query.sessionKey || "";
+        if (!historySessionKey) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "sessionKey is required" }));
+          return;
+        }
+        res.writeHead(200);
+        res.end(JSON.stringify({ history: getSessionQAHistoryEntry(qaHistoryFile, historySessionKey) }));
+        return;
+      }
+
+      if (req.method === "DELETE") {
+        var deleteSessionKey = parsed.query.sessionKey || "";
+        if (!deleteSessionKey) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "sessionKey is required" }));
+          return;
+        }
+        removeSessionQAHistoryEntry(qaHistoryFile, deleteSessionKey);
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true }));
+        return;
+      }
+
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end(JSON.stringify({ error: "Method not allowed" }));
+        return;
+      }
+
+      var qaHistoryBody = "";
+      req.on("data", function (chunk) { qaHistoryBody += chunk; });
+      req.on("end", function () {
+        try {
+          var historyPayload = JSON.parse(qaHistoryBody || "{}");
+          if (!historyPayload.sessionKey) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "sessionKey is required" }));
+            return;
+          }
+          var savedHistory = saveSessionQAHistoryEntry(
+            qaHistoryFile,
+            historyPayload.sessionKey,
+            historyPayload.history || historyPayload
+          );
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, history: savedHistory }));
+        } catch (error) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: error.message || "Could not persist session Q&A history" }));
+        }
+      });
+      return;
+    }
+
     if (pathname === "/api/qa") {
       if (req.method !== "POST") {
         res.setHeader("Content-Type", "application/json");
@@ -339,7 +527,15 @@ export function createServer({ sessionFile, distDir }) {
       var qaBody = "";
       req.on("data", function (chunk) { qaBody += chunk; });
       req.on("end", async function () {
-        res.setHeader("Content-Type", "application/json");
+        // SSE streaming response
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.writeHead(200);
+
+        function sseSend(data) {
+          if (!res.writableEnded) res.write("data: " + JSON.stringify(data) + "\n\n");
+        }
         try {
           var payload = JSON.parse(qaBody);
           var question = payload.question;
@@ -348,15 +544,24 @@ export function createServer({ sessionFile, distDir }) {
           var metadata = payload.metadata || {};
           var requestedModel = payload.model || null;
           var qaSessionId = payload.qaSessionId || null;
+          var sessionFilePath = payload.sessionFilePath || null;
 
           if (!question) {
-            res.writeHead(400);
-            res.end(JSON.stringify({ error: "Missing 'question' field" }));
+            sseSend({ error: "Missing 'question' field" });
+            if (!res.writableEnded) res.end();
             return;
           }
 
+          var lastStatus = null;
+          function sendStatus(status) {
+            if (!status || status === lastStatus) return;
+            lastStatus = status;
+            sseSend({ status: status });
+          }
+
+          sendStatus("Preparing session context...");
           var context = buildQAContext(events, turns, metadata);
-          var prompt = buildQAPrompt(question, context);
+          var prompt = buildQAPrompt(question, context, { sessionFilePath: sessionFilePath });
 
           var { CopilotClient, approveAll } = await import("@github/copilot-sdk");
           var client = new CopilotClient();
@@ -368,35 +573,34 @@ export function createServer({ sessionFile, distDir }) {
 
             var session;
             if (qaSessionId) {
-              // Resume existing Q&A session -- retains full conversation history
+              sendStatus("Resuming previous Q&A session...");
               try {
-                session = await client.resumeSession(qaSessionId, {
-                  onPermissionRequest: approveAll,
-                });
+                session = await client.resumeSession(
+                  qaSessionId,
+                  buildQASessionConfig(prompt.system, approveAll)
+                );
               } catch (resumeErr) {
-                // Session may have been deleted or expired -- fall back to new
                 session = null;
               }
             }
 
             if (!session) {
-              // Create a new session
-              var sessionOpts = {
-                tools: [],
-                onPermissionRequest: approveAll,
-                systemMessage: {
-                  mode: "replace",
-                  content: prompt.system,
-                },
-              };
+              sendStatus("Starting Q&A session...");
+              var sessionOpts = buildQASessionConfig(prompt.system, approveAll);
               if (requestedModel) sessionOpts.model = requestedModel;
               session = await client.createSession(sessionOpts);
               returnedSessionId = session.sessionId;
             }
 
-            // Send the question and wait for the session to idle
+            // Abort on client disconnect
+            res.on("close", function () {
+              session && session.abort && session.abort().catch(function () {});
+            });
+
+            // Send the question and stream deltas back via SSE
             await new Promise(function (resolve, reject) {
               var done = false;
+              var sawDelta = false;
               var unsubscribe = session.on(function (event) {
                 if (done) return;
                 if (event.type === "session.idle") {
@@ -407,15 +611,33 @@ export function createServer({ sessionFile, distDir }) {
                   done = true;
                   unsubscribe();
                   reject(new Error(event.data && event.data.message ? event.data.message : "Session error"));
-                } else if (event.type === "assistant.message.delta") {
-                  var delta = event.data && (event.data.text || event.data.content || "");
-                  answer += delta;
+                } else if (event.type === "tool.execution_start") {
+                  sendStatus(describeQAToolStatus(getQAToolName(event.data), "start"));
+                } else if (event.type === "tool.execution_complete" && !sawDelta) {
+                  sendStatus(describeQAToolStatus(getQAToolName(event.data), "complete"));
+                } else if (event.type === "assistant.reasoning_delta" && !sawDelta) {
+                  sendStatus("Thinking through the session...");
+                } else if (event.type === "assistant.message_delta" || event.type === "assistant.message.delta") {
+                  var delta = getQAEventText(event.data, true);
+                  if (delta) {
+                    sawDelta = true;
+                    answer += delta;
+                    sendStatus("Streaming answer...");
+                    sseSend({ delta: delta });
+                  }
                 } else if (event.type === "assistant.message") {
-                  var text = event.data && (event.data.text || event.data.content || "");
-                  if (text) answer = text;
+                  var text = getQAEventText(event.data, false);
+                  if (text) {
+                    answer = text;
+                    if (!sawDelta) {
+                      sendStatus("Streaming answer...");
+                      sseSend({ delta: text });
+                    }
+                  }
                 }
               });
-              session.send({ prompt: "[AGENTVIZ-QA] " + question }).catch(function (err) {
+              sendStatus(sessionFilePath ? "Ready to inspect the raw session file..." : "Sending your question to the model...");
+              session.send({ prompt: "[AGENTVIZ-QA] " + prompt.user }).catch(function (err) {
                 if (!done) { done = true; unsubscribe(); reject(err); }
               });
             });
@@ -436,12 +658,12 @@ export function createServer({ sessionFile, distDir }) {
             }
           }
 
-          res.writeHead(200);
           var modelLabel = requestedModel || "default";
-          res.end(JSON.stringify({ answer: answer, references: references, model: modelLabel, qaSessionId: returnedSessionId }));
+          sseSend({ done: true, answer: answer, references: references, model: modelLabel, qaSessionId: returnedSessionId });
+          if (!res.writableEnded) res.end();
         } catch (e) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: e.message || "Q&A failed" }));
+          sseSend({ error: e.message || "Q&A failed" });
+          if (!res.writableEnded) res.end();
         }
       });
       return;
@@ -638,6 +860,7 @@ export function createServer({ sessionFile, distDir }) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
         filename: sessionFile ? path.basename(sessionFile) : null,
+        path: sessionFile || null,
         live: Boolean(sessionFile),
       }));
       return;

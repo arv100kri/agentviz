@@ -73,6 +73,81 @@ function createInactiveFetch() {
   });
 }
 
+// Create a mock SSE response that streams a Q&A answer
+function createSSEResponse(data) {
+  var answer = data.answer || "";
+  var refs = data.references || [];
+  var model = data.model || "default";
+  var qaSessionId = data.qaSessionId || null;
+  // Build SSE payload: one delta with the full text, then a done event
+  var sseText = "data: " + JSON.stringify({ delta: answer }) + "\n\n" +
+    "data: " + JSON.stringify({ done: true, answer: answer, references: refs, model: model, qaSessionId: qaSessionId }) + "\n\n";
+  var encoder = new TextEncoder();
+  var bytes = encoder.encode(sseText);
+  var stream = new ReadableStream({
+    start: function (controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
+  return { ok: true, body: stream };
+}
+
+function createChunkedSSEResponse(events, delays) {
+  var encoder = new TextEncoder();
+  var stream = new ReadableStream({
+    start: function (controller) {
+      var index = 0;
+      function enqueueNext() {
+        if (index >= events.length) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(encoder.encode("data: " + JSON.stringify(events[index]) + "\n\n"));
+        var delay = Array.isArray(delays) ? (delays[index] || 0) : (delays || 0);
+        index++;
+        setTimeout(enqueueNext, delay);
+      }
+      enqueueNext();
+    },
+  });
+  return { ok: true, body: stream };
+}
+
+function createSessionQAHistoryFetch(qaHandler) {
+  var historyStore = {};
+  var fetchMock = vi.fn(async function (url, opts) {
+    var s = String(url);
+    if (s.includes("/api/session-qa-history")) {
+      var urlObj = new URL(s, "http://localhost");
+      var sessionKey = urlObj.searchParams.get("sessionKey");
+      var method = opts && opts.method ? opts.method : "GET";
+      if (method === "POST") {
+        var body = JSON.parse(opts.body);
+        historyStore[body.sessionKey] = body.history;
+        return {
+          ok: true,
+          json: async function () { return { success: true, history: historyStore[body.sessionKey] }; },
+        };
+      }
+      if (method === "DELETE") {
+        delete historyStore[sessionKey];
+        return {
+          ok: true,
+          json: async function () { return { success: true }; },
+        };
+      }
+      return {
+        ok: true,
+        json: async function () { return { history: sessionKey ? (historyStore[sessionKey] || null) : null }; },
+      };
+    }
+    return qaHandler ? qaHandler(url, opts, historyStore) : { ok: false };
+  });
+
+  return { fetchMock: fetchMock, historyStore: historyStore };
+}
+
 async function renderApp(fetchImpl) {
   global.fetch = fetchImpl || createInactiveFetch();
   var container = document.createElement("div");
@@ -176,16 +251,11 @@ describe("Q&A view integration", function () {
       if (String(url).includes("/api/qa")) {
         qaFetchCalled = true;
         if (opts && opts.body) capturedBody = JSON.parse(opts.body);
-        return {
-          ok: true,
-          json: async function () {
-            return {
-              answer: "The session used the view tool in [Turn 0].",
-              references: [{ turnIndex: 0 }],
-              model: "gpt-5.4",
-            };
-          },
-        };
+        return createSSEResponse({
+          answer: "The session used the view tool in [Turn 0].",
+          references: [{ turnIndex: 0 }],
+          model: "gpt-5.4",
+        });
       }
       return { ok: false };
     });
@@ -251,6 +321,66 @@ describe("Q&A view integration", function () {
     await app.unmount();
   });
 
+  it("renders progress states and partial streamed answers incrementally", async function () {
+    var fetchMock = vi.fn(async function (url) {
+      if (String(url).includes("/api/qa")) {
+        return createChunkedSSEResponse([
+          { status: "Preparing session context..." },
+          { status: "Searching the session..." },
+          { delta: "First chunk" },
+          { delta: " and more" },
+          { done: true, answer: "First chunk and more", references: [], model: "gpt-5.4" },
+        ], [120, 180, 250, 0, 0]);
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("fixture.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected landing inbox to render");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findByText(app.container, "fixture.jsonl");
+    }, "expected stored session to open");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A view to render");
+
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Stream it");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Preparing session context...");
+    }, "expected initial progress state");
+
+    await waitFor(function () {
+      return findByText(app.container, "Searching the session...");
+    }, "expected updated progress state");
+
+    await waitFor(function () {
+      return findByText(app.container, "First chunk");
+    }, "expected first streamed chunk");
+
+    expect(findByText(app.container, "First chunk and more")).toBeFalsy();
+
+    await waitFor(function () {
+      return findByText(app.container, "First chunk and more");
+    }, "expected final streamed answer", 5000);
+
+    expect(findByText(app.container, "Searching the session...")).toBeFalsy();
+
+    await app.unmount();
+  });
+
   it("shows an error when the server returns a failure", async function () {
     var fetchMock = vi.fn(async function (url) {
       if (String(url).includes("/api/qa")) {
@@ -297,12 +427,7 @@ describe("Q&A view integration", function () {
   it("clears the conversation when the Clear button is clicked", async function () {
     var fetchMock = vi.fn(async function (url) {
       if (String(url).includes("/api/qa")) {
-        return {
-          ok: true,
-          json: async function () {
-            return { answer: "Here is your answer.", references: [] };
-          },
-        };
+        return createSSEResponse({ answer: "Here is your answer.", references: [] });
       }
       return { ok: false };
     });
@@ -444,12 +569,7 @@ describe("Q&A view integration", function () {
     var fetchMock = vi.fn(async function (url) {
       if (String(url).includes("/api/qa")) {
         callCount++;
-        return {
-          ok: true,
-          json: async function () {
-            return { answer: "Answer " + callCount + ".", references: [] };
-          },
-        };
+        return createSSEResponse({ answer: "Answer " + callCount + ".", references: [] });
       }
       return { ok: false };
     });
@@ -519,12 +639,7 @@ describe("Q&A view integration", function () {
     var fetchMock = vi.fn(async function (url) {
       if (String(url).includes("/api/qa")) {
         callCount++;
-        return {
-          ok: true,
-          json: async function () {
-            return { answer: "Answer " + callCount + ".", references: [] };
-          },
-        };
+        return createSSEResponse({ answer: "Answer " + callCount + ".", references: [] });
       }
       return { ok: false };
     });
@@ -618,17 +733,14 @@ describe("Q&A view integration", function () {
   });
 
   it("clears per-session history when Clear is clicked", async function () {
-    var fetchMock = vi.fn(async function (url) {
+    var historyFetch = createSessionQAHistoryFetch(async function (url) {
       if (String(url).includes("/api/qa")) {
-        return {
-          ok: true,
-          json: async function () {
-            return { answer: "Some answer.", references: [] };
-          },
-        };
+        return createSSEResponse({ answer: "Some answer.", references: [] });
       }
       return { ok: false };
     });
+    var fetchMock = historyFetch.fetchMock;
+    var historyStore = historyFetch.historyStore;
 
     var parsed = parseSessionText(FIXTURE_TEXT);
     persistSessionSnapshot("fixture.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
@@ -657,6 +769,8 @@ describe("Q&A view integration", function () {
       return findByText(app.container, "Some answer.");
     }, "expected answer", 5000);
 
+    expect(Object.keys(historyStore).length).toBe(1);
+
     // Clear the conversation
     var clearBtn = app.container.querySelector("button[title='Clear conversation']");
     await click(clearBtn);
@@ -679,7 +793,30 @@ describe("Q&A view integration", function () {
     expect(findByText(app.container, "My question")).toBeFalsy();
     expect(findByText(app.container, "Some answer.")).toBeFalsy();
 
+    expect(Object.keys(historyStore).length).toBe(0);
+
     await app.unmount();
+
+    var app2 = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app2.container, "Inbox");
+    }, "expected inbox after remount");
+
+    await click(findExactButton(app2.container, "Open in Observe"));
+    await waitFor(function () {
+      return findByText(app2.container, "fixture.jsonl");
+    }, "expected session after remount");
+
+    await click(findClickableText(app2.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app2.container, "Ask about this session");
+    }, "expected empty Q&A after remount");
+
+    expect(findByText(app2.container, "My question")).toBeFalsy();
+    expect(findByText(app2.container, "Some answer.")).toBeFalsy();
+
+    await app2.unmount();
   });
 
   it("lists all available models in the dropdown", async function () {
@@ -721,18 +858,15 @@ describe("Q&A view integration", function () {
     await app.unmount();
   });
 
-  it("persists Q&A conversations to localStorage across app restarts", async function () {
-    var fetchMock = vi.fn(async function (url) {
+  it("persists Q&A conversations via server-backed history across app restarts", async function () {
+    var historyFetch = createSessionQAHistoryFetch(async function (url) {
       if (String(url).includes("/api/qa")) {
-        return {
-          ok: true,
-          json: async function () {
-            return { answer: "Persisted answer.", references: [], model: "gpt-5.4", qaSessionId: "sdk-session-123" };
-          },
-        };
+        return createSSEResponse({ answer: "Persisted answer.", references: [], model: "gpt-5.4", qaSessionId: "sdk-session-123" });
       }
       return { ok: false };
     });
+    var fetchMock = historyFetch.fetchMock;
+    var historyStore = historyFetch.historyStore;
 
     var parsed = parseSessionText(FIXTURE_TEXT);
     persistSessionSnapshot("persist-test.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
@@ -762,15 +896,9 @@ describe("Q&A view integration", function () {
       return findByText(app1.container, "Persisted answer.");
     }, "expected answer", 5000);
 
-    // Verify localStorage was written
-    var stored = global.localStorage.getItem("agentviz:qa-history");
-    expect(stored).toBeTruthy();
-    var parsed2 = JSON.parse(stored);
-    var keys = Object.keys(parsed2);
+    var keys = Object.keys(historyStore);
     expect(keys.length).toBeGreaterThanOrEqual(1);
-
-    // Find the entry for our session
-    var entry = parsed2[keys.find(function (k) { return parsed2[k].messages && parsed2[k].messages.length > 0; })];
+    var entry = historyStore[keys[0]];
     expect(entry).toBeTruthy();
     expect(entry.messages.length).toBe(2); // user + assistant
     expect(entry.qaSessionId).toBe("sdk-session-123");
@@ -791,7 +919,7 @@ describe("Q&A view integration", function () {
 
     await click(findClickableText(app2.container, "Q&A"));
 
-    // The old conversation should be restored from localStorage
+    // The old conversation should be restored from server-backed history
     await waitFor(function () {
       return findByText(app2.container, "Question that should persist");
     }, "expected persisted user message to be restored");
@@ -808,17 +936,12 @@ describe("Q&A view integration", function () {
       if (String(url).includes("/api/qa")) {
         callCount++;
         if (opts && opts.body) capturedBodies.push(JSON.parse(opts.body));
-        return {
-          ok: true,
-          json: async function () {
-            return {
-              answer: "Answer " + callCount + ".",
-              references: [],
-              model: "gpt-5.4",
-              qaSessionId: "sdk-sess-456",
-            };
-          },
-        };
+        return createSSEResponse({
+          answer: "Answer " + callCount + ".",
+          references: [],
+          model: "gpt-5.4",
+          qaSessionId: "sdk-sess-456",
+        });
       }
       return { ok: false };
     });
@@ -866,4 +989,193 @@ describe("Q&A view integration", function () {
 
     await app.unmount();
   });
+
+  it("passes sessionFilePath to /api/qa when loaded via live bootstrap", async function () {
+    var capturedBody = null;
+    var fetchMock = vi.fn(async function (url, opts) {
+      var s = String(url);
+      if (s.includes("/api/meta")) {
+        return {
+          ok: true,
+          json: async function () { return { filename: "live-session.jsonl", path: "/home/user/.copilot/sessions/abc/events.jsonl", live: true }; },
+        };
+      }
+      if (s.includes("/api/file")) {
+        return {
+          ok: true,
+          text: async function () { return FIXTURE_TEXT; },
+        };
+      }
+      if (s.includes("/api/qa")) {
+        if (opts && opts.body) capturedBody = JSON.parse(opts.body);
+        return createSSEResponse({ answer: "Answer with file access.", references: [] });
+      }
+      return { ok: false };
+    });
+
+    var app = await renderApp(fetchMock);
+
+    // Wait for live bootstrap to complete
+    await waitFor(function () {
+      return findByText(app.container, "live-session.jsonl");
+    }, "expected live session to load", 5000);
+
+    // Navigate to Q&A
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A to render");
+
+    // Ask a question
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "What kusto queries were used?");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Answer with file access.");
+    }, "expected answer", 5000);
+
+    // Verify the request included the session file path
+    expect(capturedBody).toBeTruthy();
+    expect(capturedBody.sessionFilePath).toBe("/home/user/.copilot/sessions/abc/events.jsonl");
+
+    await app.unmount();
+  });
+
+  it("allows queuing messages while the model is thinking", async function () {
+    var responseCount = 0;
+    var fetchMock = vi.fn(async function (url) {
+      if (String(url).includes("/api/qa")) {
+        responseCount++;
+        return createChunkedSSEResponse([
+          { status: "Preparing session context..." },
+          { delta: "Response " + responseCount + "." },
+          { done: true, answer: "Response " + responseCount + ".", references: [] },
+        ], [120, 120, 0]);
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("queue-test.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A");
+
+    // Send first question
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "First question");
+    await click(findExactButton(app.container, "Send"));
+
+    // Immediately send a second question (should be queued)
+    await changeInput(input, "Second question");
+    await click(findExactButton(app.container, "Send"));
+
+    // Both user messages should be visible
+    expect(findByText(app.container, "First question")).toBeTruthy();
+    expect(findByText(app.container, "Second question")).toBeTruthy();
+
+    await waitFor(function () {
+      return findByText(app.container, "1 queued message behind this answer");
+    }, "expected queued progress message", 5000);
+
+    // Wait for both responses to complete
+    await waitFor(function () {
+      return findByText(app.container, "Response 1.");
+    }, "expected first response", 5000);
+
+    await waitFor(function () {
+      return findByText(app.container, "Response 2.");
+    }, "expected second response (queued)", 5000);
+
+    await app.unmount();
+  });
+
+  it("stops an in-flight answer and allows retrying", async function () {
+    var requestCount = 0;
+    var historyFetch = createSessionQAHistoryFetch(async function (url, opts) {
+      if (String(url).includes("/api/qa")) {
+        requestCount++;
+        if (requestCount === 1) {
+          var signal = opts && opts.signal;
+          var encoder = new TextEncoder();
+          var stream = new ReadableStream({
+            start: function (controller) {
+              controller.enqueue(encoder.encode("data: " + JSON.stringify({ status: "Searching the session..." }) + "\n\n"));
+              if (signal) {
+                signal.addEventListener("abort", function () {
+                  var abortError = new Error("Aborted");
+                  abortError.name = "AbortError";
+                  controller.error(abortError);
+                });
+              }
+            },
+          });
+          return { ok: true, body: stream };
+        }
+        return createSSEResponse({ answer: "Recovered answer.", references: [] });
+      }
+      return { ok: false };
+    });
+    var fetchMock = historyFetch.fetchMock;
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("stop-test.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A");
+
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Question to stop");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Searching the session...");
+    }, "expected in-flight status");
+
+    await click(findExactButton(app.container, "Stop"));
+
+    await waitFor(function () {
+      return !findByText(app.container, "Searching the session...") && !findExactButton(app.container, "Stop");
+    }, "expected loading to stop", 5000);
+
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Retry after stop");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Recovered answer.");
+    }, "expected retry answer", 5000);
+
+    expect(requestCount).toBe(2);
+
+    await app.unmount();
+  });
 });
+

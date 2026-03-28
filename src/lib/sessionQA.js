@@ -180,21 +180,54 @@ export function buildQAContext(events, turns, metadata) {
 /**
  * Build the system prompt for a Q&A question.
  */
-export function buildQAPrompt(question, context) {
+function buildFullSessionFileAccessMessage(sessionFilePath) {
+  return "FULL SESSION FILE ACCESS:\n" +
+    "The complete session JSONL file is at: " + sessionFilePath + "\n" +
+    "The summary below may be truncated and may not contain all turns.\n" +
+    "For questions about specific tool calls, queries, commands, outputs, or errors, " +
+    "search the raw JSONL file before answering.\n" +
+    "Use only file-search or file-read tools for that exact file.\n" +
+    "JSONL structure hints:\n" +
+    "  - type: 'tool.execution_start' (has data.toolName, data.toolInput)\n" +
+    "  - type: 'tool.execution_complete' (has data.result or data.output, data.isError)\n" +
+    "  - type: 'assistant.message' (has data.content)\n" +
+    "  - type: 'user.message' (has data.content)\n" +
+    "Do not say the session is inaccessible or truncated if the answer can be found in this file.";
+}
+
+export function buildQAPrompt(question, context, options) {
+  var sessionFilePath = options && options.sessionFilePath;
+  var system = "You are an AI assistant that answers questions about a coding session. " +
+    "The user will provide session data and a question in each message. " +
+    "Answer ONLY based on the session data provided";
+
+  if (sessionFilePath) {
+    system += " and the explicitly provided session JSONL file. " +
+      "If a session JSONL file path is provided, you may use only file-search and file-read tools " +
+      "to inspect that exact file. Do NOT use web, sql, session_store, or unrelated workspace exploration. ";
+  } else {
+    system += ". DO NOT use any tools (no bash, no sql, no session_store, no file reads). ";
+  }
+
+  system += "Do NOT attempt to access external data sources. " +
+    "If the answer is not in the provided session data, say so.\n\n" +
+    "When referencing specific moments, cite turn numbers like [Turn 3]. " +
+    "Keep answers concise and factual. Use markdown formatting.\n\n" +
+    "IMPORTANT: If the tool output shown is truncated (ends with '...') and you need " +
+    "the full output to answer the question, respond ONLY with one or more lines like:\n" +
+    "[NEED_DETAIL: Turn 5, powershell]\n" +
+    "[NEED_DETAIL: Turn 12, kusto]\n" +
+    "The system will automatically fetch the full data and ask you again. " +
+    "Only request details you actually need to answer the question.";
+
+  var user = "";
+  if (sessionFilePath) {
+    user += buildFullSessionFileAccessMessage(sessionFilePath) + "\n\n";
+  }
+
   return {
-    system: "You are an AI assistant that answers questions about a coding session. " +
-      "You have access to the session's event log below. Answer ONLY based on what is " +
-      "in the session data. If the answer is not in the session, say so.\n\n" +
-      "When referencing specific moments, cite turn numbers like [Turn 3]. " +
-      "Keep answers concise and factual. Use markdown formatting.\n\n" +
-      "IMPORTANT: If the tool output shown is truncated (ends with '...') and you need " +
-      "the full output to answer the question, respond ONLY with one or more lines like:\n" +
-      "[NEED_DETAIL: Turn 5, powershell]\n" +
-      "[NEED_DETAIL: Turn 12, kusto]\n" +
-      "The system will automatically fetch the full data and ask you again. " +
-      "Only request details you actually need to answer the question.\n\n" +
-      "SESSION DATA:\n" + context,
-    user: question,
+    system: system,
+    user: user + "SESSION DATA:\n" + context + "\n\nQUESTION: " + question,
   };
 }
 

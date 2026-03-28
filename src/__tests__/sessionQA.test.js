@@ -124,7 +124,8 @@ describe("buildQAPrompt", function () {
     var prompt = buildQAPrompt("What tools were used?", "some context");
     expect(prompt).toHaveProperty("system");
     expect(prompt).toHaveProperty("user");
-    expect(prompt.user).toBe("What tools were used?");
+    expect(prompt.user).toContain("What tools were used?");
+    expect(prompt.user).toContain("SESSION DATA:");
   });
 
   it("instructs the model to cite turn numbers", function () {
@@ -137,16 +138,33 @@ describe("buildQAPrompt", function () {
     expect(prompt.system).toContain("session data");
   });
 
-  it("embeds the context in the system prompt", function () {
+  it("embeds the context in the user message", function () {
     var context = buildQAContext(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
     var prompt = buildQAPrompt("What happened?", context);
-    expect(prompt.system).toContain("SESSION OVERVIEW");
-    expect(prompt.system).toContain("Turn 0");
+    expect(prompt.user).toContain("SESSION OVERVIEW");
+    expect(prompt.user).toContain("Turn 0");
+    expect(prompt.user).toContain("QUESTION: What happened?");
   });
 
   it("includes NEED_DETAIL instructions in the system prompt", function () {
     var prompt = buildQAPrompt("question", "context");
     expect(prompt.system).toContain("NEED_DETAIL");
+  });
+
+  it("allows raw session file reads when a session file path is provided", function () {
+    var prompt = buildQAPrompt("question", "context", {
+      sessionFilePath: "C:\\sessions\\agentviz.jsonl",
+    });
+    expect(prompt.system).toContain("file-search and file-read tools");
+    expect(prompt.system).not.toContain("DO NOT use any tools");
+    expect(prompt.user).toContain("FULL SESSION FILE ACCESS");
+    expect(prompt.user).toContain("C:\\sessions\\agentviz.jsonl");
+  });
+
+  it("still forbids tool use when no session file path is provided", function () {
+    var prompt = buildQAPrompt("question", "context");
+    expect(prompt.system).toContain("DO NOT use any tools");
+    expect(prompt.user).not.toContain("FULL SESSION FILE ACCESS");
   });
 });
 

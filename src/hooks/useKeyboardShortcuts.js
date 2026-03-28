@@ -17,7 +17,7 @@ export function handleKeyboardShortcut(e, options) {
     return true;
   }
 
-  if (options.showHero && (e.code === "Space" || e.code === "Enter")) {
+  if (options.showHero && (e.code === "Space" || e.code === "Enter") && !isEditableTarget(e.target)) {
     e.preventDefault();
     options.onDismissHero();
     return true;

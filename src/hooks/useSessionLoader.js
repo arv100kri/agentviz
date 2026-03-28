@@ -20,6 +20,7 @@ export default function useSessionLoader(options) {
   var [metadata, setMetadata] = useState(null);
   var [total, setTotal] = useState(0);
   var [file, setFile] = useState("");
+  var [filePath, setFilePath] = useState(null);
   var [error, setError] = useState(null);
   var [loading, setLoading] = useState(false);
   var [showHero, setShowHero] = useState(false);
@@ -131,6 +132,7 @@ export default function useSessionLoader(options) {
     setMetadata(null);
     setTotal(0);
     setFile("");
+    setFilePath(null);
     setError(null);
     setLoading(false);
     setIsLive(false);
@@ -171,6 +173,7 @@ export default function useSessionLoader(options) {
             setMetadata(parsed.result.metadata);
             setTotal(getSessionTotal(parsed.result.events));
             setFile(meta.filename);
+            setFilePath(meta.path || null);
             setError(null);
             setShowHero(true);
             notifySessionParsed(parsed.result, meta.filename, text);
@@ -195,11 +198,13 @@ export default function useSessionLoader(options) {
     metadata: metadata,
     total: total,
     file: file,
+    filePath: filePath,
     error: error,
     loading: loading,
     showHero: showHero,
     isLive: isLive,
     handleFile: handleFile,
+    setFilePath: setFilePath,
     appendLines: appendLines,
     loadSample: loadSample,
     resetSession: resetSession,

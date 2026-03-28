@@ -57,7 +57,7 @@ var AVAILABLE_MODELS = [
 
 var DEFAULT_MODEL = "gpt-5.4";
 
-export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetView }) {
+export default function QAView({ qa, events, turns, metadata, sessionFilePath, onSeekTurn, onSetView }) {
   var [input, setInput] = useState("");
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
@@ -66,7 +66,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetV
     if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [qa.messages.length, qa.loading]);
+  }, [qa.messages.length, qa.loading, qa.loadingLabel, qa.queuedCount]);
 
   useEffect(function () {
     if (inputRef.current) inputRef.current.focus();
@@ -74,13 +74,13 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetV
 
   function handleSubmit(e) {
     if (e) e.preventDefault();
-    if (!input.trim() || qa.loading) return;
-    qa.askQuestion(input.trim(), events, turns, metadata, qa.selectedModel);
+    if (!input.trim()) return;
+    qa.askQuestion(input.trim(), events, turns, metadata, qa.selectedModel, sessionFilePath);
     setInput("");
   }
 
   function handleSuggestion(q) {
-    qa.askQuestion(q, events, turns, metadata, qa.selectedModel);
+    qa.askQuestion(q, events, turns, metadata, qa.selectedModel, sessionFilePath);
   }
 
   function handleTurnClick(turnIndex) {
@@ -191,13 +191,31 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetV
     fontWeight: 600,
   };
 
-  var loadingStyle = {
+  var loadingBubbleStyle = {
     alignSelf: "flex-start",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: theme.space.sm + "px",
     padding: theme.space.md + "px " + theme.space.lg + "px",
-    color: theme.text.muted,
+    background: alpha(theme.bg.surface, 0.95),
+    border: "1px solid " + theme.border.default,
+    borderRadius: theme.radius.lg + "px",
+    color: theme.text.secondary,
+    maxWidth: "85%",
+  };
+
+  var loadingTitleStyle = {
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
     fontStyle: "italic",
+    lineHeight: 1.5,
+  };
+
+  var loadingMetaStyle = {
+    marginTop: 4,
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.font.mono,
+    color: theme.text.dim,
   };
 
   var inputContainerStyle = {
@@ -229,8 +247,20 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetV
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
     fontWeight: 600,
-    cursor: qa.loading ? "not-allowed" : "pointer",
-    opacity: qa.loading ? 0.5 : 1,
+    cursor: "pointer",
+    transition: theme.transition.fast,
+  };
+
+  var stopBtnStyle = {
+    background: alpha(theme.semantic.error, 0.14),
+    border: "1px solid " + alpha(theme.semantic.error, 0.4),
+    borderRadius: theme.radius.md + "px",
+    padding: theme.space.md + "px " + theme.space.lg + "px",
+    color: theme.semantic.error,
+    fontSize: theme.fontSize.sm,
+    fontFamily: theme.font.mono,
+    fontWeight: 600,
+    cursor: "pointer",
     transition: theme.transition.fast,
   };
 
@@ -278,6 +308,7 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetV
   };
 
   var hasMessages = qa.messages.length > 0;
+  var loadingLabel = qa.loadingLabel || "Working on your question...";
 
   var modelSelectStyle = {
     background: theme.bg.base,
@@ -346,8 +377,15 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetV
 
         {qa.messages.map(function (msg, i) {
           if (msg.role === "user") {
-            return <div key={i} style={userMsgStyle}>{msg.content}</div>;
+            var isQueued = msg.queued;
+            return (
+              <div key={i} style={Object.assign({}, userMsgStyle, isQueued ? { opacity: 0.6 } : {})}>
+                {isQueued && <Icon name="hourglass" size={12} style={{ marginRight: 6, verticalAlign: "middle" }} />}
+                {msg.content}
+              </div>
+            );
           }
+          if (!msg.content) return null;
           var parts = parseTurnReferences(msg.content);
           return (
             <div key={i} style={assistantMsgStyle}>
@@ -370,7 +408,19 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetV
           );
         })}
 
-        {qa.loading && <div style={loadingStyle}>Thinking...</div>}
+        {qa.loading && (
+          <div style={loadingBubbleStyle}>
+            <Icon name="hourglass" size={14} style={{ marginTop: 1, flexShrink: 0 }} />
+            <div>
+              <div style={loadingTitleStyle}>{loadingLabel}</div>
+              {qa.queuedCount > 0 && (
+                <div style={loadingMetaStyle}>
+                  {qa.queuedCount} queued {qa.queuedCount === 1 ? "message" : "messages"} behind this answer
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {qa.error && <div style={errorStyle}>{qa.error}</div>}
         <div ref={messagesEndRef} />
       </div>
@@ -390,9 +440,18 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetV
           placeholder="Ask a question about this session..."
           value={input}
           onChange={function (e) { setInput(e.target.value); }}
-          disabled={qa.loading}
         />
-        <button type="submit" style={sendBtnStyle} disabled={qa.loading}>
+        {qa.loading && (
+          <button
+            type="button"
+            style={stopBtnStyle}
+            onClick={qa.stopAnswer}
+            title="Stop current answer"
+          >
+            Stop
+          </button>
+        )}
+        <button type="submit" style={sendBtnStyle}>
           Send
         </button>
       </form>

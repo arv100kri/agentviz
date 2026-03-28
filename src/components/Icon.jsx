@@ -29,6 +29,8 @@ import {
   Workflow,
   Clock,
   ArrowRight,
+  MessageSquareText,
+  Hourglass,
 } from "lucide-react";
 
 var ICON_MAP = {
@@ -62,6 +64,8 @@ var ICON_MAP = {
   graph: Workflow,
   clock: Clock,
   "arrow-right": ArrowRight,
+  "message-square-text": MessageSquareText,
+  hourglass: Hourglass,
 };
 
 export default function Icon({ name, size, strokeWidth, style, className }) {
