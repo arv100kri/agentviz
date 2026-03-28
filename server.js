@@ -733,6 +733,43 @@ export function createServer({ sessionFile, distDir }) {
   var pollInterval = null;
   var sessionQACache = createSessionQACacheStore();
 
+  // Context-based model answer cache: stores model answers keyed by a hash of
+  // the context + question family, so different phrasings that produce the same
+  // retrieval context can share cached answers. Max 50 entries, LRU eviction.
+  var modelAnswerCache = {};
+  var modelAnswerCacheOrder = [];
+  var MODEL_ANSWER_CACHE_MAX = 50;
+
+  function hashContextKey(fingerprint, family, contextSubstr) {
+    var input = (fingerprint || "") + "|" + (family || "") + "|" + (contextSubstr || "").substring(0, 500);
+    var hash = 0;
+    for (var i = 0; i < input.length; i++) {
+      hash = ((hash << 5) - hash + input.charCodeAt(i)) | 0;
+    }
+    return String(Math.abs(hash));
+  }
+
+  function getCachedModelAnswer(fingerprint, family, context) {
+    var key = hashContextKey(fingerprint, family, context);
+    var entry = modelAnswerCache[key];
+    if (!entry) return null;
+    var idx = modelAnswerCacheOrder.indexOf(key);
+    if (idx > 0) { modelAnswerCacheOrder.splice(idx, 1); modelAnswerCacheOrder.unshift(key); }
+    return entry;
+  }
+
+  function setCachedModelAnswer(fingerprint, family, context, answer, references, model) {
+    var key = hashContextKey(fingerprint, family, context);
+    modelAnswerCache[key] = { answer: answer, references: references, model: model, cachedAt: Date.now() };
+    var idx = modelAnswerCacheOrder.indexOf(key);
+    if (idx !== -1) modelAnswerCacheOrder.splice(idx, 1);
+    modelAnswerCacheOrder.unshift(key);
+    while (modelAnswerCacheOrder.length > MODEL_ANSWER_CACHE_MAX) {
+      var evicted = modelAnswerCacheOrder.pop();
+      delete modelAnswerCache[evicted];
+    }
+  }
+
   function broadcastNewLines() {
     if (!sessionFile || clients.size === 0) return;
     try {
@@ -1466,6 +1503,28 @@ export function createServer({ sessionFile, distDir }) {
             });
           }
 
+          // Check context-based model answer cache before calling the model
+          var contextFingerprint = precomputed ? precomputed.fingerprint : null;
+          var contextFamily = queryProgram ? queryProgram.family : "unknown";
+          var cachedModelAnswer = context ? getCachedModelAnswer(contextFingerprint, contextFamily, context) : null;
+          if (cachedModelAnswer && cachedModelAnswer.answer) {
+            sendProgress("using-cached-program-answer", {
+              detail: "Reusing a cached model answer for similar context.",
+              force: true,
+            });
+            stopProgressHeartbeat();
+            sseSend(buildQADonePayload(
+              cachedModelAnswer.answer,
+              cachedModelAnswer.references || [],
+              cachedModelAnswer.model || "AGENTVIZ cached model answer",
+              qaSessionId,
+              qaRequestStartedAt,
+              Date.now()
+            ));
+            res.end();
+            return;
+          }
+
           var sdkModule = typeof sdkImportPromise !== "undefined"
             ? await sdkImportPromise
             : await import("@github/copilot-sdk");
@@ -1588,6 +1647,29 @@ export function createServer({ sessionFile, distDir }) {
             if (!references.some(function (r) { return r.turnIndex === turnIdx; })) {
               references.push({ turnIndex: turnIdx });
             }
+          }
+
+          // Cache the model answer for paraphrase reuse on future similar questions
+          if (programCacheKey && answer && resolvedSession.programCache) {
+            resolvedSession.programCache[programCacheKey] = {
+              fingerprint: precomputed ? precomputed.fingerprint : null,
+              directAnswer: answer,
+              references: references,
+              model: requestedModel || "default",
+              context: context || "",
+            };
+          }
+
+          // Also cache by context hash for cross-phrasing reuse
+          if (context && answer) {
+            setCachedModelAnswer(
+              precomputed ? precomputed.fingerprint : null,
+              queryProgram ? queryProgram.family : "unknown",
+              context,
+              answer,
+              references,
+              requestedModel || "default"
+            );
           }
 
           var modelLabel = requestedModel || "default";
