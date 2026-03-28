@@ -607,6 +607,27 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
   if (!db) return null;
 
   try {
+    // Implicit turn lookup for "last turn" / "first turn" questions
+    if ((queryProgram.family === "session-summary" || queryProgram.family === "broad-synthesis") &&
+        queryProgram.normalizedQuestion) {
+      var nq = queryProgram.normalizedQuestion;
+      var implicitTurnIndex = null;
+      if (/\b(last|final)\s+turn\b/.test(nq)) {
+        implicitTurnIndex = loadMaxTurnIndex(db);
+      } else if (/\b(first|initial|opening)\s+turn\b/.test(nq)) {
+        implicitTurnIndex = 0;
+      }
+      if (implicitTurnIndex !== null) {
+        var implicitRow = loadTurnSummary(db, implicitTurnIndex);
+        if (implicitRow) {
+          var implicitTools = loadTurnToolCalls(db, implicitTurnIndex, 6);
+          return Object.assign(buildTurnLookupAnswer(implicitRow, implicitTools), {
+            model: "AGENTVIZ SQLite fact store",
+          });
+        }
+      }
+    }
+
     if (queryProgram.family === "turn-lookup" && queryProgram.slots.turnHints.length > 0) {
       var turnIndex = queryProgram.slots.turnHints[0];
       var turnRow = loadTurnSummary(db, turnIndex);
