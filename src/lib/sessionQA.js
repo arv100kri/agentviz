@@ -2305,7 +2305,7 @@ export function routeSessionQAQuestion(question, artifacts, options) {
 
   // For low-confidence questions, use the full-text search index to find relevant turns
   var searchResults = null;
-  if (artifacts && artifacts.searchIndex && questionProfile.confidence !== "high" && relevantEntries.length === 0) {
+  if (artifacts && artifacts.searchIndex && questionProfile.confidence !== "high") {
     try {
       searchResults = artifacts.searchIndex.search(question, { limit: 8 });
     } catch (searchErr) {}
