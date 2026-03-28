@@ -3709,13 +3709,15 @@ function buildFullQAContext(events, turns, metadata, qaArtifacts) {
 function buildSearchQAContext(events, turns, metadata, qaArtifacts, route) {
   if (!route || !Array.isArray(route.searchResults) || route.searchResults.length === 0) return "";
   var turnRecords = Array.isArray(qaArtifacts.turnRecords) ? qaArtifacts.turnRecords : buildTurnRecords(events, turns);
+  // Use a lighter preamble for search-routed questions since the search
+  // results already provide focused evidence
   var parts = buildContextPreamble(turnRecords, metadata, qaArtifacts, {
-    includeToolUsage: true,
-    includeFiles: true,
-    includeErrors: true,
-    toolLimit: MAX_FALLBACK_TOOL_RANKING,
-    fileLimit: MAX_FALLBACK_FILE_ENTRIES,
-    errorLimit: MAX_FALLBACK_ERRORS,
+    includeToolUsage: false,
+    includeFiles: false,
+    includeErrors: route.profile && route.profile.wantsErrors,
+    toolLimit: 5,
+    fileLimit: 5,
+    errorLimit: 5,
   });
   var remainingBudget = MAX_FOCUSED_CONTEXT_CHARS - parts.join("\n").length;
 
