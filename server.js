@@ -1285,7 +1285,8 @@ export function createServer({ sessionFile, distDir }) {
               force: true,
             });
 
-            if (cachedProgramPlan && cachedProgramPlan.fingerprint === (precomputed && precomputed.fingerprint)) {
+            if (cachedProgramPlan && cachedProgramPlan.fingerprint === (precomputed && precomputed.fingerprint) &&
+                !(queryProgram.deterministic && !queryProgram.needsModel)) {
               if (cachedProgramPlan.directAnswer) {
                 sendProgress("using-cached-program-answer", {
                   detail: "Reusing the cached " + describeSessionQAQueryProgram(queryProgram) + " answer.",
