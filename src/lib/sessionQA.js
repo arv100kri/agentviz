@@ -2019,7 +2019,8 @@ function determineSessionQAProgramFamily(questionProfile, metricMatch) {
   if (questionProfile && questionProfile.requiresExactEvidence &&
       !(questionProfile.wantsPaths && (!questionProfile.pathTerms || questionProfile.pathTerms.length === 0) && questionProfile.matchers.length === 0) &&
       !(questionProfile.wantsErrors && questionProfile.matchers.length === 0 && (!questionProfile.pathTerms || questionProfile.pathTerms.length === 0)) &&
-      !((questionProfile.wantsCommands || questionProfile.wantsQueries) && questionProfile.matchers.length === 0 && (!questionProfile.commandTerms || questionProfile.commandTerms.length === 0) && (!questionProfile.queryTerms || questionProfile.queryTerms.length === 0))) {
+      !((questionProfile.wantsCommands || questionProfile.wantsQueries) && questionProfile.matchers.length === 0 && (!questionProfile.commandTerms || questionProfile.commandTerms.length === 0) && (!questionProfile.queryTerms || questionProfile.queryTerms.length === 0)) &&
+      !(questionProfile.matchedToolNames && questionProfile.matchedToolNames.length > 0)) {
     return {
       family: "exact-raw-evidence",
       intent: "exact-evidence",
