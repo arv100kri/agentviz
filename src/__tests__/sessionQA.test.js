@@ -1084,3 +1084,34 @@ describe("buildDetailResponse", function () {
     expect(detail).toContain("\"tool.execution_complete\"");
   });
 });
+
+describe("session search index", function () {
+  it("builds a search index from session artifacts", function () {
+    var artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    expect(artifacts.searchIndex).toBeTruthy();
+    expect(artifacts.searchIndex.provider).toBe("lunr");
+    expect(artifacts.searchIndex.documentCount).toBeGreaterThan(0);
+  });
+
+  it("finds relevant turns via full-text search", function () {
+    var artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    var results = artifacts.searchIndex.search("auth.js bug");
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].turnIndex).toBe(0);
+  });
+
+  it("routes domain-specific questions through the search path", function () {
+    var events = [
+      { t: 0, agent: "user", track: "output", text: "Persist the client app id in key vault", duration: 0, intensity: 0.5, isError: false, turnIndex: 0 },
+      { t: 1, agent: "assistant", track: "tool_call", text: "edit keyvault config", duration: 1, intensity: 1, toolName: "edit", toolInput: { path: "src/keyvault.ts" }, isError: false, turnIndex: 0 },
+    ];
+    var turns = [{ index: 0, startTime: 0, endTime: 2, eventIndices: [0, 1], userMessage: "Persist the client app id in key vault", toolCount: 1, hasError: false }];
+    var meta = { totalEvents: 2, totalTurns: 1, totalToolCalls: 1, errorCount: 0, duration: 2, format: "copilot-cli" };
+    var artifacts = buildSessionQAArtifacts(events, turns, meta);
+
+    var route = routeSessionQAQuestion("Why was the client app id persisted in key vault?", artifacts);
+    expect(route).toBeTruthy();
+    expect(route.kind).toBe("search");
+    expect(route.searchResults.length).toBeGreaterThan(0);
+  });
+});
