@@ -2017,7 +2017,8 @@ function determineSessionQAProgramFamily(questionProfile, metricMatch) {
   }
 
   if (questionProfile && questionProfile.requiresExactEvidence &&
-      !(questionProfile.wantsPaths && (!questionProfile.pathTerms || questionProfile.pathTerms.length === 0) && questionProfile.matchers.length === 0)) {
+      !(questionProfile.wantsPaths && (!questionProfile.pathTerms || questionProfile.pathTerms.length === 0) && questionProfile.matchers.length === 0) &&
+      !(questionProfile.wantsErrors && questionProfile.matchers.length === 0 && (!questionProfile.pathTerms || questionProfile.pathTerms.length === 0))) {
     return {
       family: "exact-raw-evidence",
       intent: "exact-evidence",
