@@ -627,6 +627,25 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
       return toolResult ? Object.assign(toolResult, { model: "AGENTVIZ SQLite fact store" }) : null;
     }
 
+    if (queryProgram.family === "tool-lookup" && queryProgram.slots.toolNames.length === 0) {
+      var allToolRows = db.prepare(
+        "SELECT tool_name, COUNT(*) AS use_count, COUNT(DISTINCT turn_index) AS turn_count, ROUND(SUM(duration), 1) AS total_duration FROM tool_calls GROUP BY tool_name ORDER BY use_count DESC LIMIT 15"
+      ).all();
+      if (allToolRows && allToolRows.length > 0) {
+        var toolLines = allToolRows.map(function (row) {
+          var parts = ["- " + row.tool_name + ": " + pluralize(row.use_count, "call") + " across " + pluralize(row.turn_count, "turn")];
+          if (Number(row.total_duration) > 0) parts[0] += " (" + formatDuration(row.total_duration) + " total)";
+          return parts[0];
+        });
+        return {
+          answer: "The session used " + pluralize(allToolRows.length, "tool") + ":\n" + toolLines.join("\n"),
+          references: [],
+          detail: "Listed all tool usage from the SQLite fact store.",
+          model: "AGENTVIZ SQLite fact store",
+        };
+      }
+    }
+
     if (queryProgram.family === "file-lookup" && queryProgram.slots.pathTerms.length > 0) {
       var fileResult = lookupEntityUsage(
         db,

@@ -2078,6 +2078,18 @@ function determineSessionQAProgramFamily(questionProfile, metricMatch) {
     };
   }
 
+  if (questionProfile && questionProfile.wantsTools && (!questionProfile.matchedToolNames || questionProfile.matchedToolNames.length === 0)) {
+    return {
+      family: "tool-lookup",
+      intent: "tool-list",
+      routePreference: "index",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+    };
+  }
+
   if (questionProfile && (questionProfile.wantsCommands || questionProfile.wantsQueries)) {
     return {
       family: "command-query-lookup",
