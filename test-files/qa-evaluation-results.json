@@ -1,5 +1,5 @@
 {
-  "evaluatedAt": "2026-03-28T18:24:08.693Z",
+  "evaluatedAt": "2026-03-28T18:35:00.742Z",
   "summary": {
     "totalQuestions": 332,
     "evaluated": 332,
@@ -8,10 +8,10 @@
     "routingCorrect": 312,
     "routingTotal": 332,
     "latency": {
-      "p50": "3ms",
-      "p90": "8ms",
-      "p99": "17ms",
-      "max": "27ms"
+      "p50": "2ms",
+      "p90": "7ms",
+      "p99": "15ms",
+      "max": "23ms"
     },
     "deterministicCount": 218,
     "modelRequiredCount": 114,
@@ -145,7 +145,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 27,
+      "actualLatencyMs": 23,
       "contextChars": 2509,
       "routeKind": "metric"
     },
@@ -197,7 +197,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 5,
       "contextChars": 10928,
       "routeKind": "metric"
     },
@@ -210,7 +210,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 8,
       "contextChars": 10488,
       "routeKind": "metric"
     },
@@ -223,7 +223,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4858,
       "routeKind": "metric"
     },
@@ -236,7 +236,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 8,
+      "actualLatencyMs": 4,
       "contextChars": 11651,
       "routeKind": "metric"
     },
@@ -249,7 +249,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 11941,
       "routeKind": "metric"
     },
@@ -262,7 +262,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 2504,
       "routeKind": "metric"
     },
@@ -275,7 +275,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 5,
       "contextChars": 16299,
       "routeKind": "metric"
     },
@@ -288,7 +288,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 4,
       "contextChars": 13813,
       "routeKind": "metric"
     },
@@ -301,7 +301,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 2494,
       "routeKind": "metric"
     },
@@ -314,7 +314,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 4,
       "contextChars": 16314,
       "routeKind": "metric"
     },
@@ -327,7 +327,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 13900,
       "routeKind": "metric"
     },
@@ -418,9 +418,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 5971,
-      "routeKind": "index"
+      "actualLatencyMs": 4,
+      "contextChars": 2563,
+      "routeKind": "search"
     },
     {
       "id": "q023",
@@ -431,9 +431,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 11849,
-      "routeKind": "index"
+      "actualLatencyMs": 6,
+      "contextChars": 5348,
+      "routeKind": "search"
     },
     {
       "id": "q024",
@@ -444,9 +444,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 11637,
-      "routeKind": "index"
+      "actualLatencyMs": 4,
+      "contextChars": 4801,
+      "routeKind": "search"
     },
     {
       "id": "q025",
@@ -470,7 +470,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 5,
       "contextChars": 11715,
       "routeKind": "metric"
     },
@@ -509,9 +509,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 13114,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 5830,
+      "routeKind": "search"
     },
     {
       "id": "q030",
@@ -522,9 +522,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 14755,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 6001,
+      "routeKind": "search"
     },
     {
       "id": "q031",
@@ -535,9 +535,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 4854,
-      "routeKind": "index"
+      "actualLatencyMs": 0,
+      "contextChars": 1408,
+      "routeKind": "search"
     },
     {
       "id": "q032",
@@ -548,9 +548,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 11647,
-      "routeKind": "index"
+      "actualLatencyMs": 3,
+      "contextChars": 6147,
+      "routeKind": "search"
     },
     {
       "id": "q033",
@@ -561,9 +561,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 11937,
-      "routeKind": "index"
+      "actualLatencyMs": 3,
+      "contextChars": 5724,
+      "routeKind": "search"
     },
     {
       "id": "q034",
@@ -574,7 +574,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 5184,
       "routeKind": "index"
     },
@@ -587,7 +587,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 9,
       "contextChars": 9936,
       "routeKind": "index"
     },
@@ -600,7 +600,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 6,
       "contextChars": 8597,
       "routeKind": "index"
     },
@@ -613,7 +613,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 4007,
       "routeKind": "chunk"
     },
@@ -626,9 +626,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 8695,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 5487,
+      "routeKind": "search"
     },
     {
       "id": "q039",
@@ -639,9 +639,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8524,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4990,
+      "routeKind": "search"
     },
     {
       "id": "q040",
@@ -652,7 +652,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 4007,
       "routeKind": "chunk"
     },
@@ -665,9 +665,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 8696,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 5336,
+      "routeKind": "search"
     },
     {
       "id": "q042",
@@ -678,9 +678,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8136,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 3714,
+      "routeKind": "search"
     },
     {
       "id": "q043",
@@ -691,9 +691,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 7718,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4792,
+      "routeKind": "search"
     },
     {
       "id": "q044",
@@ -704,9 +704,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 7722,
-      "routeKind": "chunk"
+      "actualLatencyMs": 4,
+      "contextChars": 4796,
+      "routeKind": "search"
     },
     {
       "id": "q045",
@@ -717,9 +717,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 7722,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4796,
+      "routeKind": "search"
     },
     {
       "id": "q046",
@@ -730,9 +730,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 7722,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4796,
+      "routeKind": "search"
     },
     {
       "id": "q047",
@@ -756,9 +756,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 7553,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4614,
+      "routeKind": "search"
     },
     {
       "id": "q049",
@@ -769,9 +769,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 11,
-      "contextChars": 7509,
-      "routeKind": "index"
+      "actualLatencyMs": 9,
+      "contextChars": 5276,
+      "routeKind": "search"
     },
     {
       "id": "q050",
@@ -782,7 +782,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 4,
       "contextChars": 4575,
       "routeKind": "index"
     },
@@ -795,9 +795,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 7384,
-      "routeKind": "chunk"
+      "actualLatencyMs": 4,
+      "contextChars": 4532,
+      "routeKind": "search"
     },
     {
       "id": "q052",
@@ -808,9 +808,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
-      "contextChars": 7814,
-      "routeKind": "chunk"
+      "actualLatencyMs": 5,
+      "contextChars": 4678,
+      "routeKind": "search"
     },
     {
       "id": "q053",
@@ -821,9 +821,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 7707,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 4352,
+      "routeKind": "search"
     },
     {
       "id": "q054",
@@ -834,9 +834,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 8,
-      "contextChars": 7710,
-      "routeKind": "chunk"
+      "actualLatencyMs": 5,
+      "contextChars": 4757,
+      "routeKind": "search"
     },
     {
       "id": "q055",
@@ -847,9 +847,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 10,
-      "contextChars": 7561,
-      "routeKind": "chunk"
+      "actualLatencyMs": 7,
+      "contextChars": 4663,
+      "routeKind": "search"
     },
     {
       "id": "q056",
@@ -860,7 +860,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 14,
+      "actualLatencyMs": 18,
       "contextChars": 6504,
       "routeKind": "index"
     },
@@ -873,9 +873,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 12,
-      "contextChars": 8781,
-      "routeKind": "index"
+      "actualLatencyMs": 15,
+      "contextChars": 4300,
+      "routeKind": "search"
     },
     {
       "id": "q058",
@@ -886,9 +886,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 11,
-      "contextChars": 7484,
-      "routeKind": "chunk"
+      "actualLatencyMs": 7,
+      "contextChars": 5065,
+      "routeKind": "search"
     },
     {
       "id": "q059",
@@ -899,7 +899,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 4,
       "contextChars": 6789,
       "routeKind": "index"
     },
@@ -912,7 +912,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 1,
       "contextChars": 1938,
       "routeKind": "index"
     },
@@ -925,9 +925,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 10,
-      "contextChars": 7096,
-      "routeKind": "chunk"
+      "actualLatencyMs": 7,
+      "contextChars": 4703,
+      "routeKind": "search"
     },
     {
       "id": "q062",
@@ -938,9 +938,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 7938,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5109,
+      "routeKind": "search"
     },
     {
       "id": "q063",
@@ -951,9 +951,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7942,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 5113,
+      "routeKind": "search"
     },
     {
       "id": "q064",
@@ -965,8 +965,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 1,
-      "contextChars": 7940,
-      "routeKind": "chunk"
+      "contextChars": 5111,
+      "routeKind": "search"
     },
     {
       "id": "q065",
@@ -977,9 +977,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7942,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 5113,
+      "routeKind": "search"
     },
     {
       "id": "q066",
@@ -1003,9 +1003,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7942,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5113,
+      "routeKind": "search"
     },
     {
       "id": "q068",
@@ -1016,9 +1016,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 9587,
-      "routeKind": "index"
+      "actualLatencyMs": 3,
+      "contextChars": 3458,
+      "routeKind": "search"
     },
     {
       "id": "q069",
@@ -1029,7 +1029,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 6594,
       "routeKind": "index"
     },
@@ -1042,7 +1042,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 7943,
       "routeKind": "chunk"
     },
@@ -1069,8 +1069,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 2,
-      "contextChars": 7762,
-      "routeKind": "chunk"
+      "contextChars": 4652,
+      "routeKind": "search"
     },
     {
       "id": "q073",
@@ -1081,9 +1081,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
-      "contextChars": 7820,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4692,
+      "routeKind": "search"
     },
     {
       "id": "q074",
@@ -1094,9 +1094,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 7433,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 4857,
+      "routeKind": "search"
     },
     {
       "id": "q075",
@@ -1120,9 +1120,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 11158,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 4321,
+      "routeKind": "search"
     },
     {
       "id": "q077",
@@ -1133,9 +1133,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 7719,
-      "routeKind": "chunk"
+      "actualLatencyMs": 5,
+      "contextChars": 4728,
+      "routeKind": "search"
     },
     {
       "id": "q078",
@@ -1159,7 +1159,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 2101,
       "routeKind": "index"
     },
@@ -1172,9 +1172,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 8112,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4365,
+      "routeKind": "search"
     },
     {
       "id": "q081",
@@ -1185,9 +1185,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 7137,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 4133,
+      "routeKind": "search"
     },
     {
       "id": "q082",
@@ -1198,9 +1198,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7141,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4137,
+      "routeKind": "search"
     },
     {
       "id": "q083",
@@ -1211,9 +1211,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 7139,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 4135,
+      "routeKind": "search"
     },
     {
       "id": "q084",
@@ -1224,9 +1224,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7141,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4137,
+      "routeKind": "search"
     },
     {
       "id": "q085",
@@ -1237,7 +1237,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 7509,
       "routeKind": "index"
     },
@@ -1250,9 +1250,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 7141,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 4137,
+      "routeKind": "search"
     },
     {
       "id": "q087",
@@ -1263,9 +1263,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 10031,
-      "routeKind": "index"
+      "actualLatencyMs": 1,
+      "contextChars": 4808,
+      "routeKind": "search"
     },
     {
       "id": "q088",
@@ -1289,7 +1289,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 7148,
       "routeKind": "chunk"
     },
@@ -1302,9 +1302,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
-      "contextChars": 7085,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 3727,
+      "routeKind": "search"
     },
     {
       "id": "q091",
@@ -1316,8 +1316,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 1,
-      "contextChars": 7126,
-      "routeKind": "chunk"
+      "contextChars": 4809,
+      "routeKind": "search"
     },
     {
       "id": "q092",
@@ -1328,9 +1328,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
-      "contextChars": 7150,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 3061,
+      "routeKind": "search"
     },
     {
       "id": "q093",
@@ -1341,9 +1341,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 7301,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4277,
+      "routeKind": "search"
     },
     {
       "id": "q094",
@@ -1354,7 +1354,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 3,
       "contextChars": 11290,
       "routeKind": "index"
     },
@@ -1367,9 +1367,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 8431,
-      "routeKind": "index"
+      "actualLatencyMs": 3,
+      "contextChars": 3875,
+      "routeKind": "search"
     },
     {
       "id": "q096",
@@ -1380,9 +1380,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 7291,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4328,
+      "routeKind": "search"
     },
     {
       "id": "q097",
@@ -1393,7 +1393,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 2778,
       "routeKind": "index"
     },
@@ -1419,9 +1419,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
-      "contextChars": 7448,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4114,
+      "routeKind": "search"
     },
     {
       "id": "q100",
@@ -1432,9 +1432,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7345,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4568,
+      "routeKind": "search"
     },
     {
       "id": "q101",
@@ -1445,9 +1445,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7349,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4572,
+      "routeKind": "search"
     },
     {
       "id": "q102",
@@ -1458,9 +1458,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 7347,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 4570,
+      "routeKind": "search"
     },
     {
       "id": "q103",
@@ -1471,9 +1471,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7349,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4572,
+      "routeKind": "search"
     },
     {
       "id": "q104",
@@ -1497,9 +1497,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 7347,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4570,
+      "routeKind": "search"
     },
     {
       "id": "q106",
@@ -1510,9 +1510,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 10462,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 4509,
+      "routeKind": "search"
     },
     {
       "id": "q107",
@@ -1523,7 +1523,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 5,
       "contextChars": 10232,
       "routeKind": "index"
     },
@@ -1536,7 +1536,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
+      "actualLatencyMs": 3,
       "contextChars": 7409,
       "routeKind": "chunk"
     },
@@ -1550,8 +1550,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 1,
-      "contextChars": 7549,
-      "routeKind": "chunk"
+      "contextChars": 4685,
+      "routeKind": "search"
     },
     {
       "id": "q110",
@@ -1562,9 +1562,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 7375,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4327,
+      "routeKind": "search"
     },
     {
       "id": "q111",
@@ -1575,9 +1575,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
-      "contextChars": 7449,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 3697,
+      "routeKind": "search"
     },
     {
       "id": "q112",
@@ -1588,9 +1588,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 7421,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 4732,
+      "routeKind": "search"
     },
     {
       "id": "q113",
@@ -1601,7 +1601,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 8,
       "contextChars": 10906,
       "routeKind": "index"
     },
@@ -1614,9 +1614,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 10571,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 4139,
+      "routeKind": "search"
     },
     {
       "id": "q115",
@@ -1627,9 +1627,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 7465,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4537,
+      "routeKind": "search"
     },
     {
       "id": "q116",
@@ -1653,7 +1653,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 2796,
       "routeKind": "index"
     },
@@ -1666,9 +1666,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 7643,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4467,
+      "routeKind": "search"
     },
     {
       "id": "q119",
@@ -1679,9 +1679,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 9128,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 6556,
+      "routeKind": "search"
     },
     {
       "id": "q120",
@@ -1692,9 +1692,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 9132,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 6560,
+      "routeKind": "search"
     },
     {
       "id": "q121",
@@ -1705,9 +1705,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 9132,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 6560,
+      "routeKind": "search"
     },
     {
       "id": "q122",
@@ -1718,9 +1718,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 9132,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 6560,
+      "routeKind": "search"
     },
     {
       "id": "q123",
@@ -1744,9 +1744,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 11,
-      "contextChars": 9029,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 6642,
+      "routeKind": "search"
     },
     {
       "id": "q125",
@@ -1757,9 +1757,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 13,
-      "contextChars": 11540,
-      "routeKind": "index"
+      "actualLatencyMs": 5,
+      "contextChars": 6278,
+      "routeKind": "search"
     },
     {
       "id": "q126",
@@ -1770,7 +1770,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 7,
       "contextChars": 9486,
       "routeKind": "index"
     },
@@ -1783,9 +1783,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
-      "contextChars": 9065,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 4462,
+      "routeKind": "search"
     },
     {
       "id": "q128",
@@ -1796,9 +1796,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 9149,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 6236,
+      "routeKind": "search"
     },
     {
       "id": "q129",
@@ -1809,9 +1809,9 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "model",
-      "actualLatencyMs": 15,
-      "contextChars": 10400,
-      "routeKind": "index"
+      "actualLatencyMs": 5,
+      "contextChars": 6088,
+      "routeKind": "search"
     },
     {
       "id": "q130",
@@ -1822,9 +1822,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 8,
-      "contextChars": 9128,
-      "routeKind": "chunk"
+      "actualLatencyMs": 5,
+      "contextChars": 6260,
+      "routeKind": "search"
     },
     {
       "id": "q131",
@@ -1835,9 +1835,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 9,
-      "contextChars": 9039,
-      "routeKind": "chunk"
+      "actualLatencyMs": 6,
+      "contextChars": 6262,
+      "routeKind": "search"
     },
     {
       "id": "q132",
@@ -1848,9 +1848,9 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 15,
-      "contextChars": 13683,
-      "routeKind": "index"
+      "actualLatencyMs": 8,
+      "contextChars": 5939,
+      "routeKind": "search"
     },
     {
       "id": "q133",
@@ -1861,9 +1861,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 14,
-      "contextChars": 10631,
-      "routeKind": "index"
+      "actualLatencyMs": 7,
+      "contextChars": 6271,
+      "routeKind": "search"
     },
     {
       "id": "q134",
@@ -1874,9 +1874,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 10,
-      "contextChars": 9126,
-      "routeKind": "chunk"
+      "actualLatencyMs": 6,
+      "contextChars": 5753,
+      "routeKind": "search"
     },
     {
       "id": "q135",
@@ -1900,7 +1900,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 12,
+      "actualLatencyMs": 11,
       "contextChars": 5462,
       "routeKind": "index"
     },
@@ -1913,9 +1913,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 9,
-      "contextChars": 8896,
-      "routeKind": "chunk"
+      "actualLatencyMs": 7,
+      "contextChars": 6643,
+      "routeKind": "search"
     },
     {
       "id": "q138",
@@ -1926,9 +1926,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8410,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5820,
+      "routeKind": "search"
     },
     {
       "id": "q139",
@@ -1940,8 +1940,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 2,
-      "contextChars": 8414,
-      "routeKind": "chunk"
+      "contextChars": 5824,
+      "routeKind": "search"
     },
     {
       "id": "q140",
@@ -1952,9 +1952,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8414,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5824,
+      "routeKind": "search"
     },
     {
       "id": "q141",
@@ -1965,9 +1965,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8414,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 5824,
+      "routeKind": "search"
     },
     {
       "id": "q142",
@@ -1991,9 +1991,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8327,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5754,
+      "routeKind": "search"
     },
     {
       "id": "q144",
@@ -2004,9 +2004,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 11968,
-      "routeKind": "index"
+      "actualLatencyMs": 3,
+      "contextChars": 5755,
+      "routeKind": "search"
     },
     {
       "id": "q145",
@@ -2017,7 +2017,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 9500,
       "routeKind": "index"
     },
@@ -2030,9 +2030,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 8583,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4696,
+      "routeKind": "search"
     },
     {
       "id": "q147",
@@ -2043,9 +2043,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 8294,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 3740,
+      "routeKind": "search"
     },
     {
       "id": "q148",
@@ -2056,9 +2056,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 8465,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 5059,
+      "routeKind": "search"
     },
     {
       "id": "q149",
@@ -2069,9 +2069,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 8473,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 5538,
+      "routeKind": "search"
     },
     {
       "id": "q150",
@@ -2082,9 +2082,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 8584,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 5794,
+      "routeKind": "search"
     },
     {
       "id": "q151",
@@ -2095,7 +2095,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 9,
+      "actualLatencyMs": 7,
       "contextChars": 10059,
       "routeKind": "index"
     },
@@ -2108,9 +2108,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 11657,
-      "routeKind": "index"
+      "actualLatencyMs": 3,
+      "contextChars": 5381,
+      "routeKind": "search"
     },
     {
       "id": "q153",
@@ -2121,9 +2121,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 8355,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 5440,
+      "routeKind": "search"
     },
     {
       "id": "q154",
@@ -2134,7 +2134,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 7,
+      "actualLatencyMs": 6,
       "contextChars": 8249,
       "routeKind": "index"
     },
@@ -2147,7 +2147,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 4246,
       "routeKind": "index"
     },
@@ -2160,9 +2160,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 8270,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 5257,
+      "routeKind": "search"
     },
     {
       "id": "q157",
@@ -2173,9 +2173,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8397,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 6008,
+      "routeKind": "search"
     },
     {
       "id": "q158",
@@ -2187,8 +2187,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 3,
-      "contextChars": 8401,
-      "routeKind": "chunk"
+      "contextChars": 6012,
+      "routeKind": "search"
     },
     {
       "id": "q159",
@@ -2199,9 +2199,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8399,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 6010,
+      "routeKind": "search"
     },
     {
       "id": "q160",
@@ -2212,9 +2212,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 7,
-      "contextChars": 8401,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 6012,
+      "routeKind": "search"
     },
     {
       "id": "q161",
@@ -2238,9 +2238,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 8421,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5976,
+      "routeKind": "search"
     },
     {
       "id": "q163",
@@ -2251,9 +2251,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 12,
-      "contextChars": 14272,
-      "routeKind": "index"
+      "actualLatencyMs": 9,
+      "contextChars": 6074,
+      "routeKind": "search"
     },
     {
       "id": "q164",
@@ -2264,7 +2264,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 17,
+      "actualLatencyMs": 11,
       "contextChars": 14554,
       "routeKind": "index"
     },
@@ -2277,7 +2277,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
+      "actualLatencyMs": 4,
       "contextChars": 8321,
       "routeKind": "chunk"
     },
@@ -2303,7 +2303,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 4,
       "contextChars": 8582,
       "routeKind": "chunk"
     },
@@ -2316,9 +2316,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 8323,
-      "routeKind": "chunk"
+      "actualLatencyMs": 7,
+      "contextChars": 5237,
+      "routeKind": "search"
     },
     {
       "id": "q169",
@@ -2329,9 +2329,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 8336,
-      "routeKind": "chunk"
+      "actualLatencyMs": 5,
+      "contextChars": 5736,
+      "routeKind": "search"
     },
     {
       "id": "q170",
@@ -2342,7 +2342,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 18,
+      "actualLatencyMs": 14,
       "contextChars": 6224,
       "routeKind": "index"
     },
@@ -2355,9 +2355,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 13,
-      "contextChars": 14689,
-      "routeKind": "index"
+      "actualLatencyMs": 4,
+      "contextChars": 5266,
+      "routeKind": "search"
     },
     {
       "id": "q172",
@@ -2368,9 +2368,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
-      "contextChars": 8347,
-      "routeKind": "chunk"
+      "actualLatencyMs": 5,
+      "contextChars": 4063,
+      "routeKind": "search"
     },
     {
       "id": "q173",
@@ -2381,7 +2381,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 3414,
       "routeKind": "index"
     },
@@ -2394,7 +2394,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 7411,
       "routeKind": "chunk"
     },
@@ -2408,8 +2408,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 7,
-      "contextChars": 8478,
-      "routeKind": "chunk"
+      "contextChars": 5304,
+      "routeKind": "search"
     },
     {
       "id": "q176",
@@ -2421,8 +2421,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 1,
-      "contextChars": 8477,
-      "routeKind": "chunk"
+      "contextChars": 6000,
+      "routeKind": "search"
     },
     {
       "id": "q177",
@@ -2434,8 +2434,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 1,
-      "contextChars": 8479,
-      "routeKind": "chunk"
+      "contextChars": 6002,
+      "routeKind": "search"
     },
     {
       "id": "q178",
@@ -2447,8 +2447,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 0,
-      "contextChars": 8479,
-      "routeKind": "chunk"
+      "contextChars": 6002,
+      "routeKind": "search"
     },
     {
       "id": "q179",
@@ -2459,9 +2459,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 8479,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 6002,
+      "routeKind": "search"
     },
     {
       "id": "q180",
@@ -2485,9 +2485,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 8479,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 6002,
+      "routeKind": "search"
     },
     {
       "id": "q182",
@@ -2498,9 +2498,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 12998,
-      "routeKind": "index"
+      "actualLatencyMs": 1,
+      "contextChars": 6000,
+      "routeKind": "search"
     },
     {
       "id": "q183",
@@ -2524,9 +2524,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 8386,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 3204,
+      "routeKind": "search"
     },
     {
       "id": "q185",
@@ -2551,8 +2551,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 1,
-      "contextChars": 8466,
-      "routeKind": "chunk"
+      "contextChars": 4714,
+      "routeKind": "search"
     },
     {
       "id": "q187",
@@ -2563,9 +2563,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
-      "contextChars": 8246,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 3847,
+      "routeKind": "search"
     },
     {
       "id": "q188",
@@ -2576,9 +2576,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 2,
-      "contextChars": 8401,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 5796,
+      "routeKind": "search"
     },
     {
       "id": "q189",
@@ -2589,7 +2589,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 5,
       "contextChars": 11769,
       "routeKind": "index"
     },
@@ -2602,9 +2602,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8573,
-      "routeKind": "index"
+      "actualLatencyMs": 1,
+      "contextChars": 5860,
+      "routeKind": "search"
     },
     {
       "id": "q191",
@@ -2628,7 +2628,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 2,
       "contextChars": 8130,
       "routeKind": "index"
     },
@@ -2641,7 +2641,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 4838,
       "routeKind": "index"
     },
@@ -2655,8 +2655,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 2,
-      "contextChars": 8384,
-      "routeKind": "chunk"
+      "contextChars": 2980,
+      "routeKind": "search"
     },
     {
       "id": "q195",
@@ -2668,8 +2668,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 1,
-      "contextChars": 8918,
-      "routeKind": "chunk"
+      "contextChars": 6446,
+      "routeKind": "search"
     },
     {
       "id": "q196",
@@ -2680,9 +2680,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8922,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 6450,
+      "routeKind": "search"
     },
     {
       "id": "q197",
@@ -2693,9 +2693,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8920,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 6448,
+      "routeKind": "search"
     },
     {
       "id": "q198",
@@ -2706,9 +2706,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8922,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 6450,
+      "routeKind": "search"
     },
     {
       "id": "q199",
@@ -2733,8 +2733,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 1,
-      "contextChars": 8920,
-      "routeKind": "chunk"
+      "contextChars": 6448,
+      "routeKind": "search"
     },
     {
       "id": "q201",
@@ -2745,9 +2745,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 11766,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 5807,
+      "routeKind": "search"
     },
     {
       "id": "q202",
@@ -2771,7 +2771,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 2,
       "contextChars": 9029,
       "routeKind": "chunk"
     },
@@ -2785,8 +2785,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 2,
-      "contextChars": 8971,
-      "routeKind": "chunk"
+      "contextChars": 3741,
+      "routeKind": "search"
     },
     {
       "id": "q205",
@@ -2797,9 +2797,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 8926,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5027,
+      "routeKind": "search"
     },
     {
       "id": "q206",
@@ -2810,9 +2810,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 9031,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 5845,
+      "routeKind": "search"
     },
     {
       "id": "q207",
@@ -2823,9 +2823,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 9071,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 6080,
+      "routeKind": "search"
     },
     {
       "id": "q208",
@@ -2836,7 +2836,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 9,
       "contextChars": 6238,
       "routeKind": "index"
     },
@@ -2849,9 +2849,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 5,
-      "contextChars": 10947,
-      "routeKind": "index"
+      "actualLatencyMs": 3,
+      "contextChars": 6323,
+      "routeKind": "search"
     },
     {
       "id": "q210",
@@ -2862,9 +2862,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 9084,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 6087,
+      "routeKind": "search"
     },
     {
       "id": "q211",
@@ -2901,9 +2901,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 8894,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 5025,
+      "routeKind": "search"
     },
     {
       "id": "q214",
@@ -2914,9 +2914,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8148,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5460,
+      "routeKind": "search"
     },
     {
       "id": "q215",
@@ -2928,8 +2928,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 3,
-      "contextChars": 8152,
-      "routeKind": "chunk"
+      "contextChars": 5464,
+      "routeKind": "search"
     },
     {
       "id": "q216",
@@ -2940,9 +2940,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8152,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 5464,
+      "routeKind": "search"
     },
     {
       "id": "q217",
@@ -2953,9 +2953,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8152,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5464,
+      "routeKind": "search"
     },
     {
       "id": "q218",
@@ -2966,7 +2966,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 3887,
       "routeKind": "index"
     },
@@ -2979,9 +2979,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8152,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 5464,
+      "routeKind": "search"
     },
     {
       "id": "q220",
@@ -2992,9 +2992,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 8,
-      "contextChars": 7703,
-      "routeKind": "index"
+      "actualLatencyMs": 3,
+      "contextChars": 5831,
+      "routeKind": "search"
     },
     {
       "id": "q221",
@@ -3005,7 +3005,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 4,
       "contextChars": 6418,
       "routeKind": "index"
     },
@@ -3031,9 +3031,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
-      "contextChars": 8339,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 5979,
+      "routeKind": "search"
     },
     {
       "id": "q224",
@@ -3044,9 +3044,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 8605,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 4859,
+      "routeKind": "search"
     },
     {
       "id": "q225",
@@ -3057,9 +3057,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 8637,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 5357,
+      "routeKind": "search"
     },
     {
       "id": "q226",
@@ -3070,9 +3070,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 8545,
-      "routeKind": "chunk"
+      "actualLatencyMs": 4,
+      "contextChars": 5234,
+      "routeKind": "search"
     },
     {
       "id": "q227",
@@ -3083,9 +3083,9 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 9,
-      "contextChars": 10590,
-      "routeKind": "index"
+      "actualLatencyMs": 5,
+      "contextChars": 5602,
+      "routeKind": "search"
     },
     {
       "id": "q228",
@@ -3096,9 +3096,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 6,
-      "contextChars": 9787,
-      "routeKind": "index"
+      "actualLatencyMs": 5,
+      "contextChars": 5043,
+      "routeKind": "search"
     },
     {
       "id": "q229",
@@ -3109,9 +3109,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 8674,
-      "routeKind": "chunk"
+      "actualLatencyMs": 4,
+      "contextChars": 5475,
+      "routeKind": "search"
     },
     {
       "id": "q230",
@@ -3122,7 +3122,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
+      "actualLatencyMs": 3,
       "contextChars": 6299,
       "routeKind": "index"
     },
@@ -3148,9 +3148,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 8396,
-      "routeKind": "chunk"
+      "actualLatencyMs": 8,
+      "contextChars": 5964,
+      "routeKind": "search"
     },
     {
       "id": "q233",
@@ -3161,9 +3161,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8682,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 6230,
+      "routeKind": "search"
     },
     {
       "id": "q234",
@@ -3175,8 +3175,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 3,
-      "contextChars": 8686,
-      "routeKind": "chunk"
+      "contextChars": 6234,
+      "routeKind": "search"
     },
     {
       "id": "q235",
@@ -3187,9 +3187,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 8686,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 6234,
+      "routeKind": "search"
     },
     {
       "id": "q236",
@@ -3200,9 +3200,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8686,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 6234,
+      "routeKind": "search"
     },
     {
       "id": "q237",
@@ -3226,9 +3226,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8684,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 6232,
+      "routeKind": "search"
     },
     {
       "id": "q239",
@@ -3239,9 +3239,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 11,
-      "contextChars": 11678,
-      "routeKind": "index"
+      "actualLatencyMs": 5,
+      "contextChars": 6178,
+      "routeKind": "search"
     },
     {
       "id": "q240",
@@ -3252,7 +3252,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 6,
+      "actualLatencyMs": 4,
       "contextChars": 8510,
       "routeKind": "index"
     },
@@ -3265,7 +3265,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 4,
       "contextChars": 8625,
       "routeKind": "chunk"
     },
@@ -3278,9 +3278,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 4,
-      "contextChars": 8624,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 5552,
+      "routeKind": "search"
     },
     {
       "id": "q243",
@@ -3291,9 +3291,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 8422,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 5756,
+      "routeKind": "search"
     },
     {
       "id": "q244",
@@ -3304,9 +3304,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 8663,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 5988,
+      "routeKind": "search"
     },
     {
       "id": "q245",
@@ -3317,9 +3317,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 8,
-      "contextChars": 8517,
-      "routeKind": "chunk"
+      "actualLatencyMs": 4,
+      "contextChars": 5571,
+      "routeKind": "search"
     },
     {
       "id": "q246",
@@ -3330,7 +3330,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 18,
+      "actualLatencyMs": 15,
       "contextChars": 8947,
       "routeKind": "index"
     },
@@ -3343,9 +3343,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 10,
-      "contextChars": 10506,
-      "routeKind": "index"
+      "actualLatencyMs": 4,
+      "contextChars": 5839,
+      "routeKind": "search"
     },
     {
       "id": "q248",
@@ -3356,9 +3356,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 9,
-      "contextChars": 8620,
-      "routeKind": "chunk"
+      "actualLatencyMs": 7,
+      "contextChars": 5508,
+      "routeKind": "search"
     },
     {
       "id": "q249",
@@ -3369,7 +3369,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 10,
+      "actualLatencyMs": 9,
       "contextChars": 8941,
       "routeKind": "index"
     },
@@ -3395,9 +3395,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 8608,
-      "routeKind": "chunk"
+      "actualLatencyMs": 7,
+      "contextChars": 5893,
+      "routeKind": "search"
     },
     {
       "id": "q252",
@@ -3409,8 +3409,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 0,
-      "contextChars": 2500,
-      "routeKind": "chunk"
+      "contextChars": 878,
+      "routeKind": "search"
     },
     {
       "id": "q253",
@@ -3421,9 +3421,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 2502,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 880,
+      "routeKind": "search"
     },
     {
       "id": "q254",
@@ -3435,8 +3435,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 0,
-      "contextChars": 2500,
-      "routeKind": "chunk"
+      "contextChars": 878,
+      "routeKind": "search"
     },
     {
       "id": "q255",
@@ -3447,9 +3447,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 2500,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 878,
+      "routeKind": "search"
     },
     {
       "id": "q256",
@@ -3473,7 +3473,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 2505,
       "routeKind": "chunk"
     },
@@ -3486,7 +3486,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 2499,
       "routeKind": "chunk"
     },
@@ -3538,7 +3538,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 4178,
       "routeKind": "index"
     },
@@ -3551,9 +3551,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
-      "contextChars": 4055,
-      "routeKind": "index"
+      "actualLatencyMs": 1,
+      "contextChars": 1500,
+      "routeKind": "search"
     },
     {
       "id": "q264",
@@ -3577,7 +3577,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 2538,
       "routeKind": "chunk"
     },
@@ -3590,9 +3590,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 8416,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5680,
+      "routeKind": "search"
     },
     {
       "id": "q267",
@@ -3603,9 +3603,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8420,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 5684,
+      "routeKind": "search"
     },
     {
       "id": "q268",
@@ -3616,9 +3616,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 8418,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 5682,
+      "routeKind": "search"
     },
     {
       "id": "q269",
@@ -3629,9 +3629,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 2,
-      "contextChars": 8420,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 5684,
+      "routeKind": "search"
     },
     {
       "id": "q270",
@@ -3655,9 +3655,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 8420,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 5684,
+      "routeKind": "search"
     },
     {
       "id": "q272",
@@ -3668,9 +3668,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 12,
-      "contextChars": 11826,
-      "routeKind": "index"
+      "actualLatencyMs": 5,
+      "contextChars": 4978,
+      "routeKind": "search"
     },
     {
       "id": "q273",
@@ -3681,7 +3681,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 14,
+      "actualLatencyMs": 12,
       "contextChars": 12253,
       "routeKind": "index"
     },
@@ -3694,7 +3694,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
+      "actualLatencyMs": 5,
       "contextChars": 8404,
       "routeKind": "chunk"
     },
@@ -3708,8 +3708,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 4,
-      "contextChars": 8356,
-      "routeKind": "chunk"
+      "contextChars": 5102,
+      "routeKind": "search"
     },
     {
       "id": "q276",
@@ -3720,9 +3720,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 5,
-      "contextChars": 8514,
-      "routeKind": "chunk"
+      "actualLatencyMs": 6,
+      "contextChars": 4723,
+      "routeKind": "search"
     },
     {
       "id": "q277",
@@ -3733,9 +3733,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
-      "contextChars": 8406,
-      "routeKind": "chunk"
+      "actualLatencyMs": 5,
+      "contextChars": 4727,
+      "routeKind": "search"
     },
     {
       "id": "q278",
@@ -3747,8 +3747,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 7,
-      "contextChars": 8426,
-      "routeKind": "chunk"
+      "contextChars": 5786,
+      "routeKind": "search"
     },
     {
       "id": "q279",
@@ -3773,8 +3773,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 10,
-      "contextChars": 13721,
-      "routeKind": "index"
+      "contextChars": 5221,
+      "routeKind": "search"
     },
     {
       "id": "q281",
@@ -3785,9 +3785,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 8,
-      "contextChars": 8430,
-      "routeKind": "chunk"
+      "actualLatencyMs": 7,
+      "contextChars": 4959,
+      "routeKind": "search"
     },
     {
       "id": "q282",
@@ -3824,9 +3824,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 7,
-      "contextChars": 8395,
-      "routeKind": "chunk"
+      "actualLatencyMs": 6,
+      "contextChars": 4758,
+      "routeKind": "search"
     },
     {
       "id": "q285",
@@ -3837,9 +3837,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 3999,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 1753,
+      "routeKind": "search"
     },
     {
       "id": "q286",
@@ -3851,8 +3851,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 1,
-      "contextChars": 4001,
-      "routeKind": "chunk"
+      "contextChars": 1755,
+      "routeKind": "search"
     },
     {
       "id": "q287",
@@ -3864,8 +3864,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 0,
-      "contextChars": 3999,
-      "routeKind": "chunk"
+      "contextChars": 1753,
+      "routeKind": "search"
     },
     {
       "id": "q288",
@@ -3876,9 +3876,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 3999,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 1753,
+      "routeKind": "search"
     },
     {
       "id": "q289",
@@ -3889,7 +3889,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 2777,
       "routeKind": "index"
     },
@@ -3902,7 +3902,7 @@
       "routingMatch": false,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 3051,
       "routeKind": "index"
     },
@@ -3915,7 +3915,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4004,
       "routeKind": "chunk"
     },
@@ -3928,7 +3928,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 3998,
       "routeKind": "chunk"
     },
@@ -3981,8 +3981,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 1,
-      "contextChars": 5991,
-      "routeKind": "index"
+      "contextChars": 2583,
+      "routeKind": "search"
     },
     {
       "id": "q297",
@@ -3994,8 +3994,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 0,
-      "contextChars": 4030,
-      "routeKind": "chunk"
+      "contextChars": 1467,
+      "routeKind": "search"
     },
     {
       "id": "q298",
@@ -4020,8 +4020,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 0,
-      "contextChars": 4792,
-      "routeKind": "chunk"
+      "contextChars": 2860,
+      "routeKind": "search"
     },
     {
       "id": "q300",
@@ -4032,9 +4032,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 4794,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 2862,
+      "routeKind": "search"
     },
     {
       "id": "q301",
@@ -4045,9 +4045,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 4792,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 2860,
+      "routeKind": "search"
     },
     {
       "id": "q302",
@@ -4058,9 +4058,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
-      "contextChars": 4794,
-      "routeKind": "chunk"
+      "actualLatencyMs": 0,
+      "contextChars": 2862,
+      "routeKind": "search"
     },
     {
       "id": "q303",
@@ -4071,7 +4071,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 5450,
       "routeKind": "index"
     },
@@ -4084,7 +4084,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 4745,
       "routeKind": "index"
     },
@@ -4097,7 +4097,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4797,
       "routeKind": "chunk"
     },
@@ -4123,7 +4123,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4781,
       "routeKind": "chunk"
     },
@@ -4150,8 +4150,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 0,
-      "contextChars": 5764,
-      "routeKind": "chunk"
+      "contextChars": 2045,
+      "routeKind": "search"
     },
     {
       "id": "q310",
@@ -4176,8 +4176,8 @@
       "deterministic": true,
       "expectedLatency": "instant",
       "actualLatencyMs": 0,
-      "contextChars": 8032,
-      "routeKind": "index"
+      "contextChars": 3729,
+      "routeKind": "search"
     },
     {
       "id": "q312",
@@ -4188,7 +4188,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 3,
       "contextChars": 4823,
       "routeKind": "chunk"
     },
@@ -4201,7 +4201,7 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 0,
+      "actualLatencyMs": 1,
       "contextChars": 4884,
       "routeKind": "chunk"
     },
@@ -4214,7 +4214,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 5,
+      "actualLatencyMs": 6,
       "contextChars": 8383,
       "routeKind": "metric"
     },
@@ -4266,9 +4266,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 4,
-      "contextChars": 10017,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 2236,
+      "routeKind": "search"
     },
     {
       "id": "q319",
@@ -4279,7 +4279,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "fast",
-      "actualLatencyMs": 8,
+      "actualLatencyMs": 7,
       "contextChars": 11649,
       "routeKind": "index"
     },
@@ -4292,7 +4292,7 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 1,
+      "actualLatencyMs": 0,
       "contextChars": 1442,
       "routeKind": "model"
     },
@@ -4305,9 +4305,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 3,
-      "contextChars": 7706,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 4503,
+      "routeKind": "search"
     },
     {
       "id": "q322",
@@ -4318,9 +4318,9 @@
       "routingMatch": true,
       "deterministic": true,
       "expectedLatency": "instant",
-      "actualLatencyMs": 4,
-      "contextChars": 14767,
-      "routeKind": "index"
+      "actualLatencyMs": 2,
+      "contextChars": 6013,
+      "routeKind": "search"
     },
     {
       "id": "q323",
@@ -4331,9 +4331,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 8,
-      "contextChars": 7640,
-      "routeKind": "chunk"
+      "actualLatencyMs": 5,
+      "contextChars": 5063,
+      "routeKind": "search"
     },
     {
       "id": "q324",
@@ -4344,9 +4344,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 7936,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4695,
+      "routeKind": "search"
     },
     {
       "id": "q325",
@@ -4357,9 +4357,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 8420,
-      "routeKind": "chunk"
+      "actualLatencyMs": 1,
+      "contextChars": 3622,
+      "routeKind": "search"
     },
     {
       "id": "q326",
@@ -4370,9 +4370,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 7543,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 4675,
+      "routeKind": "search"
     },
     {
       "id": "q327",
@@ -4383,9 +4383,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 3,
-      "contextChars": 7561,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 4777,
+      "routeKind": "search"
     },
     {
       "id": "q328",
@@ -4397,8 +4397,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 7,
-      "contextChars": 9136,
-      "routeKind": "chunk"
+      "contextChars": 6159,
+      "routeKind": "search"
     },
     {
       "id": "q329",
@@ -4409,9 +4409,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 9,
-      "contextChars": 7310,
-      "routeKind": "chunk"
+      "actualLatencyMs": 4,
+      "contextChars": 4879,
+      "routeKind": "search"
     },
     {
       "id": "q330",
@@ -4422,9 +4422,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 1,
-      "contextChars": 8338,
-      "routeKind": "chunk"
+      "actualLatencyMs": 2,
+      "contextChars": 3823,
+      "routeKind": "search"
     },
     {
       "id": "q331",
@@ -4435,9 +4435,9 @@
       "routingMatch": true,
       "deterministic": false,
       "expectedLatency": "model",
-      "actualLatencyMs": 6,
-      "contextChars": 8428,
-      "routeKind": "chunk"
+      "actualLatencyMs": 3,
+      "contextChars": 4059,
+      "routeKind": "search"
     },
     {
       "id": "q332",
@@ -4449,8 +4449,8 @@
       "deterministic": false,
       "expectedLatency": "model",
       "actualLatencyMs": 3,
-      "contextChars": 7440,
-      "routeKind": "chunk"
+      "contextChars": 4091,
+      "routeKind": "search"
     }
   ],
   "errors": []
