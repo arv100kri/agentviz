@@ -2109,9 +2109,9 @@ function determineSessionQAProgramFamily(questionProfile, metricMatch) {
       intent: "error-diagnosis",
       routePreference: "index",
       canAnswerFromFactStore: true,
-      deterministic: false,
-      needsModel: true,
-      raceEligible: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
     };
   }
 
