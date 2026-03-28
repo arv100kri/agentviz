@@ -1493,9 +1493,18 @@ export function createServer({ sessionFile, distDir }) {
                 force: true,
               });
             }
-            // Start SDK import in parallel with prompt building for model-required questions
+            // Only offer raw file access to the model when retrieval came up short.
+            // When search/index/chunk retrieval found good matches, the model should
+            // answer from the provided context without scanning the raw JSONL file
+            // (which can take 3+ minutes on large sessions).
+            var promptSessionFilePath = null;
+            if (route && (route.kind === "raw-full" || route.kind === "raw-targeted")) {
+              promptSessionFilePath = sessionFilePath;
+            } else if (!route || route.kind === "model") {
+              promptSessionFilePath = sessionFilePath;
+            }
             var sdkImportPromise = import("@github/copilot-sdk");
-            prompt = buildQAPrompt(question, context, { sessionFilePath: sessionFilePath });
+            prompt = buildQAPrompt(question, context, { sessionFilePath: promptSessionFilePath });
             sendProgress("retrieving-context", {
               detail: route && route.kind !== "model"
                 ? route.detail + " " + describeQAContextRetrieval(resolvedSession)
