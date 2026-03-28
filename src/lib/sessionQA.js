@@ -3853,16 +3853,19 @@ export function buildQAPrompt(question, context, options) {
   system += "Do NOT attempt to access external data sources. " +
     "If the answer is not in the provided session data, say so.\n\n" +
     "When referencing specific moments, cite turn numbers like [Turn 3]. " +
-    "Keep answers concise and factual. Use markdown formatting.\n\n" +
+    "Keep answers concise and factual. Use markdown formatting. " +
+    "Aim for 2-4 paragraph answers unless the question requires more detail.\n\n" +
     "If the relevant answer is already present in SESSION DATA, answer directly and do NOT " +
     "inspect the raw file or request NEED_DETAIL. Do not request extra detail just to confirm " +
-    "an answer that the retrieved evidence already supports.\n\n" +
+    "an answer that the retrieved evidence already supports. " +
+    "Prefer answering from the provided summary data over requesting raw details.\n\n" +
     "IMPORTANT: If the tool output shown is truncated (ends with '...') and you need " +
     "the full output to answer the question, respond ONLY with one or more lines like:\n" +
     "[NEED_DETAIL: Turn 5, powershell]\n" +
     "[NEED_DETAIL: Turn 12, kusto]\n" +
     "The system will automatically fetch the full data and ask you again. " +
-    "Only request details you actually need to answer the question.";
+    "Only request details you actually need to answer the question. " +
+    "Request at most 2 detail fetches per answer.";
 
   var user = "";
   if (sessionFilePath) {
