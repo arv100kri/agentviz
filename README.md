@@ -4,7 +4,7 @@
 
 **See what your AI agents actually do.**
 
-Drop a Claude Code or Copilot CLI session file and explore the agent's reasoning, tool calls, turn flow, and output through replay, tracks, waterfall, graph, and stats views. Or run it from the CLI for a live view that updates as your session unfolds.
+Drop a Claude Code or Copilot CLI session file and explore the agent's reasoning, tool calls, turn flow, and output through replay, tracks, waterfall, graph, stats, and Q&A views. Or run it from the CLI for a live view that updates as your session unfolds.
 
 [![CI](https://github.com/jayparikh/agentviz/actions/workflows/ci.yml/badge.svg)](https://github.com/jayparikh/agentviz/actions/workflows/ci.yml)
 ![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
@@ -15,7 +15,7 @@ Drop a Claude Code or Copilot CLI session file and explore the agent's reasoning
 
 <img src="docs/screenshots/session-hero.svg" alt="AGENTVIZ session views" width="800" />
 
-*Move between replay, tracks, waterfall, graph, and stats views to inspect the same session from different angles.*
+*Move between replay, tracks, waterfall, graph, stats, and Q&A views to inspect the same session from different angles.*
 
 </div>
 
@@ -34,6 +34,7 @@ AI coding agents (Claude Code, Copilot CLI, etc.) generate dense session logs, b
 - **Export CLI digests and stats** for post-mortems, sharing, and automation
 - **Discover sessions** automatically from the Copilot CLI session store
 - **Get AI coaching** on prompt engineering, skills, and MCP setup grounded in best practices
+- **Ask questions** about any session in natural language and get answers grounded in session data
 
 ## Quick Start
 
@@ -258,6 +259,10 @@ AI-powered session coaching available directly from any session. The coach reads
 <img src="docs/screenshots/coach-view.svg" alt="Coach View" width="800" />
 </div>
 
+### Q&A View
+
+Ask natural-language questions about any loaded session and get answers grounded in the session data. The Q&A engine uses precomputed session artifacts, a SQLite fact store for deterministic lookups, and query-aware retrieval to answer questions about turns, tools, errors, files, and overall session flow. Answers include clickable turn references that jump directly to the relevant point in the session. Requires the CLI server for model-backed answers.
+
 ### More Features
 
 | Feature | Description |
@@ -278,6 +283,7 @@ AI-powered session coaching available directly from any session. The coach reads
 | **CLI Digests and Stats** | Generate markdown digests and machine-readable JSON telemetry from the command line without opening the browser. |
 | **Inbox Auto-discovery** | Automatically finds recent Copilot CLI sessions and ranks them by review priority. |
 | **AI Coach** | Agentic analysis powered by Copilot SDK. Recommends prompts, skills, and MCP config with one-click apply. |
+| **Session Q&A** | Ask natural-language questions about any session. Answers are grounded in session data with clickable turn references. Uses precomputed artifacts, a SQLite fact store, and query-aware retrieval. |
 | **Autonomy Metrics** | Measures human response time, idle gaps, and intervention frequency per session. |
 
 ## Keyboard Shortcuts
@@ -286,7 +292,7 @@ AI-powered session coaching available directly from any session. The coach reads
 |-----|--------|
 | `Space` | Play / Pause |
 | `Left` / `Right` | Seek 2 seconds |
-| `1` / `2` / `3` / `4` / `5` | Switch view (Replay / Tracks / Waterfall / Graph / Stats) |
+| `1` / `2` / `3` / `4` / `5` / `6` | Switch view (Replay / Tracks / Waterfall / Graph / Stats / Q&A) |
 | `/` | Focus search |
 | `E` / `Shift+E` | Next / Previous error |
 | `Cmd+K` | Command palette |
@@ -318,6 +324,7 @@ src/
     useDiscoveredSessions.js # Auto-discovery of Copilot CLI sessions via /api/sessions
     useHashRouter.js     # Hash-based routing between inbox and session views
     useAsyncStatus.js    # Async operation state machine (idle/loading/success/error)
+    useSessionQA.js      # Session Q&A conversation state, persistence, and streaming
   lib/
     cliArgs.js          # CLI flag parsing and mode resolution
     parseSession.ts      # Auto-detect format router
@@ -340,6 +347,8 @@ src/
     waterfall.ts         # Waterfall view helpers: item building, stats, layout
     graphLayout.js       # ELKjs graph builder and layout merger for Graph view
     pricing.js           # Claude model pricing table and cost estimation
+    sessionQA.js         # Session Q&A helpers: context building, routing, chunk scoring
+    sessionQAFactStore.js # SQLite fact store for deterministic Q&A lookups
     exportHtml.js        # Self-contained HTML export for single sessions and comparisons
     formatTime.js        # Duration and date formatting utilities
     playbackUtils.js     # Playback state helpers
@@ -351,6 +360,7 @@ src/
     WaterfallView.jsx    # Tool execution waterfall with nesting and inspector
     GraphView.jsx        # Interactive turn graph with expandable tool-call nodes
     StatsView.jsx        # Aggregate metrics and tool ranking
+    QAView.jsx           # AI-powered Session Q&A panel with suggested questions
     CompareView.jsx      # Side-by-side session comparison (Scorecard + Tools tabs)
     CommandPalette.jsx   # Cmd+K fuzzy search overlay
     Timeline.jsx         # Scrubable playback bar with event markers

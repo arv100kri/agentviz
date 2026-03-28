@@ -895,7 +895,7 @@ Two loading patterns exist:
 |-----|--------|
 | `Space` | Play / Pause |
 | `ArrowRight` / `ArrowLeft` | Seek forward / back 2s |
-| `1` - `5` | Switch view (Replay, Tracks, Waterfall, Graph, Stats) |
+| `1` - `6` | Switch view (Replay, Tracks, Waterfall, Graph, Stats, Q&A) |
 | `e` / `E` | Jump to next / previous error |
 | `/` | Focus search input |
 | `Cmd+K` / `Ctrl+K` | Open command palette |
