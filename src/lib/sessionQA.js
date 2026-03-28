@@ -49,7 +49,8 @@ var QUESTION_STOP_WORDS = buildLookup([
 ]);
 var BROAD_SUMMARY_TERMS = buildLookup([
   "approach", "overall", "summary", "summarize", "recap", "timeline", "story",
-  "happened", "doing", "did", "goal", "intent",
+  "happened", "doing", "did", "goal", "intent", "strategy", "plan", "methodology",
+  "accomplish", "accomplished", "achieve", "achieved",
 ]);
 var EARLY_SESSION_TERMS = buildLookup(["first", "early", "initially", "start", "started", "began", "beginning", "initial", "opening"]);
 var LATE_SESSION_TERMS = buildLookup(["last", "final", "end", "ended", "eventually", "concluded", "outcome", "result", "finish", "finished", "closing"]);
@@ -67,7 +68,7 @@ var COMMAND_STOP_WORDS = buildLookup([
   "turn", "turns",
 ]);
 var TOOL_HINT_TERMS = buildLookup([
-  "tool", "tools", "used", "usage", "call", "calls",
+  "tool", "tools", "usage", "call", "calls",
 ]);
 var PATH_HINT_TERMS = buildLookup([
   "file", "files", "path", "paths", "read", "view", "edit", "edited", "modify", "modified", "write", "wrote", "diff",
@@ -1456,6 +1457,7 @@ function buildSessionMetricCatalog(events, turns, metadata, options) {
 
   return {
     duration: safeMetadata.duration != null ? Number(safeMetadata.duration) || 0 : 0,
+    totalEvents: safeMetadata.totalEvents != null ? Number(safeMetadata.totalEvents) || 0 : safeEvents.length,
     totalTurns: safeMetadata.totalTurns != null ? Number(safeMetadata.totalTurns) || 0 : safeTurns.length,
     totalToolCalls: safeMetadata.totalToolCalls != null ? Number(safeMetadata.totalToolCalls) || 0 : ledger.length,
     errorCount: safeMetadata.errorCount != null ? Number(safeMetadata.errorCount) || 0 : (stats.errorList || []).length,
@@ -1855,6 +1857,15 @@ function buildMetricQuestionMatch(questionProfile, metricCatalog) {
     };
   }
 
+  if (normalizedQuestion.indexOf("event") !== -1 && hasAnyTerm(normalizedQuestion, ["how many", "total", "number of", "count"])) {
+    return {
+      key: "total-events",
+      answer: "The session has " + formatMetricCount(metricCatalog.totalEvents || 0, "event") + ".",
+      references: [],
+      detail: "Matched the total event count from the precomputed metrics catalog.",
+    };
+  }
+
   if (normalizedQuestion.indexOf("error") !== -1 && hasAnyTerm(normalizedQuestion, ["how many", "total", "number of", "count"])) {
     return {
       key: "error-count",
@@ -2002,7 +2013,7 @@ function buildSessionQAQueryProgramSlots(questionProfile, metricMatch) {
   var turnHints = Array.isArray(safeProfile.turnHints)
     ? safeProfile.turnHints
       .map(function (value) { return Number(value); })
-      .filter(function (value) { return Number.isFinite(value) && value >= 0; })
+      .filter(function (value) { return Number.isFinite(value) && value >= -1; })
       .sort(function (left, right) { return left - right; })
     : [];
 
@@ -2046,7 +2057,8 @@ function determineSessionQAProgramFamily(questionProfile, metricMatch) {
       !(questionProfile.wantsPaths && (!questionProfile.pathTerms || questionProfile.pathTerms.length === 0) && questionProfile.matchers.length === 0) &&
       !(questionProfile.wantsErrors && questionProfile.matchers.length === 0 && (!questionProfile.pathTerms || questionProfile.pathTerms.length === 0)) &&
       !((questionProfile.wantsCommands || questionProfile.wantsQueries) && questionProfile.matchers.length === 0 && (!questionProfile.commandTerms || questionProfile.commandTerms.length === 0) && (!questionProfile.queryTerms || questionProfile.queryTerms.length === 0)) &&
-      !(questionProfile.matchedToolNames && questionProfile.matchedToolNames.length > 0)) {
+      !(questionProfile.matchedToolNames && questionProfile.matchedToolNames.length > 0) &&
+      !(questionProfile.pathTerms && questionProfile.pathTerms.length > 0 && questionProfile.matchers.length > 0 && questionProfile.matchers.every(function (m) { return m.scopes.indexOf("path") !== -1 || m.scopes.indexOf("query") !== -1; }))) {
     return {
       family: "exact-raw-evidence",
       intent: "exact-evidence",
@@ -2620,6 +2632,16 @@ function extractQuestionTurnHints(question) {
   while ((match = regex.exec(question)) !== null) {
     pushUniqueValue(turnHints, String(parseInt(match[1], 10)));
   }
+
+  // Detect symbolic turn references: "first turn", "last turn"
+  var lower = question.toLowerCase();
+  if (/\b(first|initial|opening)\s+turn\b/.test(lower)) {
+    pushUniqueValue(turnHints, "0");
+  }
+  if (/\b(last|final|closing)\s+turn\b/.test(lower)) {
+    pushUniqueValue(turnHints, "-1");
+  }
+
   return turnHints.map(function (value) { return parseInt(value, 10); });
 }
 

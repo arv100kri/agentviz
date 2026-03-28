@@ -302,7 +302,7 @@ validProfiles.forEach(function (session) {
       difficulty: "very-hard",
       sessionId: session.fullId,
       sessionLabel: session.label,
-      expectedFamily: "broad-synthesis",
+      expectedFamily: "session-summary",
       expectedLatency: "model",
       goldenAnswer: {
         text: "The agent performed this action around turn " + midMessage.turnIndex + " because of prior context in the session.",
@@ -335,7 +335,7 @@ validProfiles.forEach(function (session) {
     difficulty: "very-hard",
     sessionId: session.fullId,
     sessionLabel: session.label,
-    expectedFamily: "broad-synthesis",
+    expectedFamily: "session-summary",
     expectedLatency: "model",
     goldenAnswer: {
       text: "With " + pluralize(session.errorCount, "error") + " and " + pluralize(turnCount, "turn") + ", potential efficiency improvements could include reducing error-retry cycles and consolidating tool calls.",
@@ -425,7 +425,7 @@ validProfiles.forEach(function (session) {
       difficulty: "very-hard",
       sessionId: session.fullId,
       sessionLabel: session.label,
-      expectedFamily: "broad-synthesis",
+      expectedFamily: "session-summary",
       expectedLatency: "model",
       goldenAnswer: {
         text: "The error in turn " + session.errorTurns[0] + " led to subsequent actions in the session.",

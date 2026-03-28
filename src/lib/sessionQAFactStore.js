@@ -656,6 +656,11 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
 
     if (queryProgram.family === "turn-lookup" && queryProgram.slots.turnHints.length > 0) {
       var turnIndex = queryProgram.slots.turnHints[0];
+      // Resolve symbolic turn hints: -1 means "last turn"
+      if (turnIndex === -1) {
+        var resolvedMax = loadMaxTurnIndex(db);
+        turnIndex = resolvedMax !== null ? resolvedMax : 0;
+      }
       var turnRow = loadTurnSummary(db, turnIndex);
       if (!turnRow) {
         var maxTurn = loadMaxTurnIndex(db);
