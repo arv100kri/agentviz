@@ -578,15 +578,36 @@ function buildErrorSummaryContext(db, program) {
 }
 
 function buildChunkSummaryContext(db, heading, whereClause, params) {
+  var totalChunks = db.prepare("SELECT COUNT(*) AS cnt FROM summary_chunks").get();
+  var chunkCount = totalChunks ? Number(totalChunks.cnt) : 0;
+  
+  // Select chunks from diverse positions: first, middle, and last
+  var limit = Math.min(chunkCount, 4);
   var statement = db.prepare(
     "SELECT start_turn, end_turn, summary FROM summary_chunks " +
     (whereClause ? ("WHERE " + whereClause + " ") : "") +
-    "ORDER BY chunk_index LIMIT 4"
+    "ORDER BY chunk_index LIMIT ?"
   );
-  var rows = statement.all.apply(statement, params || []);
+  var rows = statement.all.apply(statement, (params || []).concat([limit]));
   if (!rows || rows.length === 0) return null;
 
+  // Add session metrics preamble for richer context
+  var metricRows = db.prepare("SELECT metric_key, numeric_value, text_value FROM session_metrics WHERE metric_key IN ('totalTurns', 'totalToolCalls', 'errorCount', 'duration') LIMIT 4").all();
+  var metricMap = {};
+  for (var mi = 0; mi < metricRows.length; mi++) {
+    metricMap[metricRows[mi].metric_key] = metricRows[mi].numeric_value != null ? metricRows[mi].numeric_value : metricRows[mi].text_value;
+  }
+
   var lines = [heading];
+  if (Object.keys(metricMap).length > 0) {
+    var metricParts = [];
+    if (metricMap.totalTurns != null) metricParts.push(pluralize(metricMap.totalTurns, "turn"));
+    if (metricMap.totalToolCalls != null) metricParts.push(pluralize(metricMap.totalToolCalls, "tool call"));
+    if (metricMap.errorCount != null) metricParts.push(pluralize(metricMap.errorCount, "error"));
+    if (metricMap.duration != null) metricParts.push(formatDuration(metricMap.duration));
+    if (metricParts.length > 0) lines.push("Session: " + metricParts.join(", "));
+  }
+
   for (var index = 0; index < rows.length; index += 1) {
     lines.push(
       "- Turns " + rows[index].start_turn + "-" + rows[index].end_turn + ": " +
