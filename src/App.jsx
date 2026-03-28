@@ -110,6 +110,7 @@ function renderActiveView(activeView, props) {
         turns={props.session.turns}
         metadata={props.session.metadata}
         sessionFilePath={props.session.filePath}
+        rawText={props.session.getRawText ? props.session.getRawText() : ""}
         onSeekTurn={props.playback.seek}
         onSetView={props.onSetView}
       />
@@ -258,7 +259,14 @@ export default function App() {
 
   // Switch Q&A conversation when a different session is loaded
   useEffect(function () {
-    if (qaSessionDescriptor.key) qa.switchSession(qaSessionDescriptor.key, qaSessionDescriptor.aliases);
+    if (!qaSessionDescriptor.key) return;
+    qa.switchSession(qaSessionDescriptor.key, qaSessionDescriptor.aliases, {
+      events: session.events || [],
+      turns: session.turns || [],
+      metadata: session.metadata || null,
+      sessionFilePath: session.filePath || null,
+      rawText: session.filePath ? null : rawSessionText,
+    });
   }, [qa.switchSession, qaSessionDescriptor]);
 
   useEffect(function () {

@@ -7,6 +7,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { theme, alpha } from "../lib/theme.js";
+import { formatDuration } from "../lib/formatTime.js";
 import Icon from "./Icon.jsx";
 
 var SUGGESTED_QUESTIONS = [
@@ -35,6 +36,35 @@ function parseTurnReferences(text) {
   return parts;
 }
 
+function formatAnswerTiming(timing) {
+  var totalMs = timing && timing.totalMs;
+  var numericTotalMs = typeof totalMs === "number" ? totalMs : Number(totalMs);
+  if (!Number.isFinite(numericTotalMs) || numericTotalMs <= 0) return null;
+  return "Answered in " + formatDuration(numericTotalMs / 1000);
+}
+
+function sanitizeElapsedMs(value) {
+  var numericValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numericValue) || numericValue < 0) return null;
+  return Math.round(numericValue);
+}
+
+function getLiveLoadingElapsedMs(qa, nowMs) {
+  var elapsedMs = sanitizeElapsedMs(qa && qa.loadingElapsedMs);
+  var startedAtMs = sanitizeElapsedMs(qa && qa.loadingStartedAtMs);
+  if (startedAtMs !== null) {
+    var liveElapsedMs = Math.max(0, nowMs - startedAtMs);
+    elapsedMs = elapsedMs === null ? liveElapsedMs : Math.max(elapsedMs, liveElapsedMs);
+  }
+  return elapsedMs;
+}
+
+function formatLoadingElapsed(elapsedMs) {
+  var safeElapsedMs = sanitizeElapsedMs(elapsedMs);
+  if (safeElapsedMs === null) return null;
+  return "Elapsed " + formatDuration(Math.max(1, safeElapsedMs) / 1000);
+}
+
 var AVAILABLE_MODELS = [
   { id: "gpt-5.4", label: "GPT-5.4" },
   { id: "gpt-5.4-mini", label: "GPT-5.4 mini" },
@@ -57,8 +87,9 @@ var AVAILABLE_MODELS = [
 
 var DEFAULT_MODEL = "gpt-5.4";
 
-export default function QAView({ qa, events, turns, metadata, sessionFilePath, onSeekTurn, onSetView }) {
+export default function QAView({ qa, events, turns, metadata, sessionFilePath, rawText, onSeekTurn, onSetView }) {
   var [input, setInput] = useState("");
+  var [loadingNowMs, setLoadingNowMs] = useState(function () { return Date.now(); });
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
 
@@ -72,15 +103,26 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, o
     if (inputRef.current) inputRef.current.focus();
   }, []);
 
+  useEffect(function () {
+    if (!qa.loading) return;
+    setLoadingNowMs(Date.now());
+    var intervalId = setInterval(function () {
+      setLoadingNowMs(Date.now());
+    }, 250);
+    return function () {
+      clearInterval(intervalId);
+    };
+  }, [qa.loading, qa.loadingStartedAtMs]);
+
   function handleSubmit(e) {
     if (e) e.preventDefault();
     if (!input.trim()) return;
-    qa.askQuestion(input.trim(), events, turns, metadata, qa.selectedModel, sessionFilePath);
+    qa.askQuestion(input.trim(), events, turns, metadata, qa.selectedModel, sessionFilePath, rawText);
     setInput("");
   }
 
   function handleSuggestion(q) {
-    qa.askQuestion(q, events, turns, metadata, qa.selectedModel, sessionFilePath);
+    qa.askQuestion(q, events, turns, metadata, qa.selectedModel, sessionFilePath, rawText);
   }
 
   function handleTurnClick(turnIndex) {
@@ -183,6 +225,13 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, o
     wordBreak: "break-word",
   };
 
+  var assistantMetaStyle = {
+    marginTop: theme.space.sm + "px",
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.font.mono,
+    color: theme.text.dim,
+  };
+
   var turnRefStyle = {
     display: "inline",
     color: theme.accent.primary,
@@ -207,12 +256,24 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, o
   var loadingTitleStyle = {
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
-    fontStyle: "italic",
+    fontWeight: 600,
+    color: theme.text.primary,
+    lineHeight: 1.5,
+  };
+
+  var loadingDetailStyle = {
+    marginTop: 4,
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.font.mono,
+    color: theme.text.secondary,
     lineHeight: 1.5,
   };
 
   var loadingMetaStyle = {
     marginTop: 4,
+    display: "flex",
+    flexWrap: "wrap",
+    gap: theme.space.md + "px",
     fontSize: theme.fontSize.xs,
     fontFamily: theme.font.mono,
     color: theme.text.dim,
@@ -309,6 +370,8 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, o
 
   var hasMessages = qa.messages.length > 0;
   var loadingLabel = qa.loadingLabel || "Working on your question...";
+  var loadingDetail = qa.loadingDetail || null;
+  var loadingElapsedLabel = formatLoadingElapsed(getLiveLoadingElapsedMs(qa, loadingNowMs));
 
   var modelSelectStyle = {
     background: theme.bg.base,
@@ -387,6 +450,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, o
           }
           if (!msg.content) return null;
           var parts = parseTurnReferences(msg.content);
+          var timingLabel = formatAnswerTiming(msg.timing);
           return (
             <div key={i} style={assistantMsgStyle}>
               {parts.map(function (part, pi) {
@@ -404,6 +468,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, o
                 }
                 return <span key={pi}>{part.value}</span>;
               })}
+              {timingLabel && <div style={assistantMetaStyle}>{timingLabel}</div>}
             </div>
           );
         })}
@@ -413,9 +478,15 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, o
             <Icon name="hourglass" size={14} style={{ marginTop: 1, flexShrink: 0 }} />
             <div>
               <div style={loadingTitleStyle}>{loadingLabel}</div>
-              {qa.queuedCount > 0 && (
+              {loadingDetail && <div style={loadingDetailStyle}>{loadingDetail}</div>}
+              {(loadingElapsedLabel || qa.queuedCount > 0) && (
                 <div style={loadingMetaStyle}>
-                  {qa.queuedCount} queued {qa.queuedCount === 1 ? "message" : "messages"} behind this answer
+                  {loadingElapsedLabel && <span>{loadingElapsedLabel}</span>}
+                  {qa.queuedCount > 0 && (
+                    <span>
+                      {qa.queuedCount} queued {qa.queuedCount === 1 ? "message" : "messages"} behind this answer
+                    </span>
+                  )}
                 </div>
               )}
             </div>

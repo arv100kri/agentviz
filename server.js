@@ -12,7 +12,14 @@ import os from "os";
 import path from "path";
 import url from "url";
 import { runCoachAgent } from "./src/lib/aiCoachAgent.js";
-import { buildQAContext, buildQAPrompt } from "./src/lib/sessionQA.js";
+import {
+  buildQAContext,
+  buildQAPrompt,
+  buildRawJsonlRecordIndex,
+  buildSessionQAArtifacts,
+  routeSessionQAQuestion,
+  scanRawJsonlQuestionMatches,
+} from "./src/lib/sessionQA.js";
 var MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
@@ -67,6 +74,13 @@ export function getSessionQAHistoryFilePath(homeDir) {
   return path.join(homeDir || os.homedir(), ".agentviz", "session-qa-history.json");
 }
 
+export function sanitizeSessionQATiming(timing) {
+  var totalMs = timing && timing.totalMs;
+  var numericTotalMs = typeof totalMs === "number" ? totalMs : Number(totalMs);
+  if (!Number.isFinite(numericTotalMs) || numericTotalMs < 0) return null;
+  return { totalMs: Math.round(numericTotalMs) };
+}
+
 export function sanitizeSessionQAMessages(messages) {
   return Array.isArray(messages) ? messages
     .filter(function (message) {
@@ -75,11 +89,14 @@ export function sanitizeSessionQAMessages(messages) {
         (message.content || message.role !== "assistant");
     })
     .map(function (message) {
-      return {
+      var sanitizedMessage = {
         role: message.role,
         content: message.content,
         references: Array.isArray(message.references) ? message.references : [],
       };
+      var timing = sanitizeSessionQATiming(message.timing);
+      if (timing) sanitizedMessage.timing = timing;
+      return sanitizedMessage;
     }) : [];
 }
 
@@ -136,6 +153,274 @@ export function removeSessionQAHistoryEntry(filePath, sessionKey, fsModule) {
   return true;
 }
 
+function hashText(text) {
+  var value = 0;
+  var source = text || "";
+
+  for (var index = 0; index < source.length; index += 1) {
+    value = ((value << 5) - value + source.charCodeAt(index)) | 0;
+  }
+
+  return String(Math.abs(value));
+}
+
+function cloneJsonValue(value) {
+  if (value == null) return value;
+  return JSON.parse(JSON.stringify(value));
+}
+
+export function getSessionQAPrecomputeCacheDir(homeDir) {
+  return path.join(homeDir || os.homedir(), ".agentviz", "session-qa-cache");
+}
+
+export function getSessionQASidecarFilePath(sessionFilePath) {
+  if (!sessionFilePath) return null;
+  var ext = path.extname(sessionFilePath);
+  if (ext.toLowerCase() === ".jsonl") {
+    return sessionFilePath.slice(0, sessionFilePath.length - ext.length) + ".agentviz-qa.json";
+  }
+  return sessionFilePath + ".agentviz-qa.json";
+}
+
+function getManagedSessionQAPrecomputePath(fingerprint, homeDir) {
+  return path.join(getSessionQAPrecomputeCacheDir(homeDir), "session-" + hashText(fingerprint) + ".json");
+}
+
+export function readSessionQAPrecompute(filePath, fsModule) {
+  if (!filePath) return null;
+  var targetFs = fsModule || fs;
+  try {
+    var raw = targetFs.readFileSync(filePath, "utf8");
+    var parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed;
+  } catch (error) {
+    return null;
+  }
+}
+
+export function writeSessionQAPrecompute(filePath, record, fsModule) {
+  if (!filePath || !record) return false;
+  var targetFs = fsModule || fs;
+  try {
+    targetFs.mkdirSync(path.dirname(filePath), { recursive: true });
+    targetFs.writeFileSync(filePath, JSON.stringify(record, null, 2), "utf8");
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function getSessionQARawText(entry, fsModule) {
+  if (entry && typeof entry.rawText === "string") return entry.rawText;
+  if (!entry || !entry.sessionFilePath) return "";
+  var targetFs = fsModule || fs;
+  try {
+    return targetFs.readFileSync(entry.sessionFilePath, "utf8");
+  } catch (error) {
+    return "";
+  }
+}
+
+function sanitizePersistedSessionQAArtifacts(artifacts, options) {
+  var cloned = cloneJsonValue(artifacts);
+  var opts = options && typeof options === "object" ? options : {};
+  if (!cloned || typeof cloned !== "object") return null;
+
+  if (cloned.rawLookup) {
+    if (!opts.includeRawText) cloned.rawLookup.rawText = "";
+    cloned.rawLookup.rawIndex = null;
+  }
+
+  if (cloned.rawIndex && !opts.includeRawText) {
+    cloned.rawIndex = null;
+  }
+
+  return cloned;
+}
+
+function hydratePersistedSessionQAArtifacts(artifacts, rawText) {
+  var cloned = cloneJsonValue(artifacts);
+  if (!cloned || typeof cloned !== "object") return null;
+  if (rawText && cloned.rawLookup && !cloned.rawLookup.rawText) cloned.rawLookup.rawText = rawText;
+  if (rawText && cloned.rawIndex && !cloned.rawIndex.rawText) cloned.rawIndex.rawText = rawText;
+  return cloned;
+}
+
+export function buildSessionQAPrecomputeFingerprint(entry, fsModule) {
+  var targetFs = fsModule || fs;
+  var events = Array.isArray(entry && entry.events) ? entry.events : [];
+  var turns = Array.isArray(entry && entry.turns) ? entry.turns : [];
+  var metadata = entry && entry.metadata && typeof entry.metadata === "object" ? entry.metadata : {};
+  var lastEvent = events.length > 0 ? events[events.length - 1] : null;
+  var rawText = entry && typeof entry.rawText === "string" ? entry.rawText : "";
+  var fileStat = "";
+
+  if (!rawText && entry && entry.sessionFilePath) {
+    try {
+      var stat = targetFs.statSync(entry.sessionFilePath);
+      fileStat = [stat.size, Math.round(stat.mtimeMs)].join("|");
+    } catch (error) {}
+  }
+
+  return [
+    entry && entry.sessionFilePath ? String(entry.sessionFilePath).toLowerCase() : "",
+    rawText ? [rawText.length, hashText(rawText)].join(":") : "",
+    events.length,
+    turns.length,
+    lastEvent && lastEvent.t != null ? lastEvent.t : "",
+    lastEvent && lastEvent.toolName ? lastEvent.toolName : "",
+    metadata.totalEvents != null ? metadata.totalEvents : "",
+    metadata.totalTurns != null ? metadata.totalTurns : "",
+    metadata.totalToolCalls != null ? metadata.totalToolCalls : "",
+    metadata.errorCount != null ? metadata.errorCount : "",
+    metadata.duration != null ? metadata.duration : "",
+    fileStat,
+  ].join("|");
+}
+
+export function buildSessionQAPrecomputeEntry(entry, options) {
+  var opts = options && typeof options === "object" ? options : {};
+  var targetFs = opts.fsModule || fs;
+  var fingerprint = buildSessionQAPrecomputeFingerprint(entry, targetFs);
+  var rawText = getSessionQARawText(entry, targetFs);
+  var includeRawText = !entry || !entry.sessionFilePath;
+  var candidatePaths = [];
+  var sidecarPath = entry && entry.sessionFilePath ? getSessionQASidecarFilePath(entry.sessionFilePath) : null;
+  var managedPath = getManagedSessionQAPrecomputePath(fingerprint, opts.homeDir);
+  if (sidecarPath) candidatePaths.push({ path: sidecarPath, storage: "sidecar" });
+  candidatePaths.push({ path: managedPath, storage: "managed" });
+
+  for (var candidateIndex = 0; candidateIndex < candidatePaths.length; candidateIndex++) {
+    var existing = readSessionQAPrecompute(candidatePaths[candidateIndex].path, targetFs);
+    if (!existing || existing.fingerprint !== fingerprint || !existing.artifacts) continue;
+    return {
+      fingerprint: fingerprint,
+      storage: candidatePaths[candidateIndex].storage,
+      path: candidatePaths[candidateIndex].path,
+      builtAt: existing.builtAt || existing.updatedAt || null,
+      reused: true,
+      artifacts: hydratePersistedSessionQAArtifacts(existing.artifacts, rawText),
+      rawText: rawText || null,
+    };
+  }
+
+  var artifactOptions = rawText ? { rawText: rawText } : null;
+  var artifacts = buildSessionQAArtifacts(entry && entry.events, entry && entry.turns, entry && entry.metadata, artifactOptions);
+  var builtAt = new Date().toISOString();
+  var record = {
+    version: 1,
+    fingerprint: fingerprint,
+    builtAt: builtAt,
+    sessionFilePath: entry && entry.sessionFilePath ? String(entry.sessionFilePath) : null,
+    artifacts: sanitizePersistedSessionQAArtifacts(artifacts, { includeRawText: includeRawText }),
+  };
+  var persistedStorage = "memory";
+  var persistedPath = null;
+
+  for (var writeIndex = 0; writeIndex < candidatePaths.length; writeIndex++) {
+    if (!writeSessionQAPrecompute(candidatePaths[writeIndex].path, record, targetFs)) continue;
+    persistedStorage = candidatePaths[writeIndex].storage;
+    persistedPath = candidatePaths[writeIndex].path;
+    break;
+  }
+
+  return {
+    fingerprint: fingerprint,
+    storage: persistedStorage,
+    path: persistedPath,
+    builtAt: builtAt,
+    reused: false,
+    artifacts: artifacts,
+    rawText: rawText || null,
+  };
+}
+
+export function ensureSessionQAPrecomputed(entry, options) {
+  if (!entry || typeof entry !== "object") return null;
+  var opts = options && typeof options === "object" ? options : {};
+  var targetFs = opts.fsModule || fs;
+  var fingerprint = buildSessionQAPrecomputeFingerprint(entry, targetFs);
+  if (entry.precomputed && entry.precomputed.fingerprint === fingerprint && entry.precomputed.artifacts) {
+    return entry.precomputed;
+  }
+  var built = buildSessionQAPrecomputeEntry(entry, opts);
+  entry.precomputed = built;
+  if (!entry.questionCache || entry.questionCacheFingerprint !== built.fingerprint) {
+    entry.questionCache = {};
+    entry.questionCacheFingerprint = built.fingerprint;
+  }
+  return built;
+}
+
+export function createSessionQACacheStore() {
+  return new Map();
+}
+
+export function sanitizeSessionQACacheEntry(entry) {
+  return {
+    events: Array.isArray(entry && entry.events) ? entry.events.slice() : [],
+    turns: Array.isArray(entry && entry.turns) ? entry.turns.slice() : [],
+    metadata: entry && entry.metadata && typeof entry.metadata === "object"
+      ? Object.assign({}, entry.metadata)
+      : {},
+    sessionFilePath: entry && entry.sessionFilePath ? String(entry.sessionFilePath) : null,
+    rawText: entry && typeof entry.rawText === "string" ? entry.rawText : null,
+    precomputed: entry && entry.precomputed ? entry.precomputed : null,
+    questionCache: entry && entry.questionCache && typeof entry.questionCache === "object"
+      ? entry.questionCache
+      : {},
+    questionCacheFingerprint: entry && entry.questionCacheFingerprint ? String(entry.questionCacheFingerprint) : null,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function getSessionQACacheEntry(cache, sessionKey) {
+  if (!cache || !sessionKey) return null;
+  return cache.get(String(sessionKey)) || null;
+}
+
+export function saveSessionQACacheEntry(cache, sessionKey, entry) {
+  if (!cache || !sessionKey) return null;
+  var existing = cache.get(String(sessionKey)) || null;
+  var saved = sanitizeSessionQACacheEntry(entry);
+  if (existing && existing.precomputed && !saved.precomputed) saved.precomputed = existing.precomputed;
+  if (existing && existing.questionCache && Object.keys(existing.questionCache).length > 0) {
+    saved.questionCache = existing.questionCache;
+    if (!saved.questionCacheFingerprint && existing.questionCacheFingerprint) {
+      saved.questionCacheFingerprint = existing.questionCacheFingerprint;
+    }
+  }
+  cache.set(String(sessionKey), saved);
+  return saved;
+}
+
+export function removeSessionQACacheEntry(cache, sessionKey) {
+  if (!cache || !sessionKey) return false;
+  return cache.delete(String(sessionKey));
+}
+
+function hasInlineSessionQAArtifacts(payload) {
+  if (!payload || typeof payload !== "object") return false;
+  if (Array.isArray(payload.events)) return true;
+  if (Array.isArray(payload.turns)) return true;
+  if (payload.metadata && typeof payload.metadata === "object") return true;
+  return Boolean(payload.sessionFilePath);
+}
+
+export function resolveSessionQAArtifacts(cache, payload) {
+  var sessionKey = payload && payload.sessionKey ? String(payload.sessionKey) : null;
+  var cached = sessionKey ? getSessionQACacheEntry(cache, sessionKey) : null;
+  if (cached) {
+    return Object.assign({ sessionKey: sessionKey, source: "cache" }, cached);
+  }
+  if (!hasInlineSessionQAArtifacts(payload)) return null;
+  var inlineEntry = sessionKey
+    ? saveSessionQACacheEntry(cache, sessionKey, payload)
+    : sanitizeSessionQACacheEntry(payload);
+  return Object.assign({ sessionKey: sessionKey, source: "inline" }, inlineEntry);
+}
+
 export function getQAEventText(data, isDelta) {
   if (!data) return "";
   if (isDelta && typeof data.deltaContent === "string") return data.deltaContent;
@@ -153,6 +438,24 @@ export function getQAEventText(data, isDelta) {
   }
   if (typeof data.deltaContent === "string") return data.deltaContent;
   return "";
+}
+
+export function buildQATiming(startedAtMs, completedAtMs) {
+  var start = typeof startedAtMs === "number" ? startedAtMs : Number(startedAtMs);
+  var end = typeof completedAtMs === "number" ? completedAtMs : Number(completedAtMs);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return { totalMs: 0 };
+  return { totalMs: Math.max(0, Math.round(end - start)) };
+}
+
+export function buildQADonePayload(answer, references, modelLabel, qaSessionId, startedAtMs, completedAtMs) {
+  return {
+    done: true,
+    answer: answer,
+    references: references,
+    model: modelLabel,
+    qaSessionId: qaSessionId,
+    timing: buildQATiming(startedAtMs, completedAtMs),
+  };
 }
 
 export function getQAToolName(data) {
@@ -179,6 +482,86 @@ export function describeQAToolStatus(toolName, phase) {
   return phase === "complete" ? "Analyzing " + name + " results..." : "Running " + name + "...";
 }
 
+function sanitizeQAElapsedMs(value) {
+  var numericValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numericValue) || numericValue < 0) return null;
+  return Math.round(numericValue);
+}
+
+function formatQACount(value, singular, plural) {
+  var numericValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numericValue) || numericValue < 0) return null;
+  var roundedValue = Math.round(numericValue);
+  return roundedValue.toLocaleString() + " " + (roundedValue === 1 ? singular : (plural || singular + "s"));
+}
+
+function describeQAContextPreparation(events, turns, metadata) {
+  var safeMetadata = metadata && typeof metadata === "object" ? metadata : {};
+  var eventCount = safeMetadata.totalEvents != null ? safeMetadata.totalEvents : (Array.isArray(events) ? events.length : 0);
+  var turnCount = safeMetadata.totalTurns != null ? safeMetadata.totalTurns : (Array.isArray(turns) ? turns.length : 0);
+  var eventLabel = formatQACount(eventCount, "event");
+  var turnLabel = formatQACount(turnCount, "turn");
+  if (eventLabel && turnLabel) return "Reviewing " + eventLabel + " across " + turnLabel + ".";
+  if (eventLabel) return "Reviewing " + eventLabel + ".";
+  if (turnLabel) return "Reviewing " + turnLabel + ".";
+  return "Reviewing the loaded session.";
+}
+
+function describeQAContextRetrieval(resolvedSession) {
+  if (!resolvedSession || typeof resolvedSession !== "object") return null;
+  var source = resolvedSession.source === "cache"
+    ? "Using the cached session snapshot."
+    : "Using the session data from this request.";
+  if (!resolvedSession.sessionFilePath) return source;
+  return source + " Raw session file access is available if the model needs exact output.";
+}
+
+function describeQAToolDetail(toolName) {
+  var name = String(toolName || "").trim();
+  return name ? "Tool: " + name : null;
+}
+
+export function getQAProgressStatus(phase, options) {
+  var opts = options && typeof options === "object" ? options : {};
+  if (opts.status) return String(opts.status);
+  if (phase === "tool-running") return describeQAToolStatus(opts.toolName, "start");
+  if (phase === "tool-finished") return describeQAToolStatus(opts.toolName, "complete");
+  if (phase === "precomputing-session") return "Building session index...";
+  if (phase === "using-precomputed-metrics") return "Using precomputed metrics...";
+  if (phase === "searching-index") return "Searching tool and query index...";
+  if (phase === "scanning-summary-chunks") return "Scanning summary chunks...";
+  if (phase === "reading-targeted-raw") return "Reading targeted raw JSONL slices...";
+  if (phase === "reading-full-raw") return "Reading full raw JSONL...";
+  if (phase === "preparing-context") return "Preparing session context...";
+  if (phase === "retrieving-context") return "Retrieving session context...";
+  if (phase === "resuming-session") return "Resuming previous Q&A session...";
+  if (phase === "starting-session") return "Starting Q&A session...";
+  if (phase === "waiting-for-model") return "Waiting for model response...";
+  if (phase === "thinking") return "Thinking through the session...";
+  if (phase === "detail-fetch") return "Fetching detailed tool output...";
+  if (phase === "streaming-answer") return "Streaming answer...";
+  return "Working on your question...";
+}
+
+export function buildQAProgressPayload(phase, options) {
+  var opts = options && typeof options === "object" ? options : {};
+  var payload = {
+    status: getQAProgressStatus(phase, opts),
+  };
+  if (phase) payload.phase = phase;
+
+  var detail = typeof opts.detail === "string" ? opts.detail.trim() : "";
+  if (!detail && (phase === "tool-running" || phase === "tool-finished")) {
+    detail = describeQAToolDetail(opts.toolName) || "";
+  }
+  if (detail) payload.detail = detail;
+
+  var elapsedMs = sanitizeQAElapsedMs(opts.elapsedMs);
+  if (elapsedMs !== null) payload.elapsedMs = elapsedMs;
+  if (opts.heartbeat) payload.heartbeat = true;
+  return payload;
+}
+
 function serveStatic(res, filePath) {
   try {
     var data = fs.readFileSync(filePath);
@@ -197,6 +580,7 @@ export function createServer({ sessionFile, distDir }) {
   var watcher = null;
   var watcherClosed = false;
   var pollInterval = null;
+  var sessionQACache = createSessionQACacheStore();
 
   function broadcastNewLines() {
     if (!sessionFile || clients.size === 0) return;
@@ -519,14 +903,117 @@ export function createServer({ sessionFile, distDir }) {
       return;
     }
 
+    if (pathname === "/api/session-qa-cache") {
+      res.setHeader("Content-Type", "application/json");
+
+      if (req.method === "GET") {
+        var cacheSessionKey = parsed.query.sessionKey || "";
+        if (!cacheSessionKey) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "sessionKey is required" }));
+          return;
+        }
+        res.writeHead(200);
+        res.end(JSON.stringify({ session: getSessionQACacheEntry(sessionQACache, cacheSessionKey) }));
+        return;
+      }
+
+      if (req.method === "DELETE") {
+        var deleteCacheSessionKey = parsed.query.sessionKey || "";
+        if (!deleteCacheSessionKey) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "sessionKey is required" }));
+          return;
+        }
+        removeSessionQACacheEntry(sessionQACache, deleteCacheSessionKey);
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true }));
+        return;
+      }
+
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end(JSON.stringify({ error: "Method not allowed" }));
+        return;
+      }
+
+      var qaCacheBody = "";
+      req.on("data", function (chunk) { qaCacheBody += chunk; });
+      req.on("end", function () {
+        try {
+          var cachePayload = JSON.parse(qaCacheBody || "{}");
+          if (!cachePayload.sessionKey) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "sessionKey is required" }));
+            return;
+          }
+          var savedSession = saveSessionQACacheEntry(
+            sessionQACache,
+            cachePayload.sessionKey,
+            cachePayload
+          );
+          var precomputed = ensureSessionQAPrecomputed(savedSession);
+          res.writeHead(200);
+          res.end(JSON.stringify({
+            success: true,
+            sessionKey: cachePayload.sessionKey,
+            updatedAt: savedSession ? savedSession.updatedAt : null,
+            precomputed: precomputed ? {
+              fingerprint: precomputed.fingerprint,
+              storage: precomputed.storage,
+              builtAt: precomputed.builtAt,
+              reused: precomputed.reused,
+            } : null,
+          }));
+        } catch (error) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: error.message || "Could not cache session Q&A data" }));
+        }
+      });
+      return;
+    }
+
     if (pathname === "/api/qa") {
       if (req.method !== "POST") {
         res.setHeader("Content-Type", "application/json");
         res.writeHead(405); res.end(JSON.stringify({ error: "Method not allowed" })); return;
       }
+      var qaRequestStartedAt = Date.now();
       var qaBody = "";
       req.on("data", function (chunk) { qaBody += chunk; });
       req.on("end", async function () {
+        var payload;
+        try {
+          payload = JSON.parse(qaBody || "{}");
+        } catch (error) {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Invalid JSON body" }));
+          return;
+        }
+
+        var question = payload.question;
+        var requestedModel = payload.model || null;
+        var qaSessionId = payload.qaSessionId || null;
+        var resolvedSession = resolveSessionQAArtifacts(sessionQACache, payload);
+
+        if (!question) {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Missing 'question' field" }));
+          return;
+        }
+        if (!resolvedSession) {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(payload.sessionKey ? 409 : 400);
+          res.end(JSON.stringify({
+            error: payload.sessionKey
+              ? "No cached session found for sessionKey. Register the session before asking questions."
+              : "Missing session data",
+          }));
+          return;
+        }
+
         // SSE streaming response
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
@@ -536,32 +1023,164 @@ export function createServer({ sessionFile, distDir }) {
         function sseSend(data) {
           if (!res.writableEnded) res.write("data: " + JSON.stringify(data) + "\n\n");
         }
+        var stopProgressHeartbeat = function () {};
         try {
-          var payload = JSON.parse(qaBody);
-          var question = payload.question;
-          var events = payload.events || [];
-          var turns = payload.turns || [];
-          var metadata = payload.metadata || {};
-          var requestedModel = payload.model || null;
-          var qaSessionId = payload.qaSessionId || null;
-          var sessionFilePath = payload.sessionFilePath || null;
+          var events = resolvedSession.events;
+          var turns = resolvedSession.turns;
+          var metadata = resolvedSession.metadata;
+          var sessionFilePath = resolvedSession.sessionFilePath;
+          var precomputed = ensureSessionQAPrecomputed(resolvedSession);
+          var qaArtifacts = precomputed && precomputed.artifacts
+            ? precomputed.artifacts
+            : buildSessionQAArtifacts(events, turns, metadata);
+          var rawText = precomputed && typeof precomputed.rawText === "string"
+            ? precomputed.rawText
+            : getSessionQARawText(resolvedSession);
+          var rawIndex = qaArtifacts && qaArtifacts.rawIndex
+            ? qaArtifacts.rawIndex
+            : (rawText ? buildRawJsonlRecordIndex(rawText) : null);
+          if (qaArtifacts && qaArtifacts.rawLookup && rawText && !qaArtifacts.rawLookup.rawText) {
+            qaArtifacts.rawLookup.rawText = rawText;
+          }
+          if (qaArtifacts && !qaArtifacts.rawIndex && rawIndex) qaArtifacts.rawIndex = rawIndex;
 
-          if (!question) {
-            sseSend({ error: "Missing 'question' field" });
-            if (!res.writableEnded) res.end();
-            return;
+          var currentProgress = null;
+          var lastProgressSignature = "";
+          var lastProgressSentAt = 0;
+          var progressHeartbeat = setInterval(function () {
+            if (!currentProgress || currentProgress.phase === "streaming-answer") return;
+            if (Date.now() - lastProgressSentAt < 2000) return;
+            lastProgressSentAt = Date.now();
+            sseSend(buildQAProgressPayload(currentProgress.phase, {
+              status: currentProgress.status,
+              detail: currentProgress.detail,
+              elapsedMs: Date.now() - qaRequestStartedAt,
+              heartbeat: true,
+            }));
+          }, 1500);
+
+          stopProgressHeartbeat = function () {
+            if (!progressHeartbeat) return;
+            clearInterval(progressHeartbeat);
+            progressHeartbeat = null;
+          };
+
+          function sendProgress(phase, options) {
+            var opts = options && typeof options === "object" ? options : {};
+            var payload = buildQAProgressPayload(phase, {
+              status: opts.status,
+              detail: opts.detail,
+              toolName: opts.toolName,
+              elapsedMs: opts.elapsedMs != null ? opts.elapsedMs : (Date.now() - qaRequestStartedAt),
+              heartbeat: opts.heartbeat,
+            });
+            currentProgress = {
+              phase: payload.phase || phase || null,
+              status: payload.status,
+              detail: payload.detail || null,
+            };
+            var signature = [currentProgress.phase || "", currentProgress.status || "", currentProgress.detail || ""].join("|");
+            if (!opts.force && signature === lastProgressSignature) return;
+            lastProgressSignature = signature;
+            lastProgressSentAt = Date.now();
+            sseSend(payload);
           }
 
-          var lastStatus = null;
-          function sendStatus(status) {
-            if (!status || status === lastStatus) return;
-            lastStatus = status;
-            sseSend({ status: status });
-          }
+          sendProgress("precomputing-session", {
+            detail: precomputed && precomputed.reused
+              ? "Using the precomputed metrics, indexes, and summary chunks for this session."
+              : "Building precomputed metrics, indexes, and summary chunks for this session.",
+            force: true,
+          });
 
-          sendStatus("Preparing session context...");
-          var context = buildQAContext(events, turns, metadata);
-          var prompt = buildQAPrompt(question, context, { sessionFilePath: sessionFilePath });
+          var context = "";
+          var prompt = null;
+          var route = null;
+
+          if (payload.requestKind === "detail-fetch") {
+            sendProgress("detail-fetch", {
+              detail: "Pulling the exact tool output referenced in the draft answer.",
+              force: true,
+            });
+            context = buildQAContext(events, turns, metadata, {
+              question: question,
+              artifacts: qaArtifacts,
+            });
+            prompt = buildQAPrompt(question, context, { sessionFilePath: sessionFilePath });
+          } else {
+            var questionCacheKey = String(question || "").trim().toLowerCase();
+            var cachedQuestionPlan = questionCacheKey && resolvedSession.questionCache
+              ? resolvedSession.questionCache[questionCacheKey]
+              : null;
+
+            if (cachedQuestionPlan && cachedQuestionPlan.fingerprint === (precomputed && precomputed.fingerprint)) {
+              route = cachedQuestionPlan.route || null;
+              context = cachedQuestionPlan.context || "";
+            }
+
+            if (!route) {
+              route = routeSessionQAQuestion(question, qaArtifacts, {
+                rawText: rawText,
+                rawIndex: rawIndex,
+                sessionFilePath: sessionFilePath,
+              });
+              if (route && route.kind === "raw-full" && rawIndex) {
+                route.rawMatches = scanRawJsonlQuestionMatches(rawIndex, question, {
+                  questionProfile: route.profile,
+                  artifacts: qaArtifacts,
+                });
+              }
+              if (route && route.kind !== "metric") {
+                context = buildQAContext(events, turns, metadata, {
+                  question: question,
+                  artifacts: qaArtifacts,
+                  route: route,
+                });
+              }
+              if (questionCacheKey) {
+                resolvedSession.questionCache[questionCacheKey] = {
+                  fingerprint: precomputed ? precomputed.fingerprint : null,
+                  route: cloneJsonValue(route),
+                  context: context || "",
+                };
+              }
+            }
+
+            if (route) {
+              sendProgress(route.phase, {
+                status: route.status,
+                detail: route.detail,
+                force: true,
+              });
+            }
+
+            if (route && route.kind === "metric") {
+              stopProgressHeartbeat();
+              sseSend(buildQADonePayload(
+                route.directAnswer,
+                route.references || [],
+                "AGENTVIZ precomputed metrics",
+                qaSessionId,
+                qaRequestStartedAt,
+                Date.now()
+              ));
+              res.end();
+              return;
+            }
+
+            if (!route || route.kind === "model") {
+              sendProgress("preparing-context", {
+                detail: describeQAContextPreparation(events, turns, metadata),
+                force: true,
+              });
+            }
+            prompt = buildQAPrompt(question, context, { sessionFilePath: sessionFilePath });
+            sendProgress("retrieving-context", {
+              detail: route && route.kind !== "model"
+                ? route.detail + " " + describeQAContextRetrieval(resolvedSession)
+                : describeQAContextRetrieval(resolvedSession),
+            });
+          }
 
           var { CopilotClient, approveAll } = await import("@github/copilot-sdk");
           var client = new CopilotClient();
@@ -573,7 +1192,9 @@ export function createServer({ sessionFile, distDir }) {
 
             var session;
             if (qaSessionId) {
-              sendStatus("Resuming previous Q&A session...");
+              sendProgress("resuming-session", {
+                detail: "Continuing the previous Q&A conversation with the loaded session.",
+              });
               try {
                 session = await client.resumeSession(
                   qaSessionId,
@@ -585,7 +1206,11 @@ export function createServer({ sessionFile, distDir }) {
             }
 
             if (!session) {
-              sendStatus("Starting Q&A session...");
+              sendProgress("starting-session", {
+                detail: requestedModel
+                  ? "Launching a fresh " + requestedModel + " Q&A session."
+                  : "Launching a fresh Q&A session.",
+              });
               var sessionOpts = buildQASessionConfig(prompt.system, approveAll);
               if (requestedModel) sessionOpts.model = requestedModel;
               session = await client.createSession(sessionOpts);
@@ -594,6 +1219,7 @@ export function createServer({ sessionFile, distDir }) {
 
             // Abort on client disconnect
             res.on("close", function () {
+              stopProgressHeartbeat();
               session && session.abort && session.abort().catch(function () {});
             });
 
@@ -612,17 +1238,25 @@ export function createServer({ sessionFile, distDir }) {
                   unsubscribe();
                   reject(new Error(event.data && event.data.message ? event.data.message : "Session error"));
                 } else if (event.type === "tool.execution_start") {
-                  sendStatus(describeQAToolStatus(getQAToolName(event.data), "start"));
+                  sendProgress("tool-running", {
+                    toolName: getQAToolName(event.data),
+                  });
                 } else if (event.type === "tool.execution_complete" && !sawDelta) {
-                  sendStatus(describeQAToolStatus(getQAToolName(event.data), "complete"));
+                  sendProgress("tool-finished", {
+                    toolName: getQAToolName(event.data),
+                  });
                 } else if (event.type === "assistant.reasoning_delta" && !sawDelta) {
-                  sendStatus("Thinking through the session...");
+                  sendProgress("thinking", {
+                    detail: "Synthesizing an answer from the session timeline.",
+                  });
                 } else if (event.type === "assistant.message_delta" || event.type === "assistant.message.delta") {
                   var delta = getQAEventText(event.data, true);
                   if (delta) {
                     sawDelta = true;
                     answer += delta;
-                    sendStatus("Streaming answer...");
+                    sendProgress("streaming-answer", {
+                      detail: "Composing the final answer.",
+                    });
                     sseSend({ delta: delta });
                   }
                 } else if (event.type === "assistant.message") {
@@ -630,13 +1264,22 @@ export function createServer({ sessionFile, distDir }) {
                   if (text) {
                     answer = text;
                     if (!sawDelta) {
-                      sendStatus("Streaming answer...");
+                      sendProgress("streaming-answer", {
+                        detail: "Composing the final answer.",
+                      });
                       sseSend({ delta: text });
                     }
                   }
                 }
               });
-              sendStatus(sessionFilePath ? "Ready to inspect the raw session file..." : "Sending your question to the model...");
+              sendProgress("waiting-for-model", {
+                detail: payload.requestKind === "detail-fetch"
+                  ? "Prompt sent. Fetching the exact tool output referenced in the draft answer."
+                  : sessionFilePath
+                    ? "Prompt sent. Raw session file access is available if the model needs exact output."
+                    : "Prompt sent. Waiting for the first model response.",
+                force: true,
+              });
               session.send({ prompt: "[AGENTVIZ-QA] " + prompt.user }).catch(function (err) {
                 if (!done) { done = true; unsubscribe(); reject(err); }
               });
@@ -644,6 +1287,7 @@ export function createServer({ sessionFile, distDir }) {
 
             await session.disconnect();
           } finally {
+            stopProgressHeartbeat();
             await client.stop().catch(function () {});
           }
 
@@ -659,9 +1303,17 @@ export function createServer({ sessionFile, distDir }) {
           }
 
           var modelLabel = requestedModel || "default";
-          sseSend({ done: true, answer: answer, references: references, model: modelLabel, qaSessionId: returnedSessionId });
+          sseSend(buildQADonePayload(
+            answer,
+            references,
+            modelLabel,
+            returnedSessionId,
+            qaRequestStartedAt,
+            Date.now()
+          ));
           if (!res.writableEnded) res.end();
         } catch (e) {
+          stopProgressHeartbeat();
           sseSend({ error: e.message || "Q&A failed" });
           if (!res.writableEnded) res.end();
         }

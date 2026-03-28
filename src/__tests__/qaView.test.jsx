@@ -53,6 +53,13 @@ function findByText(container, text) {
     }) || null;
 }
 
+function findByPattern(container, pattern) {
+  return Array.from(container.querySelectorAll("*"))
+    .find(function (node) {
+      return node.textContent && pattern.test(node.textContent);
+    }) || null;
+}
+
 function findExactButton(container, text) {
   return Array.from(container.querySelectorAll("button"))
     .find(function (node) {
@@ -79,9 +86,17 @@ function createSSEResponse(data) {
   var refs = data.references || [];
   var model = data.model || "default";
   var qaSessionId = data.qaSessionId || null;
+  var timing = data.timing || null;
   // Build SSE payload: one delta with the full text, then a done event
   var sseText = "data: " + JSON.stringify({ delta: answer }) + "\n\n" +
-    "data: " + JSON.stringify({ done: true, answer: answer, references: refs, model: model, qaSessionId: qaSessionId }) + "\n\n";
+    "data: " + JSON.stringify({
+      done: true,
+      answer: answer,
+      references: refs,
+      model: model,
+      qaSessionId: qaSessionId,
+      timing: timing,
+    }) + "\n\n";
   var encoder = new TextEncoder();
   var bytes = encoder.encode(sseText);
   var stream = new ReadableStream({
@@ -116,8 +131,38 @@ function createChunkedSSEResponse(events, delays) {
 
 function createSessionQAHistoryFetch(qaHandler) {
   var historyStore = {};
+  var cacheStore = {};
   var fetchMock = vi.fn(async function (url, opts) {
     var s = String(url);
+    if (s.includes("/api/session-qa-cache")) {
+      var cacheUrlObj = new URL(s, "http://localhost");
+      var cacheSessionKey = cacheUrlObj.searchParams.get("sessionKey");
+      var cacheMethod = opts && opts.method ? opts.method : "GET";
+      if (cacheMethod === "POST") {
+        var cacheBody = JSON.parse(opts.body);
+        cacheStore[cacheBody.sessionKey] = {
+          events: cacheBody.events || [],
+          turns: cacheBody.turns || [],
+          metadata: cacheBody.metadata || {},
+          sessionFilePath: cacheBody.sessionFilePath || null,
+        };
+        return {
+          ok: true,
+          json: async function () { return { success: true, sessionKey: cacheBody.sessionKey }; },
+        };
+      }
+      if (cacheMethod === "DELETE") {
+        delete cacheStore[cacheSessionKey];
+        return {
+          ok: true,
+          json: async function () { return { success: true }; },
+        };
+      }
+      return {
+        ok: true,
+        json: async function () { return { session: cacheSessionKey ? (cacheStore[cacheSessionKey] || null) : null }; },
+      };
+    }
     if (s.includes("/api/session-qa-history")) {
       var urlObj = new URL(s, "http://localhost");
       var sessionKey = urlObj.searchParams.get("sessionKey");
@@ -142,10 +187,10 @@ function createSessionQAHistoryFetch(qaHandler) {
         json: async function () { return { history: sessionKey ? (historyStore[sessionKey] || null) : null }; },
       };
     }
-    return qaHandler ? qaHandler(url, opts, historyStore) : { ok: false };
+    return qaHandler ? qaHandler(url, opts, historyStore, cacheStore) : { ok: false };
   });
 
-  return { fetchMock: fetchMock, historyStore: historyStore };
+  return { fetchMock: fetchMock, historyStore: historyStore, cacheStore: cacheStore };
 }
 
 async function renderApp(fetchImpl) {
@@ -255,6 +300,7 @@ describe("Q&A view integration", function () {
           answer: "The session used the view tool in [Turn 0].",
           references: [{ turnIndex: 0 }],
           model: "gpt-5.4",
+          timing: { totalMs: 8200 },
         });
       }
       return { ok: false };
@@ -306,6 +352,7 @@ describe("Q&A view integration", function () {
 
     // Verify the model label is displayed
     expect(findByText(app.container, "Powered by GPT-5.4")).toBeTruthy();
+    expect(findByText(app.container, "Answered in 8.2s")).toBeTruthy();
 
     // Verify the request included the selected model
     expect(capturedBody).toBeTruthy();
@@ -325,12 +372,28 @@ describe("Q&A view integration", function () {
     var fetchMock = vi.fn(async function (url) {
       if (String(url).includes("/api/qa")) {
         return createChunkedSSEResponse([
-          { status: "Preparing session context..." },
-          { status: "Searching the session..." },
+          {
+            status: "Preparing session context...",
+            phase: "preparing-context",
+            detail: "Reviewing 42 events across 3 turns.",
+            elapsedMs: 0,
+          },
+          {
+            status: "Waiting for model response...",
+            phase: "waiting-for-model",
+            detail: "Prompt sent. Raw session file access is available if the model needs exact output.",
+            elapsedMs: 1250,
+          },
+          {
+            status: "Streaming answer...",
+            phase: "streaming-answer",
+            detail: "Composing the final answer.",
+            elapsedMs: 1600,
+          },
           { delta: "First chunk" },
           { delta: " and more" },
           { done: true, answer: "First chunk and more", references: [], model: "gpt-5.4" },
-        ], [120, 180, 250, 0, 0]);
+        ], [120, 180, 120, 250, 0, 0]);
       }
       return { ok: false };
     });
@@ -363,8 +426,20 @@ describe("Q&A view integration", function () {
     }, "expected initial progress state");
 
     await waitFor(function () {
-      return findByText(app.container, "Searching the session...");
-    }, "expected updated progress state");
+      return findByText(app.container, "Reviewing 42 events across 3 turns.");
+    }, "expected progress detail");
+
+    await waitFor(function () {
+      return findByText(app.container, "Waiting for model response...");
+    }, "expected updated progress phase");
+
+    await waitFor(function () {
+      return findByText(app.container, "Prompt sent. Raw session file access is available if the model needs exact output.");
+    }, "expected waiting detail");
+
+    await waitFor(function () {
+      return findByPattern(app.container, /^Elapsed 1\.[0-9]s$/);
+    }, "expected live elapsed label");
 
     await waitFor(function () {
       return findByText(app.container, "First chunk");
@@ -376,7 +451,72 @@ describe("Q&A view integration", function () {
       return findByText(app.container, "First chunk and more");
     }, "expected final streamed answer", 5000);
 
-    expect(findByText(app.container, "Searching the session...")).toBeFalsy();
+    expect(findByText(app.container, "Waiting for model response...")).toBeFalsy();
+    expect(findByText(app.container, "Composing the final answer.")).toBeFalsy();
+    expect(findByPattern(app.container, /^Elapsed /)).toBeFalsy();
+
+    await app.unmount();
+  });
+
+  it("renders router-specific progress updates for precomputed metric answers", async function () {
+    var qaServer = createSessionQAHistoryFetch(async function (url) {
+      if (String(url).includes("/api/qa")) {
+        return createChunkedSSEResponse([
+          {
+            status: "Using precomputed metrics...",
+            phase: "using-precomputed-metrics",
+            detail: "Matched the longest autonomous run from the precomputed metrics catalog.",
+            elapsedMs: 180,
+          },
+          {
+            done: true,
+            answer: "The longest autonomous run lasted 7s in [Turn 0].",
+            references: [{ turnIndex: 0 }],
+            model: "AGENTVIZ precomputed metrics",
+          },
+        ], [120, 0]);
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("fixture.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(qaServer.fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected landing inbox to render");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findByText(app.container, "fixture.jsonl");
+    }, "expected stored session to open");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A view to render");
+
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "How long was the longest autonomous agent run in this session?");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Using precomputed metrics...");
+    }, "expected router progress label");
+
+    await waitFor(function () {
+      return findByText(app.container, "Matched the longest autonomous run from the precomputed metrics catalog.");
+    }, "expected router progress detail");
+
+    await waitFor(function () {
+      return findByText(app.container, "The longest autonomous run lasted 7s in [Turn 0].");
+    }, "expected direct metric answer");
+
+    expect(findByText(app.container, "Using precomputed metrics...")).toBeFalsy();
+    expect(findByText(app.container, "Matched the longest autonomous run from the precomputed metrics catalog.")).toBeFalsy();
+    expect(findByText(app.container, "Powered by AGENTVIZ precomputed metrics")).toBeTruthy();
 
     await app.unmount();
   });
@@ -861,7 +1001,13 @@ describe("Q&A view integration", function () {
   it("persists Q&A conversations via server-backed history across app restarts", async function () {
     var historyFetch = createSessionQAHistoryFetch(async function (url) {
       if (String(url).includes("/api/qa")) {
-        return createSSEResponse({ answer: "Persisted answer.", references: [], model: "gpt-5.4", qaSessionId: "sdk-session-123" });
+        return createSSEResponse({
+          answer: "Persisted answer.",
+          references: [],
+          model: "gpt-5.4",
+          qaSessionId: "sdk-session-123",
+          timing: { totalMs: 8200 },
+        });
       }
       return { ok: false };
     });
@@ -902,6 +1048,7 @@ describe("Q&A view integration", function () {
     expect(entry).toBeTruthy();
     expect(entry.messages.length).toBe(2); // user + assistant
     expect(entry.qaSessionId).toBe("sdk-session-123");
+    expect(entry.messages[1].timing).toEqual({ totalMs: 8200 });
 
     await app1.unmount();
 
@@ -925,14 +1072,15 @@ describe("Q&A view integration", function () {
     }, "expected persisted user message to be restored");
 
     expect(findByText(app2.container, "Persisted answer.")).toBeTruthy();
+    expect(findByText(app2.container, "Answered in 8.2s")).toBeTruthy();
 
     await app2.unmount();
   });
 
-  it("sends qaSessionId on follow-up questions for session resumption", async function () {
+  it("sends lean follow-up requests with qaSessionId for session resumption", async function () {
     var callCount = 0;
     var capturedBodies = [];
-    var fetchMock = vi.fn(async function (url, opts) {
+    var historyFetch = createSessionQAHistoryFetch(async function (url, opts) {
       if (String(url).includes("/api/qa")) {
         callCount++;
         if (opts && opts.body) capturedBodies.push(JSON.parse(opts.body));
@@ -945,6 +1093,8 @@ describe("Q&A view integration", function () {
       }
       return { ok: false };
     });
+    var fetchMock = historyFetch.fetchMock;
+    var cacheStore = historyFetch.cacheStore;
 
     var parsed = parseSessionText(FIXTURE_TEXT);
     persistSessionSnapshot("followup-test.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
@@ -974,7 +1124,13 @@ describe("Q&A view integration", function () {
       return findByText(app.container, "Answer 1.");
     }, "expected first answer", 5000);
 
+    expect(Object.keys(cacheStore).length).toBe(1);
+    expect(capturedBodies[0].sessionKey).toBeTruthy();
     expect(capturedBodies[0].qaSessionId).toBeFalsy();
+    expect(capturedBodies[0].events).toBeUndefined();
+    expect(capturedBodies[0].turns).toBeUndefined();
+    expect(capturedBodies[0].metadata).toBeUndefined();
+    expect(capturedBodies[0].sessionFilePath).toBeUndefined();
 
     // Second question - should include qaSessionId from first response
     input = app.container.querySelector("input[placeholder*='Ask a question']");
@@ -985,12 +1141,247 @@ describe("Q&A view integration", function () {
       return findByText(app.container, "Answer 2.");
     }, "expected second answer", 5000);
 
+    expect(capturedBodies[1].sessionKey).toBe(capturedBodies[0].sessionKey);
     expect(capturedBodies[1].qaSessionId).toBe("sdk-sess-456");
+    expect(capturedBodies[1].events).toBeUndefined();
+    expect(capturedBodies[1].turns).toBeUndefined();
+    expect(capturedBodies[1].metadata).toBeUndefined();
+    expect(capturedBodies[1].sessionFilePath).toBeUndefined();
 
     await app.unmount();
   });
 
-  it("passes sessionFilePath to /api/qa when loaded via live bootstrap", async function () {
+  it("rotates long-running Q&A sessions with a recap while preserving visible chat history", async function () {
+    localStorage.setItem("agentviz:qa-session-turn-limit", "2");
+
+    var callCount = 0;
+    var capturedBodies = [];
+    var qaSessionIds = [
+      "sdk-sess-initial",
+      "sdk-sess-initial",
+      "sdk-sess-rotated",
+      "sdk-sess-rotated",
+    ];
+    var answers = [
+      "Answer 1.",
+      "Answer 2.",
+      "Compacted answer.",
+      "Follow-up after compaction.",
+    ];
+    var historyFetch = createSessionQAHistoryFetch(async function (url, opts) {
+      if (String(url).includes("/api/qa")) {
+        if (opts && opts.body) capturedBodies.push(JSON.parse(opts.body));
+        var responseIndex = callCount;
+        callCount++;
+        return createSSEResponse({
+          answer: answers[responseIndex],
+          references: [],
+          model: "gpt-5.4",
+          qaSessionId: qaSessionIds[responseIndex],
+        });
+      }
+      return { ok: false };
+    });
+    var fetchMock = historyFetch.fetchMock;
+    var historyStore = historyFetch.historyStore;
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("compaction-test.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A");
+
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "First question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Answer 1.");
+    }, "expected first answer", 5000);
+
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Second question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Answer 2.");
+    }, "expected second answer", 5000);
+
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Third question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Compacted answer.");
+    }, "expected compacted answer", 5000);
+
+    expect(capturedBodies[0].qaSessionId).toBeFalsy();
+    expect(capturedBodies[1].qaSessionId).toBe("sdk-sess-initial");
+    expect(capturedBodies[2].qaSessionId).toBeFalsy();
+    expect(capturedBodies[2].question).toContain("AGENTVIZ Q&A recap from earlier visible chat:");
+    expect(capturedBodies[2].question).toContain("Q1 user: First question");
+    expect(capturedBodies[2].question).toContain("A1 assistant: Answer 1.");
+    expect(capturedBodies[2].question).toContain("Q2 user: Second question");
+    expect(capturedBodies[2].question).toContain("A2 assistant: Answer 2.");
+    expect(capturedBodies[2].question).toContain("Current question:\nThird question");
+    expect(capturedBodies[2].events).toBeUndefined();
+    expect(capturedBodies[2].turns).toBeUndefined();
+    expect(capturedBodies[2].metadata).toBeUndefined();
+
+    expect(findByText(app.container, "First question")).toBeTruthy();
+    expect(findByText(app.container, "Answer 1.")).toBeTruthy();
+    expect(findByText(app.container, "Second question")).toBeTruthy();
+    expect(findByText(app.container, "Answer 2.")).toBeTruthy();
+    expect(findByText(app.container, "Third question")).toBeTruthy();
+    expect(findByText(app.container, "Compacted answer.")).toBeTruthy();
+
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Fourth question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Follow-up after compaction.");
+    }, "expected follow-up answer after compaction", 5000);
+
+    expect(capturedBodies[3].qaSessionId).toBe("sdk-sess-rotated");
+    expect(capturedBodies[3].question).toBe("Fourth question");
+
+    var keys = Object.keys(historyStore);
+    expect(keys.length).toBeGreaterThanOrEqual(1);
+    expect(historyStore[keys[0]].qaSessionId).toBe("sdk-sess-rotated");
+    expect(historyStore[keys[0]].messages.length).toBe(8);
+    expect(historyStore[keys[0]].messages.map(function (message) {
+      return message.content;
+    })).toEqual(expect.arrayContaining([
+      "First question",
+      "Answer 1.",
+      "Second question",
+      "Answer 2.",
+      "Third question",
+      "Compacted answer.",
+      "Fourth question",
+      "Follow-up after compaction.",
+    ]));
+
+    await app.unmount();
+  });
+
+  it("rotates resumed Q&A sessions with a recap while preserving visible chat history", async function () {
+    localStorage.setItem("agentviz:qa-session-turn-limit", "2");
+
+    var capturedBodies = [];
+    var historyFetch = createSessionQAHistoryFetch(async function (url, opts) {
+      if (String(url).includes("/api/qa")) {
+        var body = opts && opts.body ? JSON.parse(opts.body) : {};
+        capturedBodies.push(body);
+        var requestNumber = capturedBodies.length;
+        var qaSessionId = requestNumber >= 3 ? "sdk-session-beta" : "sdk-session-alpha";
+        return createSSEResponse({
+          answer: "Answer " + requestNumber + ".",
+          references: [],
+          model: "gpt-5.4",
+          qaSessionId: qaSessionId,
+        });
+      }
+      return { ok: false };
+    });
+    var fetchMock = historyFetch.fetchMock;
+    var historyStore = historyFetch.historyStore;
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("rotation-test.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A");
+
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+
+    await changeInput(input, "First question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Answer 1.");
+    }, "expected first answer", 5000);
+
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Second question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Answer 2.");
+    }, "expected second answer", 5000);
+
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Third question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Answer 3.");
+    }, "expected rotated answer", 5000);
+
+    expect(findByText(app.container, "First question")).toBeTruthy();
+    expect(findByText(app.container, "Answer 1.")).toBeTruthy();
+    expect(findByText(app.container, "Second question")).toBeTruthy();
+    expect(findByText(app.container, "Answer 2.")).toBeTruthy();
+    expect(findByText(app.container, "Third question")).toBeTruthy();
+    expect(findByText(app.container, "Answer 3.")).toBeTruthy();
+
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Fourth question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Answer 4.");
+    }, "expected post-rotation follow-up", 5000);
+
+    expect(capturedBodies).toHaveLength(4);
+    expect(capturedBodies[0].qaSessionId).toBeFalsy();
+    expect(capturedBodies[0].question).toBe("First question");
+    expect(capturedBodies[1].qaSessionId).toBe("sdk-session-alpha");
+    expect(capturedBodies[1].question).toBe("Second question");
+
+    expect(capturedBodies[2].qaSessionId).toBeFalsy();
+    expect(capturedBodies[2].question).toContain("AGENTVIZ Q&A recap from earlier visible chat:");
+    expect(capturedBodies[2].question).toContain("Q1 user: First question");
+    expect(capturedBodies[2].question).toContain("A1 assistant: Answer 1.");
+    expect(capturedBodies[2].question).toContain("Q2 user: Second question");
+    expect(capturedBodies[2].question).toContain("A2 assistant: Answer 2.");
+    expect(capturedBodies[2].question).toContain("Current question:\nThird question");
+
+    expect(capturedBodies[3].qaSessionId).toBe("sdk-session-beta");
+    expect(capturedBodies[3].question).toBe("Fourth question");
+
+    var storedKeys = Object.keys(historyStore);
+    expect(storedKeys.length).toBe(1);
+    var storedEntry = historyStore[storedKeys[0]];
+    expect(storedEntry.messages.length).toBe(8);
+    expect(storedEntry.messages[0].content).toBe("First question");
+    expect(storedEntry.messages[7].content).toBe("Answer 4.");
+    expect(storedEntry.qaSessionId).toBe("sdk-session-beta");
+
+    await app.unmount();
+  });
+
+  it("registers sessionFilePath in the session cache for live bootstrap requests", async function () {
+    var capturedRegistration = null;
     var capturedBody = null;
     var fetchMock = vi.fn(async function (url, opts) {
       var s = String(url);
@@ -1004,6 +1395,18 @@ describe("Q&A view integration", function () {
         return {
           ok: true,
           text: async function () { return FIXTURE_TEXT; },
+        };
+      }
+      if (s.includes("/api/session-qa-cache")) {
+        if (opts && opts.body) capturedRegistration = JSON.parse(opts.body);
+        return {
+          ok: true,
+          json: async function () {
+            return {
+              success: true,
+              sessionKey: capturedRegistration ? capturedRegistration.sessionKey : null,
+            };
+          },
         };
       }
       if (s.includes("/api/qa")) {
@@ -1035,9 +1438,18 @@ describe("Q&A view integration", function () {
       return findByText(app.container, "Answer with file access.");
     }, "expected answer", 5000);
 
-    // Verify the request included the session file path
+    expect(capturedRegistration).toBeTruthy();
+    expect(capturedRegistration.sessionFilePath).toBe("/home/user/.copilot/sessions/abc/events.jsonl");
+    expect(Array.isArray(capturedRegistration.events)).toBe(true);
+    expect(Array.isArray(capturedRegistration.turns)).toBe(true);
+
+    // Verify the Q&A request stayed lean and referenced the registered session
     expect(capturedBody).toBeTruthy();
-    expect(capturedBody.sessionFilePath).toBe("/home/user/.copilot/sessions/abc/events.jsonl");
+    expect(capturedBody.sessionKey).toBe(capturedRegistration.sessionKey);
+    expect(capturedBody.sessionFilePath).toBeUndefined();
+    expect(capturedBody.events).toBeUndefined();
+    expect(capturedBody.turns).toBeUndefined();
+    expect(capturedBody.metadata).toBeUndefined();
 
     await app.unmount();
   });
