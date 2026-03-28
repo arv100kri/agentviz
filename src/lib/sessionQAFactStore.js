@@ -552,9 +552,16 @@ function buildErrorSummaryContext(db, program) {
     "SELECT turn_index, tool_name, output_preview FROM tool_calls WHERE " + clauses.join(" AND ") + " ORDER BY turn_index LIMIT 5"
   );
   var rows = statement.all.apply(statement, params);
-  if (!rows || rows.length === 0) return null;
+  if (!rows || rows.length === 0) {
+    return {
+      answer: "No errors were recorded in this session.",
+      references: [],
+      detail: "Queried the SQLite fact store and found no error records.",
+      model: "AGENTVIZ SQLite fact store",
+    };
+  }
 
-  var lines = ["=== FACT STORE ERROR SUMMARY ==="];
+  var lines = [];
   for (var index = 0; index < rows.length; index += 1) {
     lines.push(
       "- Turn " + rows[index].turn_index + " | " + rows[index].tool_name + " | " +
@@ -563,8 +570,10 @@ function buildErrorSummaryContext(db, program) {
   }
 
   return {
-    context: lines.join("\n"),
+    answer: "The session recorded " + pluralize(rows.length, "error") + ":\n" + lines.join("\n"),
+    references: rows.map(function (row) { return { turnIndex: row.turn_index }; }),
     detail: "Built a compact error summary from the SQLite fact store.",
+    model: "AGENTVIZ SQLite fact store",
   };
 }
 
