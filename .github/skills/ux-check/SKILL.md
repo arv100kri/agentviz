@@ -1,6 +1,12 @@
-# UX Check -- Functionality and Ease of Use
+---
+name: ux-check
+description: "Evaluate the AGENTVIZ web application for functionality and ease of use. Use when performing UX audits, testing UI interactions, or assessing discoverability and visual quality. Keywords: UX, usability, UI testing, accessibility, screenshots."
+compatibility: "Requires Vite dev server on localhost:3000 and Playwright MCP browser tools"
+---
 
-You are performing a UX evaluation of the AGENTVIZ web application. Your goal is to assess both **functionality** (does everything work?) and **ease of use** (is it intuitive and discoverable?).
+# UX Check
+
+Perform a UX evaluation of the AGENTVIZ web application, assessing both **functionality** (does everything work?) and **ease of use** (is it intuitive and discoverable?).
 
 ## Prerequisites
 
@@ -37,7 +43,7 @@ For each applicable view, test:
 - **Inspector**: In Replay or Waterfall view, click on an event entry to see if a detail panel opens
 
 ### Step 5: UX Quality Assessment
-Reason about the following questions and provide your assessment:
+Evaluate the following dimensions:
 - **Discoverability**: Can a new user figure out what to do without instructions?
 - **Visual hierarchy**: Is the most important content prominent?
 - **Feedback**: Does the UI provide clear feedback for actions (loading states, active tabs, hover states)?

@@ -1,6 +1,12 @@
-# Accessibility Check -- WCAG Compliance Audit
+---
+name: a11y-check
+description: "Audit the AGENTVIZ web application for WCAG 2.1 AA accessibility compliance. Use when checking keyboard navigation, ARIA attributes, color contrast, semantic HTML, or running axe-core audits. Keywords: accessibility, a11y, WCAG, ARIA, contrast, keyboard navigation, screen reader."
+compatibility: "Requires Vite dev server on localhost:3000 and Playwright MCP browser tools"
+---
 
-You are performing an accessibility audit of the AGENTVIZ web application. Your goal is to identify accessibility barriers following WCAG 2.1 AA guidelines.
+# Accessibility Check
+
+Identify accessibility barriers in the AGENTVIZ web application following WCAG 2.1 AA guidelines.
 
 ## Prerequisites
 

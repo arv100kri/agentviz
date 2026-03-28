@@ -1,6 +1,12 @@
-# Performance Check -- Load Times, Rendering, and Memory
+---
+name: perf-check
+description: "Measure load times, rendering performance, memory usage, and bundle size of the AGENTVIZ web application. Use when profiling page load, diagnosing rendering bottlenecks, checking for memory leaks, or auditing bundle size. Keywords: performance, FCP, load time, memory, bundle size, DOM complexity."
+compatibility: "Requires Vite dev server on localhost:3000 and Playwright MCP browser tools"
+---
 
-You are performing a performance evaluation of the AGENTVIZ web application. Your goal is to measure load times, rendering performance, and memory usage to identify bottlenecks.
+# Performance Check
+
+Measure load times, rendering performance, and memory usage of the AGENTVIZ web application to identify bottlenecks.
 
 ## Prerequisites
 
