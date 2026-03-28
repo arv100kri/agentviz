@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import usePersistentState from "./usePersistentState.js";
+import { parseDetailRequests, buildDetailResponse } from "../lib/sessionQA.js";
 
 var DEFAULT_MODEL = "gpt-5.4";
 var STORAGE_KEY = "agentviz:qa-history";
@@ -109,14 +110,58 @@ export default function useSessionQA() {
       })
       .then(function (data) {
         var target = getSession(targetKey);
+        if (data.model) target.responseModel = data.model;
+        if (data.qaSessionId) target.qaSessionId = data.qaSessionId;
+
+        var answer = data.answer || "No answer available.";
+
+        // Check for [NEED_DETAIL] markers -- auto-fetch and follow up
+        var detailReqs = parseDetailRequests(answer);
+        if (detailReqs.length > 0) {
+          // Don't show the NEED_DETAIL response to the user; send the details as a follow-up
+          var detailText = buildDetailResponse(detailReqs, events);
+          var followUpBody = {
+            question: detailText,
+            events: events,
+            turns: turns,
+            metadata: metadata,
+            model: model,
+            qaSessionId: target.qaSessionId,
+          };
+
+          return fetch("/api/qa", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(followUpBody),
+            signal: controller.signal,
+          })
+            .then(function (res2) {
+              if (!res2.ok) throw new Error("Server error: " + res2.status);
+              return res2.json();
+            })
+            .then(function (data2) {
+              var target2 = getSession(targetKey);
+              var assistantMsg = {
+                role: "assistant",
+                content: data2.answer || "No answer available.",
+                references: data2.references || [],
+              };
+              target2.messages = target2.messages.concat([assistantMsg]);
+              if (data2.model) target2.responseModel = data2.model;
+              target2.loading = false;
+              target2.abort = null;
+              persist();
+              tick();
+            });
+        }
+
+        // Normal response (no detail needed)
         var assistantMsg = {
           role: "assistant",
-          content: data.answer || "No answer available.",
+          content: answer,
           references: data.references || [],
         };
         target.messages = target.messages.concat([assistantMsg]);
-        if (data.model) target.responseModel = data.model;
-        if (data.qaSessionId) target.qaSessionId = data.qaSessionId;
         target.loading = false;
         target.abort = null;
         persist();

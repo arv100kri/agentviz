@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { buildQAContext, buildQAPrompt } from "../../src/lib/sessionQA.js";
+import { buildQAContext, buildQAPrompt, parseDetailRequests, buildDetailResponse } from "../../src/lib/sessionQA.js";
 
 var SAMPLE_EVENTS = [
   { t: 0, agent: "user", track: "context", text: "Fix the bug in auth.js", duration: 0, intensity: 0.5, isError: false, turnIndex: 0 },
   { t: 1, agent: "assistant", track: "reasoning", text: "I think the issue is in the token validation logic", duration: 2, intensity: 0.8, isError: false, turnIndex: 0 },
-  { t: 3, agent: "assistant", track: "tool_call", text: "Reading auth.js", duration: 1, intensity: 1, toolName: "view", isError: false, turnIndex: 0 },
-  { t: 4, agent: "assistant", track: "tool_call", text: "Editing auth.js", duration: 1, intensity: 1, toolName: "edit", isError: false, turnIndex: 0 },
-  { t: 5, agent: "assistant", track: "tool_call", text: "npm test failed", duration: 2, intensity: 1, toolName: "bash", isError: true, turnIndex: 0 },
+  { t: 3, agent: "assistant", track: "tool_call", text: "Reading auth.js", duration: 1, intensity: 1, toolName: "view", toolInput: { path: "src/auth.js" }, isError: false, turnIndex: 0 },
+  { t: 4, agent: "assistant", track: "tool_call", text: "Editing auth.js", duration: 1, intensity: 1, toolName: "edit", toolInput: { path: "src/auth.js" }, isError: false, turnIndex: 0 },
+  { t: 5, agent: "assistant", track: "tool_call", text: "npm test failed with exit code 1", duration: 2, intensity: 1, toolName: "bash", toolInput: { command: "npm test" }, isError: true, turnIndex: 0 },
   { t: 8, agent: "user", track: "context", text: "Try a different approach", duration: 0, intensity: 0.5, isError: false, turnIndex: 1 },
-  { t: 9, agent: "assistant", track: "tool_call", text: "Editing auth.js", duration: 1, intensity: 1, toolName: "edit", isError: false, turnIndex: 1 },
+  { t: 9, agent: "assistant", track: "tool_call", text: "Editing auth.js", duration: 1, intensity: 1, toolName: "edit", toolInput: { path: "src/auth.js" }, isError: false, turnIndex: 1 },
   { t: 10, agent: "assistant", track: "output", text: "All tests pass now", duration: 0, intensity: 0.5, isError: false, turnIndex: 1 },
 ];
 
@@ -98,8 +98,24 @@ describe("buildQAContext", function () {
     }
 
     var context = buildQAContext(manyEvents, manyTurns, SAMPLE_METADATA);
-    expect(context.length).toBeLessThan(30000);
+    expect(context.length).toBeLessThan(70000);
     expect(context).toContain("truncated");
+  });
+
+  it("includes a tool frequency ranking section", function () {
+    var context = buildQAContext(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    expect(context).toContain("TOOL USAGE");
+    // edit appears 2 times (turnIndex 0 and 1), view 1, bash 1
+    expect(context).toContain("edit: 2 calls");
+    expect(context).toContain("view: 1 calls");
+    expect(context).toContain("bash: 1 calls");
+  });
+
+  it("includes an errors summary section", function () {
+    var context = buildQAContext(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    expect(context).toContain("ERRORS");
+    expect(context).toContain("bash");
+    expect(context).toContain("npm test failed");
   });
 });
 
@@ -126,5 +142,96 @@ describe("buildQAPrompt", function () {
     var prompt = buildQAPrompt("What happened?", context);
     expect(prompt.system).toContain("SESSION OVERVIEW");
     expect(prompt.system).toContain("Turn 0");
+  });
+
+  it("includes NEED_DETAIL instructions in the system prompt", function () {
+    var prompt = buildQAPrompt("question", "context");
+    expect(prompt.system).toContain("NEED_DETAIL");
+  });
+});
+
+describe("tool I/O in context", function () {
+  it("includes tool input in per-turn events", function () {
+    var context = buildQAContext(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    expect(context).toContain("Input: npm test");
+    expect(context).toContain("Input: src/auth.js");
+  });
+
+  it("includes tool output in per-turn events", function () {
+    var context = buildQAContext(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+    expect(context).toContain("Output: npm test failed");
+    expect(context).toContain("Output: Reading auth.js");
+  });
+});
+
+describe("parseDetailRequests", function () {
+  it("parses single NEED_DETAIL marker", function () {
+    var reqs = parseDetailRequests("[NEED_DETAIL: Turn 5, powershell]");
+    expect(reqs).toEqual([{ turnIndex: 5, toolName: "powershell" }]);
+  });
+
+  it("parses multiple NEED_DETAIL markers", function () {
+    var text = "I need more info.\n[NEED_DETAIL: Turn 3, kusto]\n[NEED_DETAIL: Turn 7, bash]\nThanks.";
+    var reqs = parseDetailRequests(text);
+    expect(reqs).toEqual([
+      { turnIndex: 3, toolName: "kusto" },
+      { turnIndex: 7, toolName: "bash" },
+    ]);
+  });
+
+  it("returns empty array when no markers present", function () {
+    var reqs = parseDetailRequests("This is a normal answer with no markers.");
+    expect(reqs).toEqual([]);
+  });
+
+  it("handles whitespace variations", function () {
+    var reqs = parseDetailRequests("[NEED_DETAIL:  Turn  12 ,  grep ]");
+    expect(reqs).toEqual([{ turnIndex: 12, toolName: "grep" }]);
+  });
+});
+
+describe("buildDetailResponse", function () {
+  it("returns full I/O for matching events", function () {
+    var detail = buildDetailResponse(
+      [{ turnIndex: 0, toolName: "bash" }],
+      SAMPLE_EVENTS
+    );
+    expect(detail).toContain("Turn 0, bash");
+    expect(detail).toContain("npm test");
+    expect(detail).toContain("npm test failed");
+  });
+
+  it("handles multiple requests", function () {
+    var detail = buildDetailResponse(
+      [{ turnIndex: 0, toolName: "view" }, { turnIndex: 0, toolName: "bash" }],
+      SAMPLE_EVENTS
+    );
+    expect(detail).toContain("view");
+    expect(detail).toContain("bash");
+    expect(detail).toContain("src/auth.js");
+  });
+
+  it("reports not found for missing events", function () {
+    var detail = buildDetailResponse(
+      [{ turnIndex: 99, toolName: "nonexistent" }],
+      SAMPLE_EVENTS
+    );
+    expect(detail).toContain("not found");
+  });
+
+  it("is case-insensitive for tool name matching", function () {
+    var detail = buildDetailResponse(
+      [{ turnIndex: 0, toolName: "BASH" }],
+      SAMPLE_EVENTS
+    );
+    expect(detail).toContain("npm test");
+  });
+
+  it("handles empty events array", function () {
+    var detail = buildDetailResponse(
+      [{ turnIndex: 0, toolName: "bash" }],
+      []
+    );
+    expect(detail).toContain("not found");
   });
 });
