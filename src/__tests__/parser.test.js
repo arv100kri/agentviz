@@ -461,5 +461,13 @@ describe("parseClaudeCodeJSONL", function () {
       expect(result).not.toBeNull();
       expect(result.events.length).toBeGreaterThan(400);
     });
+
+    it("links tool_result evidence back to the originating tool call", function () {
+      var result = parseClaudeCodeJSONL(makeSession([ASSISTANT_TOOL_USE, TOOL_RESULT_OK]));
+      var tool = result.events.find(function (e) { return e.track === "tool_call"; });
+      expect(tool.toolCallId).toBe("tool_01");
+      expect(tool.toolResultText).toContain("Directory created");
+      expect(tool.toolResultIsError).toBe(false);
+    });
   });
 });

@@ -292,9 +292,16 @@ function emitToolCall(
     if (errorContent) displayText += "\n" + truncate(errorContent, 200);
   }
 
+  const resultSummary = isError
+    ? (complete && complete.data && complete.data.error) || resultText || ""
+    : resultText;
+
   events.push(makeEvent(t, "assistant", "tool_call", displayText, duration, isError ? 0.9 : 0.6, record, {
     toolName: data.toolName,
     toolInput: data.arguments,
+    toolCallId: data.toolCallId || null,
+    toolResultText: resultSummary ? truncate(resultSummary, MAX_TEXT_LENGTH) : null,
+    toolResultIsError: isError,
     isError,
     model: complete && complete.data ? complete.data.model || null : null,
     parentToolCallId: data.parentToolCallId || null,

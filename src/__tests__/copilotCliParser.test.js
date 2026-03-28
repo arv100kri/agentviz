@@ -216,9 +216,11 @@ describe("event normalization", function () {
     var tools = events.filter(function (e) { return e.track === "tool_call"; });
     expect(tools.length).toBe(1);
     expect(tools[0].toolName).toBe("grep");
+    expect(tools[0].toolCallId).toBe("tc-1");
     expect(tools[0].duration).toBeCloseTo(0.9, 1);
     expect(tools[0].isError).toBe(false);
     expect(tools[0].model).toBe("claude-opus-4.6");
+    expect(tools[0].toolResultText).toContain("src/auth.js");
   });
 
   it("builds arg preview for tool calls", function () {
