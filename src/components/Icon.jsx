@@ -27,6 +27,8 @@ import {
   Minus,
   Download,
   Workflow,
+  Clock,
+  ArrowRight,
 } from "lucide-react";
 
 var ICON_MAP = {
@@ -58,11 +60,16 @@ var ICON_MAP = {
   minus: Minus,
   download: Download,
   graph: Workflow,
+  clock: Clock,
+  "arrow-right": ArrowRight,
 };
 
 export default function Icon({ name, size, strokeWidth, style, className }) {
   var Component = ICON_MAP[name];
-  if (!Component) return null;
+  if (!Component) {
+    if (process.env.NODE_ENV !== "production") console.warn("Icon: unknown name \"" + name + "\"");
+    return null;
+  }
   return (
     <Component
       size={size || 14}
