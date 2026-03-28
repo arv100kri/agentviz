@@ -268,7 +268,7 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
           {rec.priority === "high" && (
             <span style={{ fontSize: theme.fontSize.xs, color: theme.semantic.error, border: "1px solid " + theme.semantic.errorBorder, borderRadius: theme.radius.full, padding: "2px 8px", flexShrink: 0, marginTop: 2 }}>high</span>
           )}
-          <span style={{ fontSize: theme.fontSize.md, color: theme.text.primary, fontFamily: theme.font.ui, fontWeight: 600, flex: 1 }}>{rec.title}</span>
+          <span style={{ fontSize: theme.fontSize.sm, color: theme.text.primary, fontFamily: theme.font.mono, fontWeight: 600, flex: 1 }}>{rec.title}</span>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
             {applyState === "error" && (
               <span style={{ fontSize: theme.fontSize.xs, color: theme.semantic.error }}>Apply failed</span>
@@ -278,7 +278,7 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
                 <span style={{ fontSize: theme.fontSize.xs, color: theme.semantic.success }}>{"✓ Applied"}</span>
                 {hasHistory && (
                   <button className="av-btn" onClick={function () { handleAiRecRevert(i); }}
-                    style={{ fontSize: theme.fontSize.xs, fontFamily: theme.font.ui, border: "1px solid " + theme.semantic.warning, background: "transparent", color: theme.semantic.warning, borderRadius: theme.radius.md, padding: "2px 8px", cursor: "pointer" }}>
+                    style={{ fontSize: theme.fontSize.xs, fontFamily: theme.font.mono, border: "1px solid " + theme.semantic.warning, background: "transparent", color: theme.semantic.warning, borderRadius: theme.radius.md, padding: "2px 8px", cursor: "pointer" }}>
                     Revert
                   </button>
                 )}
@@ -287,7 +287,7 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
             {canApply && rec.draft && !showPreview && (
               <button className="av-btn" onClick={function () { toggleAiPreview(i); }}
                 title="Preview changes before applying"
-                style={{ fontSize: theme.fontSize.xs, fontFamily: theme.font.ui, border: "1px solid " + theme.border.default, background: "transparent", color: theme.text.secondary, borderRadius: theme.radius.md, padding: "2px 8px", cursor: "pointer" }}>
+                style={{ fontSize: theme.fontSize.xs, fontFamily: theme.font.mono, border: "1px solid " + theme.border.default, background: "transparent", color: theme.text.secondary, borderRadius: theme.radius.md, padding: "2px 8px", cursor: "pointer" }}>
                 Preview
               </button>
             )}
@@ -295,7 +295,7 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
               <button className="av-btn" onClick={function () { handleAiRecApply(rec, i); }}
                 disabled={applyState === "applying"}
                 title={"Apply to " + rec.targetPath}
-                style={{ fontSize: theme.fontSize.xs, fontFamily: theme.font.ui, border: "1px solid " + theme.semantic.success, background: alpha(theme.semantic.success, 0.08), color: theme.semantic.success, borderRadius: theme.radius.md, padding: "2px 10px", cursor: "pointer" }}>
+                style={{ fontSize: theme.fontSize.xs, fontFamily: theme.font.mono, border: "1px solid " + theme.semantic.success, background: alpha(theme.semantic.success, 0.08), color: theme.semantic.success, borderRadius: theme.radius.md, padding: "2px 10px", cursor: "pointer" }}>
                 {applyState === "applying" ? "Applying..." : "Apply \u2192 " + rec.targetPath}
               </button>
             )}
@@ -349,10 +349,10 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
           <div style={{ fontSize: theme.fontSize.xs, color: theme.text.dim, textTransform: "uppercase", letterSpacing: 2 }}>
             Coach
           </div>
-          <div style={{ fontSize: theme.fontSize.xl, color: theme.text.primary, marginTop: 8, fontFamily: theme.font.ui }}>
+          <div style={{ fontSize: theme.fontSize.md, color: theme.text.primary, marginTop: 8, fontFamily: theme.font.mono }}>
             {"Session coaching: " + file}
           </div>
-          <div style={{ fontSize: theme.fontSize.md, color: theme.text.muted, marginTop: 6, lineHeight: 1.7 }}>
+          <div style={{ fontSize: theme.fontSize.md, color: theme.text.secondary, marginTop: 6, lineHeight: 1.7, fontFamily: theme.font.mono }}>
             Review evidence-backed drafts. Accept to apply, ignore to skip.
           </div>
         </div>
@@ -369,7 +369,7 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
                   padding: "12px 14px",
                 }}
               >
-                <div style={{ fontSize: theme.fontSize.lg, color: theme.accent.primary, fontFamily: theme.font.ui, fontWeight: 700 }}>
+                <div style={{ fontSize: theme.fontSize.md, color: theme.accent.primary, fontFamily: theme.font.mono, fontWeight: 700 }}>
                   {item.value}
                 </div>
                 <div style={{ fontSize: theme.fontSize.xs, color: theme.text.muted, marginTop: 4 }}>
@@ -399,11 +399,11 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
               border: "none",
               color: theme.text.primary,
               cursor: "pointer",
-              fontFamily: theme.font.ui,
-              fontSize: theme.fontSize.md,
+              fontFamily: theme.font.mono,
+              fontSize: theme.fontSize.sm,
             }}
           >
-            <span style={{ fontWeight: 600 }}>Project configuration</span>
+            <span style={{ fontWeight: 600, fontFamily: theme.font.mono, fontSize: theme.fontSize.sm }}>Project configuration</span>
             <span style={{ color: theme.text.dim, fontSize: theme.fontSize.base }}>
               {showConfigExplorer ? "collapse" : "expand"}
             </span>
@@ -412,12 +412,12 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
           {showConfigExplorer && (
             <div style={{ padding: "0 16px 16px" }}>
               {!configLoaded && (
-                <div style={{ fontSize: theme.fontSize.base, color: theme.text.dim, fontFamily: theme.font.ui, padding: "8px 0" }}>
+                <div style={{ fontSize: theme.fontSize.sm, color: theme.text.muted, fontFamily: theme.font.mono, padding: "8px 0" }}>
                   Detecting project configs...
                 </div>
               )}
               {configLoaded && configFiles.length === 0 && (
-                <div style={{ fontSize: theme.fontSize.base, color: theme.text.dim, fontFamily: theme.font.ui, padding: "8px 0" }}>
+                <div style={{ fontSize: theme.fontSize.sm, color: theme.text.muted, fontFamily: theme.font.mono, padding: "8px 0" }}>
                   Start via CLI to detect project configs.
                 </div>
               )}
@@ -554,7 +554,7 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
                   borderRadius: theme.radius.md,
                   padding: "5px 10px",
                   fontSize: theme.fontSize.xs,
-                  fontFamily: theme.font.ui,
+                  fontFamily: theme.font.mono,
                   cursor: "pointer",
                 }}
               >
@@ -574,7 +574,7 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
                   borderRadius: theme.radius.md,
                   padding: "5px 10px",
                   fontSize: theme.fontSize.xs,
-                  fontFamily: theme.font.ui,
+                  fontFamily: theme.font.mono,
                   cursor: "pointer",
                 }}
               >
@@ -595,7 +595,7 @@ export default function DebriefView({ file, summary, metadata, rawSession }) {
                   borderRadius: theme.radius.md,
                   padding: "5px 10px",
                   fontSize: theme.fontSize.xs,
-                  fontFamily: theme.font.ui,
+                  fontFamily: theme.font.mono,
                   cursor: "pointer",
                 }}
               >
