@@ -11,16 +11,20 @@ Session replay visualizer for AI agent workflows (Claude Code, Copilot CLI).
 ```bash
 npm run dev          # Dev server
 npm run build        # Production build to dist/
-npm test             # Run tests via Vitest
-npm run test:watch   # Watch mode
+npm test             # Run unit tests via Vitest
+npm run test:watch   # Watch mode for unit tests
+npm run test:e2e     # Run Playwright E2E tests
 npm run typecheck    # tsc --noEmit
 ```
+
+Before running `npm run test:e2e` for the first time, install Playwright browsers with `npx playwright install chromium`.
 
 ## Rules
 - Search existing code before writing new abstractions.
 - Run tests after every non-trivial change.
+- After any UI change, run `npm run test:e2e` to verify views and interactions.
 - Prefer editing existing files over creating new ones.
-- Never silently apply config changes — surface drafts first.
+- Never silently apply config changes -- surface drafts first.
 - Product name is always AGENTVIZ (all caps, no spaces). Never "AgentViz" or "Agentviz".
 - All UI changes must conform to `docs/ui-ux-style-guide.md`. Review the checklist at the bottom of that file before approving any PR that touches components, styles, or visual behavior.
 
@@ -65,6 +69,35 @@ The README references 8 screenshot files in `docs/screenshots/`. All must be kep
 
 ## MCP vs Dev Server
 The MCP `launch_agentviz` tool serves the **production build** from `dist/` — NOT the dev server. Changes to source code are not reflected in MCP until `npm run build` is run. Always run `npm run build` before testing via MCP, and after any code change that the user will view via `open agentviz`.
+
+## UX Testing
+
+After any UI change, run `npm run test:e2e` to verify views load and interactions work. For deeper evaluation, invoke the appropriate skills:
+- **ux-check** -- Functionality and ease-of-use evaluation (dynamic view discovery, interaction testing, UX quality reasoning)
+- **a11y-check** -- Accessibility audit (axe-core, keyboard navigation, ARIA, contrast, focus rings)
+- **perf-check** -- Performance profiling (load times, render speed, DOM size, memory usage)
+
+The Playwright MCP server is configured in `.github/copilot/mcp.json` for agent-driven browser testing.
+
+## Code Review Instructions
+
+When reviewing pull requests, enforce these rules:
+
+### Four-Artifact Sync Rule
+If the PR adds or modifies files in `src/components/` or `src/lib/theme.js`:
+- **New component or view**: `README.md` must document it (architecture section, file tree). If it is a new view/tab, `docs/screenshots/` must include a screenshot.
+- **Theme changes**: `docs/ui-ux-style-guide.md` must reflect the new or changed tokens, patterns, or rules.
+- **Modified component**: Only flag if the change alters user-visible behavior that the README describes incorrectly.
+
+### Style and Convention Checks
+- All styles must be inline (no CSS files). Colors must reference `src/lib/theme.js` tokens, not hardcoded hex values.
+- Product name must be AGENTVIZ (all caps, no spaces). Flag any occurrence of "AgentViz", "Agentviz", or "Agent Viz".
+- No em dashes in any content or comments.
+- Components must receive data as props with no global state management.
+
+### Test Coverage
+- New utility functions in `src/lib/` should have corresponding tests in `src/__tests__/`.
+- New views or significant UI changes should be covered by E2E tests in `e2e/` or at minimum verified by the existing dynamic tab discovery test.
 
 ## Document Authoring Autonomy
 

@@ -26,6 +26,10 @@ vite.config.js.timestamp-*
 # Test coverage
 coverage/
 
+# Playwright
+test-results/
+playwright-report/
+
 # Local debug artifacts
 .vitest-targeted-output.txt
 
