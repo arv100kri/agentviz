@@ -9,6 +9,7 @@ export default function useSessionQA() {
   var [messages, setMessages] = useState([]);
   var [loading, setLoading] = useState(false);
   var [error, setError] = useState(null);
+  var [model, setModel] = useState(null);
   var abortRef = useRef(null);
 
   var askQuestion = useCallback(function (question, events, turns, metadata) {
@@ -43,6 +44,7 @@ export default function useSessionQA() {
           references: data.references || [],
         };
         setMessages(function (prev) { return prev.concat([assistantMsg]); });
+        if (data.model) setModel(data.model);
         setLoading(false);
       })
       .catch(function (err) {
@@ -62,6 +64,7 @@ export default function useSessionQA() {
     messages: messages,
     loading: loading,
     error: error,
+    model: model,
     askQuestion: askQuestion,
     clearHistory: clearHistory,
   };

@@ -175,6 +175,7 @@ describe("Q&A view integration", function () {
             return {
               answer: "The session used the view tool in [Turn 0].",
               references: [{ turnIndex: 0 }],
+              model: "Copilot (GPT-4o)",
             };
           },
         };
@@ -225,6 +226,9 @@ describe("Q&A view integration", function () {
     var turnRef = app.container.querySelector("span[title='Jump to Turn 0']");
     expect(turnRef).toBeTruthy();
     expect(turnRef.textContent).toBe("[Turn 0]");
+
+    // Verify the model label is displayed
+    expect(findByText(app.container, "Powered by Copilot (GPT-4o)")).toBeTruthy();
 
     await app.unmount();
   });

@@ -418,7 +418,7 @@ export function createServer({ sessionFile, distDir }) {
           }
 
           res.writeHead(200);
-          res.end(JSON.stringify({ answer: answer, references: references }));
+          res.end(JSON.stringify({ answer: answer, references: references, model: "Copilot (GPT-4o)" }));
         } catch (e) {
           res.writeHead(500);
           res.end(JSON.stringify({ error: e.message || "Q&A failed" }));

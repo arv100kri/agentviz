@@ -327,7 +327,9 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
       </div>
 
       <div style={limitationStyle}>
-        Requires a running AGENTVIZ server. Not available in self-contained HTML exports.
+        {qa.model
+          ? "Powered by " + qa.model
+          : "Requires a running AGENTVIZ server. Not available in self-contained HTML exports."}
       </div>
 
       <form onSubmit={handleSubmit} style={inputContainerStyle}>
