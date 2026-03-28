@@ -77,6 +77,26 @@ After any UI change, run `npm run test:e2e` to verify views load and interaction
 
 The Playwright MCP server is configured in `.github/copilot/mcp.json` for agent-driven browser testing.
 
+## Code Review Instructions
+
+When reviewing pull requests, enforce these rules:
+
+### Four-Artifact Sync Rule
+If the PR adds or modifies files in `src/components/` or `src/lib/theme.js`:
+- **New component or view**: `README.md` must document it (architecture section, file tree). If it is a new view/tab, `docs/screenshots/` must include a screenshot.
+- **Theme changes**: `docs/ui-ux-style-guide.md` must reflect the new or changed tokens, patterns, or rules.
+- **Modified component**: Only flag if the change alters user-visible behavior that the README describes incorrectly.
+
+### Style and Convention Checks
+- All styles must be inline (no CSS files). Colors must reference `src/lib/theme.js` tokens, not hardcoded hex values.
+- Product name must be AGENTVIZ (all caps, no spaces). Flag any occurrence of "AgentViz", "Agentviz", or "Agent Viz".
+- No em dashes in any content or comments.
+- Components must receive data as props with no global state management.
+
+### Test Coverage
+- New utility functions in `src/lib/` should have corresponding tests in `src/__tests__/`.
+- New views or significant UI changes should be covered by E2E tests in `e2e/` or at minimum verified by the existing dynamic tab discovery test.
+
 ## Document Authoring Autonomy
 
 When working on long-form documents (markdown specs, design docs, research reports), you are authorized to make the following decisions WITHOUT asking for confirmation:
