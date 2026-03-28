@@ -56,6 +56,8 @@ function findLatestJsonl(dir) {
 var sessionFile = null;
 var noOpen = false;
 var exportMode = false;
+var digestMode = false;
+var digestOutputPath = null;
 var statsMode = false;
 var outputPath = null;
 var argv = process.argv.slice(2);
@@ -63,6 +65,7 @@ for (var i = 0; i < argv.length; i++) {
   var arg = argv[i];
   if (arg === "--no-open") { noOpen = true; continue; }
   if (arg === "--export") { exportMode = true; continue; }
+  if (arg === "--digest") { digestMode = true; continue; }
   if (arg === "--stats") { statsMode = true; continue; }
   if ((arg === "-o" || arg === "--output") && i + 1 < argv.length) {
     outputPath = argv[++i]; continue;
@@ -107,6 +110,33 @@ function openBrowser(url) {
   exec(cmd + " " + url, function () {});
 }
 
+// -- Digest mode: generate structured markdown and exit --
+if (digestMode) {
+  if (!sessionFile) {
+    process.stderr.write("Error: --digest requires a session file path.\n" +
+      "Usage: agentviz --digest <session.jsonl> [-o session-digest.md]\n");
+    process.exit(1);
+  }
+
+  // Dynamic import of the digest module (ESM)
+  import("../src/lib/digestSession.js").then(function (mod) {
+    var rawText = fs.readFileSync(sessionFile, "utf8");
+    var sessionName = path.basename(sessionFile);
+    var digest = mod.digestSession(rawText);
+    var markdown = mod.formatDigestMarkdown(digest, sessionName);
+
+    var outFile = outputPath
+      ? path.resolve(outputPath)
+      : path.resolve(sessionName.replace(/\.jsonl$/, "") + "-digest.md");
+
+    fs.writeFileSync(outFile, markdown, "utf8");
+    process.stdout.write("Digest: " + outFile + "\n");
+    process.exit(0);
+  }).catch(function (err) {
+    process.stderr.write("Error generating digest: " + (err.message || err) + "\n");
+    process.exit(1);
+  });
+} else {
 // -- Stats mode: emit session telemetry as JSON and exit --
 if (statsMode) {
   if (!sessionFile) {
@@ -451,3 +481,4 @@ findFreePort(4242, function (err, port) {
     server.close(function () { process.exit(0); });
   });
 });
+} // end else (non-digest mode)
