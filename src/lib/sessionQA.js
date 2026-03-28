@@ -1474,6 +1474,8 @@ function buildSessionMetricCatalog(events, turns, metadata, options) {
     fileCount: Array.isArray(stats.fileEntries) ? stats.fileEntries.length : 0,
     summaryChunkCount: summaryChunks.length,
     rawRecordCount: rawRecordCount,
+    primaryModel: safeMetadata.primaryModel || null,
+    format: safeMetadata.format || null,
   };
 }
 
@@ -1938,6 +1940,30 @@ function buildMetricQuestionMatch(questionProfile, metricCatalog) {
       references: [],
       detail: "Matched session duration from the precomputed metrics catalog.",
     };
+  }
+
+  if ((normalizedQuestion.indexOf("model") !== -1 || normalizedQuestion.indexOf("llm") !== -1) &&
+      hasAnyTerm(normalizedQuestion, ["which", "what", "used"])) {
+    if (metricCatalog.primaryModel) {
+      return {
+        key: "primary-model",
+        answer: "The primary model used in this session was " + metricCatalog.primaryModel + ".",
+        references: [],
+        detail: "Matched the primary model from the precomputed metrics catalog.",
+      };
+    }
+  }
+
+  if (normalizedQuestion.indexOf("format") !== -1 &&
+      hasAnyTerm(normalizedQuestion, ["what", "which", "session"])) {
+    if (metricCatalog.format) {
+      return {
+        key: "session-format",
+        answer: "The session format is " + metricCatalog.format + ".",
+        references: [],
+        detail: "Matched the session format from the precomputed metrics catalog.",
+      };
+    }
   }
 
   return null;
