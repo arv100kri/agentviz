@@ -58,6 +58,7 @@ var noOpen = false;
 var exportMode = false;
 var digestMode = false;
 var digestOutputPath = null;
+var statsMode = false;
 var outputPath = null;
 var argv = process.argv.slice(2);
 for (var i = 0; i < argv.length; i++) {
@@ -65,6 +66,7 @@ for (var i = 0; i < argv.length; i++) {
   if (arg === "--no-open") { noOpen = true; continue; }
   if (arg === "--export") { exportMode = true; continue; }
   if (arg === "--digest") { digestMode = true; continue; }
+  if (arg === "--stats") { statsMode = true; continue; }
   if ((arg === "-o" || arg === "--output") && i + 1 < argv.length) {
     outputPath = argv[++i]; continue;
   }
@@ -135,6 +137,194 @@ if (digestMode) {
     process.exit(1);
   });
 } else {
+// -- Stats mode: emit session telemetry as JSON and exit --
+if (statsMode) {
+  if (!sessionFile) {
+    process.stderr.write("Error: --stats requires a session file path.\n" +
+      "Usage: agentviz --stats <session.jsonl>\n");
+    process.exit(1);
+  }
+
+  var statsRaw = fs.readFileSync(sessionFile, "utf8");
+  var statsLines = statsRaw.split("\n").filter(function (l) { return l.trim(); });
+
+  // Detect format
+  var isCopilotCli = false;
+  for (var si = 0; si < Math.min(statsLines.length, 5); si++) {
+    if (statsLines[si].indexOf('"copilot-agent"') !== -1 ||
+        statsLines[si].indexOf('"copilot_agent"') !== -1) {
+      isCopilotCli = true;
+      break;
+    }
+  }
+
+  var totalTurns = 0;
+  var totalToolCalls = 0;
+  var errorCount = 0;
+  var toolCounts = {};
+  var inputTokens = 0;
+  var outputTokens = 0;
+  var cacheRead = 0;
+  var cacheWrite = 0;
+  var firstTimestamp = null;
+  var lastTimestamp = null;
+  var primaryModel = null;
+  var modelCounts = {};
+  var userTurnCount = 0;
+  var totalCost = 0;
+
+  for (var si = 0; si < statsLines.length; si++) {
+    try {
+      var record = JSON.parse(statsLines[si]);
+    } catch (e) { continue; }
+
+    // Extract timestamp for duration calculation
+    var ts = record.timestamp || (record.data && record.data.timestamp);
+    if (ts) {
+      var tsMs = new Date(ts).getTime();
+      if (!isNaN(tsMs)) {
+        if (firstTimestamp === null || tsMs < firstTimestamp) firstTimestamp = tsMs;
+        if (lastTimestamp === null || tsMs > lastTimestamp) lastTimestamp = tsMs;
+      }
+    }
+
+    if (isCopilotCli) {
+      var rtype = record.type || "";
+      if (rtype === "assistant.turn_start") totalTurns++;
+      if (rtype === "user.message") userTurnCount++;
+      if (rtype === "tool.execution_start") {
+        totalToolCalls++;
+        var tn = record.data && record.data.toolName;
+        if (tn) toolCounts[tn] = (toolCounts[tn] || 0) + 1;
+      }
+      if (rtype === "tool.execution_complete" && record.data && record.data.isError) {
+        errorCount++;
+      }
+      if (rtype === "session.error") errorCount++;
+
+      // Token usage from turn_end
+      if (rtype === "assistant.turn_end" && record.data) {
+        var usage = record.data.tokenUsage || record.data.usage;
+        if (usage) {
+          inputTokens += usage.inputTokens || usage.input_tokens || 0;
+          outputTokens += usage.outputTokens || usage.output_tokens || 0;
+          cacheRead += usage.cacheRead || usage.cache_read || 0;
+          cacheWrite += usage.cacheWrite || usage.cache_write || 0;
+        }
+        var mdl = record.data.model;
+        if (mdl) modelCounts[mdl] = (modelCounts[mdl] || 0) + 1;
+      }
+
+      // Copilot CLI cost from turn_end
+      if (rtype === "assistant.turn_end" && record.data && record.data.cost != null) {
+        totalCost += record.data.cost;
+      }
+    } else {
+      // Claude Code format
+      var ctype = record.type;
+      if (ctype === "human" || ctype === "user") { userTurnCount++; totalTurns++; }
+      if (ctype === "assistant" && record.message && record.message.content) {
+        var content = record.message.content;
+        if (Array.isArray(content)) {
+          for (var ci = 0; ci < content.length; ci++) {
+            var block = content[ci];
+            if (block.type === "tool_use") {
+              totalToolCalls++;
+              var tname = block.name || "unknown";
+              toolCounts[tname] = (toolCounts[tname] || 0) + 1;
+            }
+          }
+        }
+        // Model from assistant messages
+        if (record.message && record.message.model) {
+          var mdl = record.message.model;
+          modelCounts[mdl] = (modelCounts[mdl] || 0) + 1;
+        }
+      }
+      if (ctype === "tool_result" || ctype === "tool_output") {
+        if (record.is_error || record.isError) errorCount++;
+      }
+      // Token usage from assistant message
+      if (ctype === "assistant" && record.message && record.message.usage) {
+        var usage = record.message.usage;
+        inputTokens += usage.input_tokens || usage.inputTokens || 0;
+        outputTokens += usage.output_tokens || usage.outputTokens || 0;
+        cacheRead += usage.cache_read_input_tokens || usage.cacheRead || 0;
+        cacheWrite += usage.cache_creation_input_tokens || usage.cacheWrite || 0;
+      }
+    }
+  }
+
+  // Determine primary model (most frequent)
+  var maxModelCount = 0;
+  for (var m in modelCounts) {
+    if (modelCounts[m] > maxModelCount) {
+      maxModelCount = modelCounts[m];
+      primaryModel = m;
+    }
+  }
+
+  // Compute cost for Claude Code format using pricing table
+  if (!isCopilotCli && (inputTokens > 0 || outputTokens > 0) && primaryModel) {
+    var PRICE_TABLE = [
+      { match: "claude-opus-4",    input: 15.00, output: 75.00 },
+      { match: "claude-sonnet-4",  input:  3.00, output: 15.00 },
+      { match: "claude-haiku-4",   input:  0.80, output:  4.00 },
+      { match: "claude-3-5-sonnet", input: 3.00, output: 15.00 },
+      { match: "claude-3-5-haiku",  input: 0.80, output:  4.00 },
+      { match: "claude-3-opus",     input: 15.00, output: 75.00 },
+      { match: "claude-3-sonnet",   input:  3.00, output: 15.00 },
+      { match: "claude-3-haiku",    input:  0.25, output:  1.25 },
+    ];
+    var price = null;
+    var modelLower = primaryModel.toLowerCase();
+    for (var pi = 0; pi < PRICE_TABLE.length; pi++) {
+      if (modelLower.includes(PRICE_TABLE[pi].match)) { price = PRICE_TABLE[pi]; break; }
+    }
+    if (!price && modelLower.includes("claude")) price = { input: 3.00, output: 15.00 };
+    if (price) {
+      totalCost = (inputTokens / 1e6) * price.input
+        + (outputTokens / 1e6) * price.output
+        + (cacheRead / 1e6) * price.input * 0.1
+        + (cacheWrite / 1e6) * price.input * 1.25;
+    }
+  }
+
+  // Build sorted top tools
+  var topTools = Object.entries(toolCounts)
+    .sort(function (a, b) { return b[1] - a[1]; });
+
+  // Calculate duration in seconds
+  var duration = (firstTimestamp !== null && lastTimestamp !== null)
+    ? Math.round((lastTimestamp - firstTimestamp) / 1000)
+    : 0;
+
+  // Intervention count: user turns minus the initial prompt
+  var interventionCount = Math.max(0, userTurnCount - 1);
+
+  // Autonomy efficiency: approximate from event counts
+  // (simplified: ratio of tool calls to total significant events)
+  var productiveEvents = totalToolCalls + totalTurns;
+  var totalSignificant = productiveEvents + interventionCount;
+  var autonomyEfficiency = totalSignificant > 0
+    ? Math.round((productiveEvents / totalSignificant) * 100) / 100
+    : 0;
+
+  var statsOutput = {
+    autonomyEfficiency: autonomyEfficiency,
+    errorCount: errorCount,
+    totalTurns: totalTurns,
+    totalToolCalls: totalToolCalls,
+    tokenUsage: { input: inputTokens, output: outputTokens },
+    totalCost: Math.round(totalCost * 10000) / 10000,
+    topTools: topTools,
+    interventionCount: interventionCount,
+    duration: duration,
+  };
+
+  process.stdout.write(JSON.stringify(statsOutput, null, 2) + "\n");
+  process.exit(0);
+}
 
 // -- Check dist/ exists --
 if (!fs.existsSync(path.join(distDir, "index.html"))) {
