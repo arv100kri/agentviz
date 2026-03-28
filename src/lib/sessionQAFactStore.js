@@ -415,8 +415,13 @@ function buildTurnLookupAnswer(turnRow, toolRows) {
   var parts = [
     "Turn " + turnRow.turn_index + " ran " + pluralize(turnRow.tool_count, "tool call") + ".",
   ];
+  if (turnRow.user_message) parts.push("User prompt: \"" + truncate(turnRow.user_message, 200) + "\"");
   if (toolNames.length > 0) parts.push("Tools: " + toolNames.join(", ") + ".");
-  if (turnRow.has_error) parts.push("It included errors.");
+  if (turnRow.has_error) parts.push("It included " + pluralize(turnRow.error_count || 1, "error") + ".");
+  if (turnRow.start_time != null && turnRow.end_time != null) {
+    var duration = Number(turnRow.end_time) - Number(turnRow.start_time);
+    if (duration > 0) parts.push("Duration: " + formatDuration(duration) + ".");
+  }
   if (turnRow.summary) parts.push("Summary: " + truncate(turnRow.summary, 320));
   return {
     answer: parts.join(" "),
