@@ -31,6 +31,7 @@ AI coding agents (Claude Code, Copilot CLI, etc.) generate dense session logs, b
 - **Analyze** tool usage patterns, error rates, and model behavior at a glance
 - **Debug** failures by jumping directly between errors with one keystroke
 - **Stream live** as a session unfolds -- the view updates in real time
+- **Export CLI digests and stats** for post-mortems, sharing, and automation
 - **Discover sessions** automatically from the Copilot CLI session store
 - **Get AI coaching** on prompt engineering, skills, and MCP setup grounded in best practices
 
@@ -47,17 +48,28 @@ npm run dev
 
 Opens at [localhost:3000](http://localhost:3000). Drop a `.jsonl` session file or click **load a demo session** to try it instantly.
 
-### CLI (live streaming)
+### CLI (interactive + analysis)
 
 ```bash
-# Point at a specific session file
+# Interactive replay: point at a specific session file
 node bin/agentviz.js ~/.claude/projects/my-project/session.jsonl
 
 # Or pass a directory -- opens the most recently modified .jsonl inside it
 node bin/agentviz.js ~/.claude/projects/my-project/
+
+# Emit machine-readable stats JSON to stdout
+node bin/agentviz.js --stats ~/.copilot/session-state/<session-id>/events.jsonl
+
+# Generate a markdown digest
+node bin/agentviz.js --digest ~/.copilot/session-state/<session-id>/events.jsonl -o session-digest.md
+
+# Generate both outputs in one parse pass
+node bin/agentviz.js --digest ~/.copilot/session-state/<session-id>/events.jsonl -o session-digest.md --stats
 ```
 
-The browser opens with a pulsing **LIVE** badge. As Claude Code writes new events to the session file, they stream into the view in real time via SSE, including records that are written incrementally before the trailing newline lands.
+Interactive launch opens the browser with a pulsing **LIVE** badge. As Claude Code writes new events to the session file, they stream into the view in real time via SSE, including records that are written incrementally before the trailing newline lands.
+
+Analysis modes do not open the browser. `--stats` prints structured JSON for scripts and dashboards. `--digest` writes a markdown session digest that combines deterministic evidence extraction with Copilot SDK-assisted synthesis for decisions, hypotheses, and reviewer Q&A.
 
 ### Finding your session files
 
@@ -263,6 +275,7 @@ AI-powered session coaching available directly from any session. The coach reads
 | **Auto-detect Format** | Supports Claude Code and Copilot CLI JSONL. Format detected from first line. |
 | **Session Comparison** | Load two traces side by side. Scorecard and tool-usage chart with delta badges. |
 | **HTML Export** | One-click export of any session or comparison to a self-contained shareable `.html` file. |
+| **CLI Digests and Stats** | Generate markdown digests and machine-readable JSON telemetry from the command line without opening the browser. |
 | **Inbox Auto-discovery** | Automatically finds recent Copilot CLI sessions and ranks them by review priority. |
 | **AI Coach** | Agentic analysis powered by Copilot SDK. Recommends prompts, skills, and MCP config with one-click apply. |
 | **Autonomy Metrics** | Measures human response time, idle gaps, and intervention frequency per session. |
@@ -293,6 +306,8 @@ More formats planned: LangSmith traces, OpenTelemetry spans.
 ```
 src/
   App.jsx                # Main orchestrator: file loading, playback, view routing
+  cli/
+    index.ts             # Node-target CLI analysis exports bundled into dist-cli/
   hooks/
     usePlayback.js       # Play/pause, speed, seek state machine
     useSearch.js         # Debounced full-text search with match highlighting
@@ -304,6 +319,7 @@ src/
     useHashRouter.js     # Hash-based routing between inbox and session views
     useAsyncStatus.js    # Async operation state machine (idle/loading/success/error)
   lib/
+    cliArgs.js          # CLI flag parsing and mode resolution
     parseSession.ts      # Auto-detect format router
     parser.ts            # Claude Code JSONL parser
     copilotCliParser.ts  # Copilot CLI JSONL parser
@@ -311,6 +327,8 @@ src/
     session.ts           # Pure helpers: getSessionTotal, buildFilteredEventEntries
     sessionLibrary.js    # localStorage-backed session library with content persistence
     sessionParsing.ts    # Session parsing utilities and types
+    sessionInsights.js   # CLI stats and digest evidence builders
+    sessionDigestAgent.js # Copilot SDK digest synthesis for higher-order sections
     autonomyMetrics.js   # Human response time, idle gaps, intervention scoring
     projectConfig.js     # Project config surface detection (CLAUDE.md, .github/, etc.)
     aiCoachAgent.js      # AI Coach powered by @github/copilot-sdk (gpt-4o)
@@ -350,10 +368,11 @@ src/
     ui/                  # Shared primitives: BrandWordmark, ShellFrame, ToolbarButton
     waterfall/           # Waterfall sub-components: WaterfallChart, WaterfallRow, TimeAxis
 bin/
-  agentviz.js            # CLI entry point: finds free port, starts server, opens browser
+  agentviz.js            # Multi-mode CLI: launch replay UI, emit stats, or generate a digest
 mcp/
   server.js              # MCP server: launch_agentviz and close_agentviz tools
 server.js                # HTTP server: serves dist/ SPA + SSE /api/stream file tail
+vite.cli.config.js       # Vite library build for the Node CLI analysis bundle
 ```
 
 ### Parser API
@@ -362,7 +381,7 @@ server.js                # HTTP server: serves dist/ SPA + SSE /api/stream file 
 
 ```js
 // Every event has the same shape regardless of source format
-{ t, agent, track, text, duration, intensity, toolName?, toolInput?, raw, turnIndex, isError, model?, tokenUsage?, parentToolCallId? }
+{ t, agent, track, text, duration, intensity, toolName?, toolInput?, toolCallId?, toolResultText?, toolResultIsError?, raw, turnIndex, isError, model?, tokenUsage?, parentToolCallId? }
 
 // Turns group events by conversation round
 { index, startTime, endTime, eventIndices, userMessage, toolCount, hasError }
@@ -376,9 +395,10 @@ server.js                # HTTP server: serves dist/ SPA + SSE /api/stream file 
 ```bash
 npm run dev             # Vite dev server on port 3000
 node bin/agentviz.js    # API backend on port 4242
-npm run build           # Production build to dist/
+npm run build           # Production builds to dist/ and dist-cli/
 npm test                # Run all tests via Vitest
 npm run test:watch      # Watch mode
+npm run typecheck       # TypeScript checks for src/lib/**/*.ts
 ```
 
 > **Full dev setup requires both servers.** `npm run dev` starts the Vite frontend; `node bin/agentviz.js` starts the API backend (Coach, session discovery, config, apply, live streaming). Vite proxies `/api/*` to the backend automatically.
