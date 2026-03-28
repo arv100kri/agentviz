@@ -722,6 +722,21 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
         );
         return queryResult ? Object.assign(queryResult, { model: "AGENTVIZ SQLite fact store" }) : null;
       }
+      // Generic command/query listing when no specific terms are provided
+      var allCommandRows = db.prepare(
+        "SELECT entity_value, COUNT(*) AS ref_count, COUNT(DISTINCT turn_index) AS turn_count FROM tool_call_entities WHERE entity_type = 'commands' GROUP BY entity_value ORDER BY ref_count DESC LIMIT 15"
+      ).all();
+      if (allCommandRows && allCommandRows.length > 0) {
+        var cmdLines = allCommandRows.map(function (row) {
+          return "- `" + truncate(row.entity_value, 120) + "` (" + pluralize(row.ref_count, "call") + " across " + pluralize(row.turn_count, "turn") + ")";
+        });
+        return {
+          answer: "The session ran " + pluralize(allCommandRows.length, "distinct command") + ":\n" + cmdLines.join("\n"),
+          references: [],
+          detail: "Listed all commands from the SQLite fact store.",
+          model: "AGENTVIZ SQLite fact store",
+        };
+      }
     }
 
     if (queryProgram.family === "exact-raw-evidence") {
