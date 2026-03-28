@@ -1300,7 +1300,7 @@ export function createServer({ sessionFile, distDir }) {
               question: question,
               artifacts: qaArtifacts,
             });
-            prompt = buildQAPrompt(question, context, { sessionFilePath: sessionFilePath });
+            prompt = buildQAPrompt(question, context, { sessionFilePath: null });
           } else {
             queryProgram = compileSessionQAQueryProgram(question, qaArtifacts);
             var programCacheKey = buildSessionQAProgramCacheKey(queryProgram, {
@@ -1500,9 +1500,10 @@ export function createServer({ sessionFile, distDir }) {
             var promptSessionFilePath = null;
             if (route && (route.kind === "raw-full" || route.kind === "raw-targeted")) {
               promptSessionFilePath = sessionFilePath;
-            } else if (!route || route.kind === "model") {
-              promptSessionFilePath = sessionFilePath;
             }
+            // For all other routes (search, index, chunk, model), do NOT offer
+            // raw file access. The model must answer from the provided context.
+            // This prevents 3+ minute file-scan chains on large sessions.
             var sdkImportPromise = import("@github/copilot-sdk");
             prompt = buildQAPrompt(question, context, { sessionFilePath: promptSessionFilePath });
             sendProgress("retrieving-context", {
