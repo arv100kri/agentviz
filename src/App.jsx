@@ -109,6 +109,7 @@ function renderActiveView(activeView, props) {
         turns={props.session.turns}
         metadata={props.session.metadata}
         onSeekTurn={props.playback.seek}
+        onSetView={props.onSetView}
       />
     );
   }
@@ -242,6 +243,11 @@ export default function App() {
 
   var search = useSearch(filteredEventEntries);
   var qa = useSessionQA();
+
+  // Switch Q&A conversation when a different session is loaded
+  useEffect(function () {
+    if (session.file) qa.switchSession(session.file);
+  }, [session.file]);
 
   useEffect(function () {
     if (session.total > 0) {
@@ -579,6 +585,7 @@ export default function App() {
           autonomyMetrics: autonomyMetrics,
           debrief: debrief,
           qa: qa,
+          onSetView: setView,
           onOpenCoach: function () { setView("coach"); },
         })}
       </div>

@@ -347,6 +347,7 @@ export function createServer({ sessionFile, distDir }) {
           var turns = payload.turns || [];
           var metadata = payload.metadata || {};
           var requestedModel = payload.model || null;
+          var qaSessionId = payload.qaSessionId || null;
 
           if (!question) {
             res.writeHead(400);
@@ -357,27 +358,43 @@ export function createServer({ sessionFile, distDir }) {
           var context = buildQAContext(events, turns, metadata);
           var prompt = buildQAPrompt(question, context);
 
-          // Use the Copilot SDK session-based pattern (same as coach)
           var { CopilotClient, approveAll } = await import("@github/copilot-sdk");
           var client = new CopilotClient();
           var answer = "";
+          var returnedSessionId = qaSessionId;
 
           try {
             await client.start();
 
-            var sessionOpts = {
-              tools: [],
-              onPermissionRequest: approveAll,
-              systemMessage: {
-                mode: "replace",
-                content: prompt.system,
-              },
-            };
-            if (requestedModel) sessionOpts.model = requestedModel;
+            var session;
+            if (qaSessionId) {
+              // Resume existing Q&A session -- retains full conversation history
+              try {
+                session = await client.resumeSession(qaSessionId, {
+                  onPermissionRequest: approveAll,
+                });
+              } catch (resumeErr) {
+                // Session may have been deleted or expired -- fall back to new
+                session = null;
+              }
+            }
 
-            var session = await client.createSession(sessionOpts);
+            if (!session) {
+              // Create a new session
+              var sessionOpts = {
+                tools: [],
+                onPermissionRequest: approveAll,
+                systemMessage: {
+                  mode: "replace",
+                  content: prompt.system,
+                },
+              };
+              if (requestedModel) sessionOpts.model = requestedModel;
+              session = await client.createSession(sessionOpts);
+              returnedSessionId = session.sessionId;
+            }
 
-            // Send the question and wait for the session to idle (response complete)
+            // Send the question and wait for the session to idle
             await new Promise(function (resolve, reject) {
               var done = false;
               var unsubscribe = session.on(function (event) {
@@ -391,16 +408,14 @@ export function createServer({ sessionFile, distDir }) {
                   unsubscribe();
                   reject(new Error(event.data && event.data.message ? event.data.message : "Session error"));
                 } else if (event.type === "assistant.message.delta") {
-                  // Accumulate streamed text
                   var delta = event.data && (event.data.text || event.data.content || "");
                   answer += delta;
                 } else if (event.type === "assistant.message") {
-                  // Complete message in one event
                   var text = event.data && (event.data.text || event.data.content || "");
                   if (text) answer = text;
                 }
               });
-              session.send({ prompt: prompt.user }).catch(function (err) {
+              session.send({ prompt: "[AGENTVIZ-QA] " + question }).catch(function (err) {
                 if (!done) { done = true; unsubscribe(); reject(err); }
               });
             });
@@ -423,7 +438,7 @@ export function createServer({ sessionFile, distDir }) {
 
           res.writeHead(200);
           var modelLabel = requestedModel || "default";
-          res.end(JSON.stringify({ answer: answer, references: references, model: modelLabel }));
+          res.end(JSON.stringify({ answer: answer, references: references, model: modelLabel, qaSessionId: returnedSessionId }));
         } catch (e) {
           res.writeHead(500);
           res.end(JSON.stringify({ error: e.message || "Q&A failed" }));
@@ -554,11 +569,15 @@ export function createServer({ sessionFile, distDir }) {
               if (repoMatch) repo = repoMatch[1].trim();
               if (branchMatch) branch = branchMatch[1].trim();
 
-              // Filter out AI coach subprocess sessions:
-              // These are spawned by the coach agent itself and have a prompt as their summary.
+              // Filter out AI coach and Q&A subprocess sessions:
+              // These are spawned by AGENTVIZ itself and should not appear in the inbox.
               if (summary && (
                 summary.startsWith("Analyze this") ||
-                (summary.includes("Session stats") && summary.includes("read_config"))
+                (summary.includes("Session stats") && summary.includes("read_config")) ||
+                summary.includes("SESSION DATA:") ||
+                summary.includes("SESSION OVERVIEW") ||
+                summary.includes("You are an AI assistant that answers questions about a coding session") ||
+                summary.includes("[AGENTVIZ-QA]")
               )) {
                 return; // skip
               }

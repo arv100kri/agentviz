@@ -37,19 +37,28 @@ function parseTurnReferences(text) {
 
 var AVAILABLE_MODELS = [
   { id: "gpt-5.4", label: "GPT-5.4" },
+  { id: "gpt-5.4-mini", label: "GPT-5.4 mini" },
+  { id: "gpt-5.3-codex", label: "GPT-5.3-Codex" },
+  { id: "gpt-5.2-codex", label: "GPT-5.2-Codex" },
   { id: "gpt-5.2", label: "GPT-5.2" },
+  { id: "gpt-5.1-codex-max", label: "GPT-5.1-Codex-Max" },
+  { id: "gpt-5.1-codex", label: "GPT-5.1-Codex" },
   { id: "gpt-5.1", label: "GPT-5.1" },
+  { id: "gpt-5.1-codex-mini", label: "GPT-5.1-Codex-Mini" },
+  { id: "gpt-5-mini", label: "GPT-5 mini" },
   { id: "gpt-4.1", label: "GPT-4.1" },
+  { id: "claude-opus-4.6", label: "Claude Opus 4.6" },
+  { id: "claude-sonnet-4.6", label: "Claude Sonnet 4.6" },
   { id: "claude-sonnet-4.5", label: "Claude Sonnet 4.5" },
   { id: "claude-sonnet-4", label: "Claude Sonnet 4" },
   { id: "claude-haiku-4.5", label: "Claude Haiku 4.5" },
+  { id: "claude-opus-4.5", label: "Claude Opus 4.5" },
 ];
 
 var DEFAULT_MODEL = "gpt-5.4";
 
-export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
+export default function QAView({ qa, events, turns, metadata, onSeekTurn, onSetView }) {
   var [input, setInput] = useState("");
-  var [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
 
@@ -66,18 +75,21 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
   function handleSubmit(e) {
     if (e) e.preventDefault();
     if (!input.trim() || qa.loading) return;
-    qa.askQuestion(input.trim(), events, turns, metadata, selectedModel);
+    qa.askQuestion(input.trim(), events, turns, metadata, qa.selectedModel);
     setInput("");
   }
 
   function handleSuggestion(q) {
-    qa.askQuestion(q, events, turns, metadata, selectedModel);
+    qa.askQuestion(q, events, turns, metadata, qa.selectedModel);
   }
 
   function handleTurnClick(turnIndex) {
     if (onSeekTurn && turns) {
       var turn = turns.find(function (t) { return t.index === turnIndex; });
-      if (turn) onSeekTurn(turn.startTime);
+      if (turn) {
+        onSeekTurn(turn.startTime);
+        if (onSetView) onSetView("replay");
+      }
     }
   }
 
@@ -286,8 +298,8 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
         <div style={{ display: "flex", alignItems: "center", gap: theme.space.sm + "px" }}>
           <select
             style={modelSelectStyle}
-            value={selectedModel}
-            onChange={function (e) { setSelectedModel(e.target.value); }}
+            value={qa.selectedModel}
+            onChange={function (e) { qa.setSelectedModel(e.target.value); }}
             title="Choose model"
           >
             {AVAILABLE_MODELS.map(function (m) {
@@ -364,8 +376,8 @@ export default function QAView({ qa, events, turns, metadata, onSeekTurn }) {
       </div>
 
       <div style={limitationStyle}>
-        {qa.model
-          ? "Powered by " + (AVAILABLE_MODELS.find(function (m) { return m.id === qa.model; }) || { label: qa.model }).label
+        {qa.responseModel
+          ? "Powered by " + (AVAILABLE_MODELS.find(function (m) { return m.id === qa.responseModel; }) || { label: qa.responseModel }).label
           : "Powered by Copilot SDK"}
       </div>
 

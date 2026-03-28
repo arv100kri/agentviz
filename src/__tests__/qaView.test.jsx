@@ -154,21 +154,28 @@ describe("Q&A view integration", function () {
     var input = app.container.querySelector("input[placeholder*='Ask a question']");
     expect(input).toBeTruthy();
 
+    // Verify model selector is present in the header
+    var modelSelect = app.container.querySelector("select[title='Choose model']");
+    expect(modelSelect).toBeTruthy();
+    expect(modelSelect.value).toBe("gpt-5.4"); // default model
+
     // Verify send button
     expect(findExactButton(app.container, "Send")).toBeTruthy();
 
-    // Verify model status bar
+    // Verify model status bar (no response yet)
     expect(findByText(app.container, "Powered by Copilot SDK")).toBeTruthy();
 
     await app.unmount();
   });
 
   it("shows a user message in the chat when a question is submitted", async function () {
-    // Mock fetch to return a Q&A answer
+    // Mock fetch to return a Q&A answer and capture the request body
     var qaFetchCalled = false;
+    var capturedBody = null;
     var fetchMock = vi.fn(async function (url, opts) {
       if (String(url).includes("/api/qa")) {
         qaFetchCalled = true;
+        if (opts && opts.body) capturedBody = JSON.parse(opts.body);
         return {
           ok: true,
           json: async function () {
@@ -229,6 +236,17 @@ describe("Q&A view integration", function () {
 
     // Verify the model label is displayed
     expect(findByText(app.container, "Powered by GPT-5.4")).toBeTruthy();
+
+    // Verify the request included the selected model
+    expect(capturedBody).toBeTruthy();
+    expect(capturedBody.model).toBe("gpt-5.4");
+
+    // Verify clicking a turn reference navigates to replay view
+    await click(turnRef);
+    await waitFor(function () {
+      // After clicking a turn ref, the view should switch to replay
+      return findByText(app.container, "Replay");
+    }, "expected view to switch to replay after turn click");
 
     await app.unmount();
   });
@@ -367,6 +385,484 @@ describe("Q&A view integration", function () {
     expect(input).toBeTruthy();
     expect(input.style.fontSize).not.toBe("");
     expect(input.style.borderRadius).not.toBe("");
+
+    await app.unmount();
+  });
+
+  it("persists the model choice across tab switches", async function () {
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("fixture.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp();
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox to render");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findByText(app.container, "fixture.jsonl");
+    }, "expected session to open");
+
+    // Go to Q&A
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A to render");
+
+    // Change model to claude-sonnet-4
+    var modelSelect = app.container.querySelector("select[title='Choose model']");
+    expect(modelSelect).toBeTruthy();
+    await act(async function () {
+      var descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(modelSelect), "value");
+      descriptor.set.call(modelSelect, "claude-sonnet-4");
+      modelSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(modelSelect.value).toBe("claude-sonnet-4");
+
+    // Switch to Stats tab
+    await click(findClickableText(app.container, "Stats"));
+    await waitFor(function () {
+      return findByText(app.container, "Session Overview");
+    }, "expected stats view to render");
+
+    // Switch back to Q&A
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A to render again");
+
+    // Model should still be claude-sonnet-4
+    var modelSelectAfter = app.container.querySelector("select[title='Choose model']");
+    expect(modelSelectAfter.value).toBe("claude-sonnet-4");
+
+    await app.unmount();
+  });
+
+  it("shows a fresh Q&A when switching to a new session", async function () {
+    var callCount = 0;
+    var fetchMock = vi.fn(async function (url) {
+      if (String(url).includes("/api/qa")) {
+        callCount++;
+        return {
+          ok: true,
+          json: async function () {
+            return { answer: "Answer " + callCount + ".", references: [] };
+          },
+        };
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("session-a.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+    persistSessionSnapshot("session-b.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox to render");
+
+    // Open first session
+    var openButtons = Array.from(app.container.querySelectorAll("button"))
+      .filter(function (b) { return b.textContent.trim() === "Open in Observe"; });
+    await click(openButtons[0]);
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session to open");
+
+    // Go to Q&A and ask a question
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A to render");
+
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Question for session A");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Answer 1.");
+    }, "expected response", 5000);
+
+    // Go back to inbox
+    var resetBtn = app.container.querySelector("button[title='Back to Inbox']");
+    if (!resetBtn) { await app.unmount(); return; }
+    await click(resetBtn);
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox after reset");
+
+    // Open the other session
+    var openBtns2 = Array.from(app.container.querySelectorAll("button"))
+      .filter(function (b) { return b.textContent.trim() === "Open in Observe"; });
+    await click(openBtns2.length > 1 ? openBtns2[1] : openBtns2[0]);
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected second session to open");
+
+    // Q&A should show empty state (no conversation from session A)
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected fresh Q&A for new session");
+
+    expect(findByText(app.container, "Question for session A")).toBeFalsy();
+    expect(findByText(app.container, "Answer 1.")).toBeFalsy();
+
+    await app.unmount();
+  });
+
+  it("restores Q&A conversation when returning to a previous session", async function () {
+    var callCount = 0;
+    var fetchMock = vi.fn(async function (url) {
+      if (String(url).includes("/api/qa")) {
+        callCount++;
+        return {
+          ok: true,
+          json: async function () {
+            return { answer: "Answer " + callCount + ".", references: [] };
+          },
+        };
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("session-a.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+    persistSessionSnapshot("session-b.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox");
+
+    // Open session A and ask a question
+    var openButtons = Array.from(app.container.querySelectorAll("button"))
+      .filter(function (b) { return b.textContent.trim() === "Open in Observe"; });
+    await click(openButtons[0]);
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session A to open");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A");
+
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Question for A");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Answer 1.");
+    }, "expected answer for A", 5000);
+
+    // Go to session B
+    var resetBtn = app.container.querySelector("button[title='Back to Inbox']");
+    if (!resetBtn) { await app.unmount(); return; }
+    await click(resetBtn);
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox");
+
+    var openBtns2 = Array.from(app.container.querySelectorAll("button"))
+      .filter(function (b) { return b.textContent.trim() === "Open in Observe"; });
+    await click(openBtns2.length > 1 ? openBtns2[1] : openBtns2[0]);
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session B to open");
+
+    // Ask a question in session B
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected fresh Q&A for B");
+
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Question for B");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Answer 2.");
+    }, "expected answer for B", 5000);
+
+    // Go back to session A
+    resetBtn = app.container.querySelector("button[title='Back to Inbox']");
+    if (!resetBtn) { await app.unmount(); return; }
+    await click(resetBtn);
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox again");
+
+    var openBtns3 = Array.from(app.container.querySelectorAll("button"))
+      .filter(function (b) { return b.textContent.trim() === "Open in Observe"; });
+    await click(openBtns3[0]);
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session A to reopen");
+
+    await click(findClickableText(app.container, "Q&A"));
+
+    // Session A's conversation should be restored
+    await waitFor(function () {
+      return findByText(app.container, "Question for A");
+    }, "expected session A conversation to be restored");
+
+    expect(findByText(app.container, "Answer 1.")).toBeTruthy();
+    // Session B's messages should NOT be present
+    expect(findByText(app.container, "Question for B")).toBeFalsy();
+    expect(findByText(app.container, "Answer 2.")).toBeFalsy();
+
+    await app.unmount();
+  });
+
+  it("clears per-session history when Clear is clicked", async function () {
+    var fetchMock = vi.fn(async function (url) {
+      if (String(url).includes("/api/qa")) {
+        return {
+          ok: true,
+          json: async function () {
+            return { answer: "Some answer.", references: [] };
+          },
+        };
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("fixture.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findByText(app.container, "fixture.jsonl");
+    }, "expected session to open");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A");
+
+    // Ask and get a response
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "My question");
+    await click(findExactButton(app.container, "Send"));
+    await waitFor(function () {
+      return findByText(app.container, "Some answer.");
+    }, "expected answer", 5000);
+
+    // Clear the conversation
+    var clearBtn = app.container.querySelector("button[title='Clear conversation']");
+    await click(clearBtn);
+
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected empty state after clear");
+
+    // Switch away and back -- should still be empty (clear purges saved history)
+    await click(findClickableText(app.container, "Stats"));
+    await waitFor(function () {
+      return findByText(app.container, "Session Overview");
+    }, "expected stats");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected empty Q&A after returning");
+
+    expect(findByText(app.container, "My question")).toBeFalsy();
+    expect(findByText(app.container, "Some answer.")).toBeFalsy();
+
+    await app.unmount();
+  });
+
+  it("lists all available models in the dropdown", async function () {
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("fixture.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp();
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox to render");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findByText(app.container, "fixture.jsonl");
+    }, "expected session to open");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A to render");
+
+    var modelSelect = app.container.querySelector("select[title='Choose model']");
+    var options = Array.from(modelSelect.querySelectorAll("option"));
+
+    // Verify key models are present
+    var optionLabels = options.map(function (o) { return o.textContent; });
+    expect(optionLabels).toContain("GPT-5.4");
+    expect(optionLabels).toContain("GPT-5.2");
+    expect(optionLabels).toContain("GPT-4.1");
+    expect(optionLabels).toContain("Claude Sonnet 4.5");
+    expect(optionLabels).toContain("Claude Sonnet 4");
+    expect(optionLabels).toContain("Claude Opus 4.6");
+    expect(optionLabels).toContain("Claude Haiku 4.5");
+
+    // Should have a substantial number of models
+    expect(options.length).toBeGreaterThanOrEqual(10);
+
+    await app.unmount();
+  });
+
+  it("persists Q&A conversations to localStorage across app restarts", async function () {
+    var fetchMock = vi.fn(async function (url) {
+      if (String(url).includes("/api/qa")) {
+        return {
+          ok: true,
+          json: async function () {
+            return { answer: "Persisted answer.", references: [], model: "gpt-5.4", qaSessionId: "sdk-session-123" };
+          },
+        };
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("persist-test.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    // First app instance: ask a question
+    var app1 = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app1.container, "Inbox");
+    }, "expected inbox");
+
+    await click(findExactButton(app1.container, "Open in Observe"));
+    await waitFor(function () {
+      return findClickableText(app1.container, "Replay");
+    }, "expected session to open");
+
+    await click(findClickableText(app1.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app1.container, "Ask about this session");
+    }, "expected Q&A");
+
+    var input = app1.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Question that should persist");
+    await click(findExactButton(app1.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app1.container, "Persisted answer.");
+    }, "expected answer", 5000);
+
+    // Verify localStorage was written
+    var stored = global.localStorage.getItem("agentviz:qa-history");
+    expect(stored).toBeTruthy();
+    var parsed2 = JSON.parse(stored);
+    var keys = Object.keys(parsed2);
+    expect(keys.length).toBeGreaterThanOrEqual(1);
+
+    // Find the entry for our session
+    var entry = parsed2[keys.find(function (k) { return parsed2[k].messages && parsed2[k].messages.length > 0; })];
+    expect(entry).toBeTruthy();
+    expect(entry.messages.length).toBe(2); // user + assistant
+    expect(entry.qaSessionId).toBe("sdk-session-123");
+
+    await app1.unmount();
+
+    // Second app instance: should restore the conversation from localStorage
+    var app2 = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app2.container, "Inbox");
+    }, "expected inbox on second mount");
+
+    await click(findExactButton(app2.container, "Open in Observe"));
+    await waitFor(function () {
+      return findClickableText(app2.container, "Replay");
+    }, "expected session to reopen");
+
+    await click(findClickableText(app2.container, "Q&A"));
+
+    // The old conversation should be restored from localStorage
+    await waitFor(function () {
+      return findByText(app2.container, "Question that should persist");
+    }, "expected persisted user message to be restored");
+
+    expect(findByText(app2.container, "Persisted answer.")).toBeTruthy();
+
+    await app2.unmount();
+  });
+
+  it("sends qaSessionId on follow-up questions for session resumption", async function () {
+    var callCount = 0;
+    var capturedBodies = [];
+    var fetchMock = vi.fn(async function (url, opts) {
+      if (String(url).includes("/api/qa")) {
+        callCount++;
+        if (opts && opts.body) capturedBodies.push(JSON.parse(opts.body));
+        return {
+          ok: true,
+          json: async function () {
+            return {
+              answer: "Answer " + callCount + ".",
+              references: [],
+              model: "gpt-5.4",
+              qaSessionId: "sdk-sess-456",
+            };
+          },
+        };
+      }
+      return { ok: false };
+    });
+
+    var parsed = parseSessionText(FIXTURE_TEXT);
+    persistSessionSnapshot("followup-test.jsonl", parsed.result, FIXTURE_TEXT, global.localStorage);
+
+    var app = await renderApp(fetchMock);
+
+    await waitFor(function () {
+      return findByText(app.container, "Inbox");
+    }, "expected inbox");
+
+    await click(findExactButton(app.container, "Open in Observe"));
+    await waitFor(function () {
+      return findClickableText(app.container, "Replay");
+    }, "expected session");
+
+    await click(findClickableText(app.container, "Q&A"));
+    await waitFor(function () {
+      return findByText(app.container, "Ask about this session");
+    }, "expected Q&A");
+
+    // First question - no qaSessionId yet
+    var input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "First question");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Answer 1.");
+    }, "expected first answer", 5000);
+
+    expect(capturedBodies[0].qaSessionId).toBeFalsy();
+
+    // Second question - should include qaSessionId from first response
+    input = app.container.querySelector("input[placeholder*='Ask a question']");
+    await changeInput(input, "Follow-up question");
+    await click(findExactButton(app.container, "Send"));
+
+    await waitFor(function () {
+      return findByText(app.container, "Answer 2.");
+    }, "expected second answer", 5000);
+
+    expect(capturedBodies[1].qaSessionId).toBe("sdk-sess-456");
 
     await app.unmount();
   });
