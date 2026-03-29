@@ -346,7 +346,7 @@ describe("Q&A view integration", function () {
     expect(qaFetchCalled).toBe(true);
 
     // Verify the [Turn 0] reference is rendered as a clickable link
-    var turnRef = app.container.querySelector("span[title='Jump to Turn 0']");
+    var turnRef = app.container.querySelector("button[title='Jump to Turn 0']");
     expect(turnRef).toBeTruthy();
     expect(turnRef.textContent).toBe("[Turn 0]");
 

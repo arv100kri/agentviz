@@ -200,7 +200,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
   var userMsgStyle = {
     alignSelf: "flex-end",
     background: theme.accent.primary,
-    color: "#fff",
+    color: theme.text.primary,
     padding: theme.space.md + "px " + theme.space.lg + "px",
     borderRadius: theme.radius.lg + "px",
     maxWidth: "75%",
@@ -304,7 +304,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
     border: "none",
     borderRadius: theme.radius.md + "px",
     padding: theme.space.md + "px " + theme.space.lg + "px",
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: theme.fontSize.sm,
     fontFamily: theme.font.mono,
     fontWeight: 600,
@@ -395,6 +395,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
             value={qa.selectedModel}
             onChange={function (e) { qa.setSelectedModel(e.target.value); }}
             title="Choose model"
+            aria-label="Choose model"
           >
             {AVAILABLE_MODELS.map(function (m) {
               return <option key={m.id} value={m.id}>{m.label}</option>;
@@ -456,14 +457,15 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
               {parts.map(function (part, pi) {
                 if (part.type === "ref") {
                   return (
-                    <span
+                    <button
+                      type="button"
                       key={pi}
                       style={turnRefStyle}
                       onClick={function () { handleTurnClick(part.turnIndex); }}
                       title={"Jump to Turn " + part.turnIndex}
                     >
                       {part.value}
-                    </span>
+                    </button>
                   );
                 }
                 return <span key={pi}>{part.value}</span>;

@@ -110,7 +110,13 @@ function renderActiveView(activeView, props) {
         turns={props.session.turns}
         metadata={props.session.metadata}
         sessionFilePath={props.session.filePath}
-        rawText={props.session.getRawText ? props.session.getRawText() : ""}
+        rawText={
+          props.session.filePath
+            ? ""
+            : props.session.getRawText
+              ? props.session.getRawText()
+              : ""
+        }
         onSeekTurn={props.playback.seek}
         onSetView={props.onSetView}
       />

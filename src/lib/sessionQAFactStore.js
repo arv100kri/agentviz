@@ -72,7 +72,11 @@ function parseJson(value, fallback) {
 }
 
 async function getSqliteModule() {
-  if (!sqliteModulePromise) sqliteModulePromise = import("node:sqlite");
+  if (!sqliteModulePromise) {
+    sqliteModulePromise = import("node:sqlite").catch(function () {
+      return null;
+    });
+  }
   return sqliteModulePromise;
 }
 
@@ -110,6 +114,7 @@ function factStoreMetaMatches(db, fingerprint) {
 async function openReusableFactStore(filePath, fingerprint) {
   if (!filePath || !fs.existsSync(filePath)) return null;
   var sqlite = await getSqliteModule();
+  if (!sqlite) return null;
   var db = null;
   try {
     db = new sqlite.DatabaseSync(filePath);
@@ -302,6 +307,7 @@ function writeFactStoreSummaryChunks(db, summaryChunks) {
 
 async function buildFactStoreAtPath(filePath, entry, precomputed, storage) {
   var sqlite = await getSqliteModule();
+  if (!sqlite) return null;
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   try { fs.unlinkSync(filePath); } catch (error) {}
 
@@ -391,6 +397,7 @@ export async function ensureSessionQAFactStore(entry, precomputed, options) {
 async function openFactStoreDatabase(factStore) {
   if (!factStore || !factStore.path || !fs.existsSync(factStore.path)) return null;
   var sqlite = await getSqliteModule();
+  if (!sqlite) return null;
   return new sqlite.DatabaseSync(factStore.path);
 }
 
