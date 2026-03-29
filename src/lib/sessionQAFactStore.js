@@ -594,13 +594,28 @@ function buildChunkSummaryContext(db, heading, whereClause, params) {
   var chunkCount = totalChunks ? Number(totalChunks.cnt) : 0;
   
   // Select chunks from diverse positions: first, middle, and last
-  var limit = Math.min(chunkCount, 4);
-  var statement = db.prepare(
-    "SELECT start_turn, end_turn, summary FROM summary_chunks " +
-    (whereClause ? ("WHERE " + whereClause + " ") : "") +
-    "ORDER BY chunk_index LIMIT ?"
-  );
-  var rows = statement.all.apply(statement, (params || []).concat([limit]));
+  var rows = [];
+  if (chunkCount <= 4) {
+    var allStmt = db.prepare(
+      "SELECT start_turn, end_turn, summary FROM summary_chunks " +
+      (whereClause ? ("WHERE " + whereClause + " ") : "") +
+      "ORDER BY chunk_index"
+    );
+    rows = allStmt.all.apply(allStmt, params || []);
+  } else {
+    // Pick first, 1/3, 2/3, and last chunks for diversity
+    var indices = [0, Math.floor(chunkCount / 3), Math.floor(2 * chunkCount / 3), chunkCount - 1];
+    var seen = {};
+    for (var ci = 0; ci < indices.length; ci++) {
+      if (seen[indices[ci]]) continue;
+      seen[indices[ci]] = true;
+      var chunkStmt = db.prepare(
+        "SELECT start_turn, end_turn, summary FROM summary_chunks WHERE chunk_index = ?"
+      );
+      var row = chunkStmt.get(indices[ci]);
+      if (row) rows.push(row);
+    }
+  }
   if (!rows || rows.length === 0) return null;
 
   // Add session metrics preamble for richer context

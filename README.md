@@ -263,6 +263,10 @@ AI-powered session coaching available directly from any session. The coach reads
 
 Ask natural-language questions about any loaded session and get answers grounded in the session data. The Q&A engine uses precomputed session artifacts, a SQLite fact store for deterministic lookups, a lunr.js full-text search index for domain-specific retrieval, and query-aware routing to answer questions about turns, tools, errors, files, and overall session flow. Deterministic answers (metrics, turn lookups, file/tool/error/command listings) return in under 10ms. Domain-specific questions use the search index to find relevant turns before sending focused context to the model. Answers include clickable turn references that jump directly to the relevant point in the session. Requires the CLI server for model-backed answers.
 
+<div align="center">
+<img src="docs/screenshots/qa-view.svg" alt="Q&A View" width="800" />
+</div>
+
 ### More Features
 
 | Feature | Description |

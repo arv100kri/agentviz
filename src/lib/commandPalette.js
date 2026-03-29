@@ -17,7 +17,7 @@ function buildViewItems() {
     { id: "view-waterfall", type: "view", label: "Waterfall View", iconName: "waterfall", viewId: "waterfall", searchText: "waterfall view tools timeline execution", priority: 40 },
     { id: "view-graph", type: "view", label: "Graph View", iconName: "graph", viewId: "graph", searchText: "graph view flow dag nodes edges turns", priority: 40 },
     { id: "view-stats", type: "view", label: "Stats View", iconName: "stats", viewId: "stats", searchText: "stats view metrics summary", priority: 40 },
-    { id: "view-qa", type: "view", label: "Q&A View", iconName: "message-circle", viewId: "qa", searchText: "qa view question answer chat ask session", priority: 40 },
+    { id: "view-qa", type: "view", label: "Q&A View", iconName: "message-square-text", viewId: "qa", searchText: "qa view question answer chat ask session", priority: 40 },
   ];
 }
 

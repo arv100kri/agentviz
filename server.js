@@ -740,8 +740,8 @@ export function createServer({ sessionFile, distDir }) {
   var modelAnswerCacheOrder = [];
   var MODEL_ANSWER_CACHE_MAX = 50;
 
-  function hashContextKey(fingerprint, family, contextSubstr) {
-    var input = (fingerprint || "") + "|" + (family || "") + "|" + (contextSubstr || "").substring(0, 500);
+  function hashContextKey(fingerprint, family, contextSubstr, model) {
+    var input = (fingerprint || "") + "|" + (family || "") + "|" + (model || "") + "|" + (contextSubstr || "");
     var hash = 0;
     for (var i = 0; i < input.length; i++) {
       hash = ((hash << 5) - hash + input.charCodeAt(i)) | 0;
@@ -749,8 +749,8 @@ export function createServer({ sessionFile, distDir }) {
     return String(Math.abs(hash));
   }
 
-  function getCachedModelAnswer(fingerprint, family, context) {
-    var key = hashContextKey(fingerprint, family, context);
+  function getCachedModelAnswer(fingerprint, family, context, model) {
+    var key = hashContextKey(fingerprint, family, context, model);
     var entry = modelAnswerCache[key];
     if (!entry) return null;
     var idx = modelAnswerCacheOrder.indexOf(key);
@@ -759,7 +759,7 @@ export function createServer({ sessionFile, distDir }) {
   }
 
   function setCachedModelAnswer(fingerprint, family, context, answer, references, model) {
-    var key = hashContextKey(fingerprint, family, context);
+    var key = hashContextKey(fingerprint, family, context, model);
     modelAnswerCache[key] = { answer: answer, references: references, model: model, cachedAt: Date.now() };
     var idx = modelAnswerCacheOrder.indexOf(key);
     if (idx !== -1) modelAnswerCacheOrder.splice(idx, 1);
@@ -1516,7 +1516,7 @@ export function createServer({ sessionFile, distDir }) {
           // Check context-based model answer cache before calling the model
           var contextFingerprint = precomputed ? precomputed.fingerprint : null;
           var contextFamily = queryProgram ? queryProgram.family : "unknown";
-          var cachedModelAnswer = context ? getCachedModelAnswer(contextFingerprint, contextFamily, context) : null;
+          var cachedModelAnswer = context ? getCachedModelAnswer(contextFingerprint, contextFamily, context, requestedModel || "default") : null;
           if (cachedModelAnswer && cachedModelAnswer.answer) {
             sendProgress("using-cached-program-answer", {
               detail: "Reusing a cached model answer for similar context.",
