@@ -261,7 +261,7 @@ AI-powered session coaching available directly from any session. The coach reads
 
 ### Q&A View
 
-Ask natural-language questions about any loaded session and get answers grounded in the session data. The Q&A engine uses precomputed session artifacts, a SQLite fact store for deterministic lookups, and query-aware retrieval to answer questions about turns, tools, errors, files, and overall session flow. Answers include clickable turn references that jump directly to the relevant point in the session. Requires the CLI server for model-backed answers.
+Ask natural-language questions about any loaded session and get answers grounded in the session data. The Q&A engine uses precomputed session artifacts, a SQLite fact store for deterministic lookups, a lunr.js full-text search index for domain-specific retrieval, and query-aware routing to answer questions about turns, tools, errors, files, and overall session flow. Deterministic answers (metrics, turn lookups, file/tool/error/command listings) return in under 10ms. Domain-specific questions use the search index to find relevant turns before sending focused context to the model. Answers include clickable turn references that jump directly to the relevant point in the session. Requires the CLI server for model-backed answers.
 
 ### More Features
 
@@ -283,7 +283,7 @@ Ask natural-language questions about any loaded session and get answers grounded
 | **CLI Digests and Stats** | Generate markdown digests and machine-readable JSON telemetry from the command line without opening the browser. |
 | **Inbox Auto-discovery** | Automatically finds recent Copilot CLI sessions and ranks them by review priority. |
 | **AI Coach** | Agentic analysis powered by Copilot SDK. Recommends prompts, skills, and MCP config with one-click apply. |
-| **Session Q&A** | Ask natural-language questions about any session. Answers are grounded in session data with clickable turn references. Uses precomputed artifacts, a SQLite fact store, and query-aware retrieval. |
+| **Session Q&A** | Ask natural-language questions about any session. Answers are grounded in session data with clickable turn references. Uses precomputed artifacts, a SQLite fact store, lunr.js search index, and query-aware retrieval. Deterministic answers in <10ms. |
 | **Autonomy Metrics** | Measures human response time, idle gaps, and intervention frequency per session. |
 
 ## Keyboard Shortcuts
@@ -349,6 +349,7 @@ src/
     pricing.js           # Claude model pricing table and cost estimation
     sessionQA.js         # Session Q&A helpers: context building, routing, chunk scoring
     sessionQAFactStore.js # SQLite fact store for deterministic Q&A lookups
+    sessionSearchIndex.js # lunr.js full-text search index for domain-specific Q&A retrieval
     exportHtml.js        # Self-contained HTML export for single sessions and comparisons
     formatTime.js        # Duration and date formatting utilities
     playbackUtils.js     # Playback state helpers

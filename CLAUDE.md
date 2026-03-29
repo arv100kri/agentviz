@@ -45,6 +45,7 @@ src/
     pricing.js         # Claude model pricing table and cost estimation
     sessionQA.js       # Session Q&A helpers: context building, routing, chunk scoring
     sessionQAFactStore.js # SQLite fact store for deterministic Q&A lookups
+    sessionSearchIndex.js # lunr.js full-text search index for domain-specific Q&A retrieval
     exportHtml.js      # Self-contained HTML export for single sessions and comparisons
     dataInspector.js   # Payload summary and preview helpers for inspector panels
     formatTime.js      # Duration and date formatting utilities
