@@ -15,7 +15,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import url from "url";
-import { spawn } from "child_process";
+import { spawn, execSync } from "child_process";
 import { handleSessionQA } from "./src/lib/sessionQAPipeline.js";
 import {
   ensureSessionQAPrecomputed,
@@ -774,7 +774,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
             var wtPath = "wt.exe";
             var wtAvailable = false;
             try {
-              require("child_process").execSync("where wt.exe", { stdio: "ignore" });
+              execSync("where wt.exe", { stdio: "ignore" });
               wtAvailable = true;
             } catch (e) {}
 
