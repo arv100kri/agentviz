@@ -357,7 +357,6 @@ function buildQARequestBody(question, model, qaSessionId, key, fallbackPayload, 
     body.turns = fallbackPayload.turns;
     body.metadata = fallbackPayload.metadata;
     if (fallbackPayload.sessionFilePath) body.sessionFilePath = fallbackPayload.sessionFilePath;
-    if (fallbackPayload.rawText) body.rawText = fallbackPayload.rawText;
   }
   return body;
 }
@@ -494,7 +493,6 @@ export default function useSessionQA() {
         turns: payload.turns,
         metadata: payload.metadata,
         sessionFilePath: payload.sessionFilePath,
-        rawText: payload.rawText || null,
       }),
     })
       .then(function (res) {

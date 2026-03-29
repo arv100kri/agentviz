@@ -1135,16 +1135,23 @@ export function createServer({ sessionFile, distDir }) {
       }
 
       var qaCacheBody = "";
-      var MAX_CACHE_BODY_BYTES = 10 * 1024 * 1024; // 10MB
+      var qaCacheOverflow = false;
+      var MAX_CACHE_BODY_BYTES = 100 * 1024 * 1024; // 100MB (local server, no DoS risk)
       req.on("data", function (chunk) {
+        if (qaCacheOverflow) return;
         qaCacheBody += chunk;
         if (qaCacheBody.length > MAX_CACHE_BODY_BYTES) {
-          req.destroy();
-          res.writeHead(413);
-          res.end(JSON.stringify({ error: "Request body too large" }));
+          qaCacheOverflow = true;
+          qaCacheBody = "";
+          req.resume();
         }
       });
       req.on("end", async function () {
+        if (qaCacheOverflow) {
+          res.writeHead(413);
+          res.end(JSON.stringify({ error: "Request body too large" }));
+          return;
+        }
         try {
           var cachePayload = JSON.parse(qaCacheBody || "{}");
           if (!cachePayload.sessionKey) {
@@ -1191,16 +1198,24 @@ export function createServer({ sessionFile, distDir }) {
       }
       var qaRequestStartedAt = Date.now();
       var qaBody = "";
-      var MAX_QA_BODY_BYTES = 10 * 1024 * 1024; // 10MB
+      var qaOverflow = false;
+      var MAX_QA_BODY_BYTES = 100 * 1024 * 1024; // 100MB (local server, no DoS risk)
       req.on("data", function (chunk) {
+        if (qaOverflow) return;
         qaBody += chunk;
         if (qaBody.length > MAX_QA_BODY_BYTES) {
-          req.destroy();
-          res.writeHead(413);
-          res.end(JSON.stringify({ error: "Request body too large" }));
+          qaOverflow = true;
+          qaBody = "";
+          req.resume();
         }
       });
       req.on("end", async function () {
+        if (qaOverflow) {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(413);
+          res.end(JSON.stringify({ error: "Request body too large" }));
+          return;
+        }
         var payload;
         try {
           payload = JSON.parse(qaBody || "{}");
@@ -1675,13 +1690,34 @@ export function createServer({ sessionFile, distDir }) {
 
           // Extract turn references from the answer
           var references = [];
-          var refRegex = /\[Turn (\d+)\]/g;
+          var refRegex = /\[Turns?\s+[\d][\d\s,\-\u2013andTurn]*/gi;
           var refMatch;
           while ((refMatch = refRegex.exec(answer)) !== null) {
-            var turnIdx = parseInt(refMatch[1], 10);
-            if (!references.some(function (r) { return r.turnIndex === turnIdx; })) {
-              references.push({ turnIndex: turnIdx });
+            var refClose = answer.indexOf("]", refMatch.index);
+            if (refClose === -1) continue;
+            var refBody = answer.substring(refMatch.index + 1, refClose);
+            // Split on commas and "and", extract numbers and ranges
+            var refSegments = refBody.split(/,|\band\b/);
+            for (var si = 0; si < refSegments.length; si++) {
+              var seg = refSegments[si].trim();
+              var rangeMatch = seg.match(/(?:Turns?\s*)?(\d+)\s*[-\u2013]\s*(?:Turn\s*)?(\d+)/i);
+              if (rangeMatch) {
+                for (var ri = parseInt(rangeMatch[1], 10); ri <= parseInt(rangeMatch[2], 10); ri++) {
+                  if (!references.some(function (r) { return r.turnIndex === ri; })) {
+                    references.push({ turnIndex: ri });
+                  }
+                }
+                continue;
+              }
+              var singleMatch = seg.match(/(?:Turns?\s*)?(\d+)/i);
+              if (singleMatch) {
+                var turnIdx = parseInt(singleMatch[1], 10);
+                if (!references.some(function (r) { return r.turnIndex === turnIdx; })) {
+                  references.push({ turnIndex: turnIdx });
+                }
+              }
             }
+            refRegex.lastIndex = refClose + 1;
           }
 
           // Cache the model answer for paraphrase reuse on future similar questions
