@@ -326,15 +326,19 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
             flexShrink: 0,
           },
         }, isSelected ? "\u25B8" : " "),
+        React.createElement("div", {
+          style: { display: "flex", flexDirection: "column", flex: 1, minWidth: 0 },
+        },
+          React.createElement("span", {
+            style: { color: theme.text.primary, fontSize: theme.fontSize.base, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+          }, s.summary || s.project || "Session"),
+          (s.project && s.summary) ? React.createElement("span", {
+            style: { color: theme.text.dim, fontSize: theme.fontSize.xs, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+          }, s.project + (s.branch ? " (" + s.branch + ")" : "")) : null
+        ),
         React.createElement("span", {
-          style: { color: theme.text.primary, fontSize: theme.fontSize.base, fontWeight: 500 },
-        }, s.project || s.name || "Session"),
-        React.createElement("span", {
-          style: { color: theme.text.dim, fontSize: theme.fontSize.sm },
-        }, s.branch ? "(" + s.branch + ")" : ""),
-        React.createElement("span", {
-          style: { color: theme.text.dim, fontSize: theme.fontSize.sm, marginLeft: "auto" },
-        }, s.updatedAt ? formatRelativeTime(s.updatedAt) : "")
+          style: { color: theme.text.dim, fontSize: theme.fontSize.sm, flexShrink: 0 },
+        }, s.mtime ? formatRelativeTime(s.mtime) : s.updatedAt ? formatRelativeTime(s.updatedAt) : "")
       );
     });
   }

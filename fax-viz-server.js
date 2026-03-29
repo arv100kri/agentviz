@@ -745,17 +745,31 @@ export function createFaxVizServer({ faxDir, distDir }) {
             return;
           }
 
+          // Write the prompt to a temp file to avoid shell quoting issues
+          // with long multi-line bootstrap prompts
+          var tmpDir = path.join(os.tmpdir(), "fax-viz-launch");
+          fs.mkdirSync(tmpDir, { recursive: true });
+          var promptFile = path.join(tmpDir, "prompt-" + Date.now() + ".txt");
+          fs.writeFileSync(promptFile, prompt, "utf8");
+
           // On Windows, Copilot CLI needs an interactive terminal.
           // Use 'start' to open a new console window that stays alive.
+          // Read the prompt from the temp file via shell redirection.
           var isWindows = process.platform === "win32";
           var child;
 
           if (isWindows) {
-            // 'start' opens a new cmd window; 'cmd /k' keeps it open after launch
-            var fullCmd = cmd + " " + cmdArgs.map(function (a) {
-              return a.indexOf(" ") !== -1 ? '"' + a + '"' : a;
-            }).join(" ");
-            child = spawn("cmd", ["/c", "start", "cmd", "/k", fullCmd], {
+            var shellScript;
+            if (tool === "copilot-cli" && mode === "new") {
+              shellScript = 'copilot -i "' + promptFile.replace(/\\/g, "\\\\") + '"';
+            } else if (tool === "copilot-cli" && mode === "resume") {
+              shellScript = 'copilot --resume=' + sessionId + ' -i "' + promptFile.replace(/\\/g, "\\\\") + '"';
+            } else if (tool === "claude-code" && mode === "new") {
+              shellScript = 'claude --input-file "' + promptFile.replace(/\\/g, "\\\\") + '"';
+            } else {
+              shellScript = 'claude --resume ' + sessionId + ' --input-file "' + promptFile.replace(/\\/g, "\\\\") + '"';
+            }
+            child = spawn("cmd", ["/c", "start", "cmd", "/k", shellScript], {
               detached: true,
               stdio: "ignore",
               shell: false,
