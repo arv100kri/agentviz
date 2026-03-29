@@ -20,7 +20,6 @@ var SUGGESTED_QUESTIONS = [
 
 function expandTurnIndices(body) {
   var indices = [];
-  // Split on commas and "and" to handle lists like "Turn 0, Turn 1, and Turn 2"
   var segments = body.split(/,|\band\b/);
   for (var i = 0; i < segments.length; i++) {
     var seg = segments[i].trim();
@@ -35,11 +34,9 @@ function expandTurnIndices(body) {
     // Single: "Turn 3" or bare "3"
     var singleMatch = seg.match(/(?:Turns?\s*)?(\d+)/i);
     if (singleMatch) {
-      var idx = parseInt(singleMatch[1], 10);
-      indices.push(idx);
+      indices.push(parseInt(singleMatch[1], 10));
     }
   }
-  // Deduplicate while preserving order
   var seen = {};
   return indices.filter(function (v) {
     if (seen[v]) return false;
@@ -49,34 +46,50 @@ function expandTurnIndices(body) {
 }
 
 function parseTurnReferences(text) {
-  var parts = [];
-  // Match bracketed numeric turn references: [Turn 0], [Turns 0-5], [Turn 0, Turn 1],
-  // [Turn 10 - Turn 12], [Turn 0, 1, and 2], etc.
-  var regex = /\[Turns?\s+[\d][\d\s,\-\u2013andTurn]*/gi;
-  var lastIndex = 0;
-  var match;
-  while ((match = regex.exec(text)) !== null) {
-    // Find the closing bracket
-    var start = match.index;
-    var close = text.indexOf("]", start);
+  // Two-pass approach:
+  // 1. Bracketed groups: [Turn 0], [Turn 0, Turn 5], [Turn 10 - 12], [Turns 0-5]
+  // 2. Unbracketed: Turn 3, turn 7 (case insensitive)
+  var markers = []; // { start, end, indices }
+
+  // Pass 1: bracketed groups with range/list expansion
+  var bracketRegex = /\[Turns?\s+[\d][\d\s,\-\u2013andTurn]*/gi;
+  var bm;
+  while ((bm = bracketRegex.exec(text)) !== null) {
+    var close = text.indexOf("]", bm.index);
     if (close === -1) continue;
-    var full = text.substring(start, close + 1);
-    var body = full.slice(1, -1); // strip brackets
+    var full = text.substring(bm.index, close + 1);
+    var body = full.slice(1, -1);
     var indices = expandTurnIndices(body);
-    if (indices.length === 0) continue;
-    if (start > lastIndex) {
-      parts.push({ type: "text", value: text.substring(lastIndex, start) });
+    if (indices.length > 0) {
+      markers.push({ start: bm.index, end: close + 1, value: full, indices: indices });
     }
-    // Emit one ref per turn index, using the full bracketed text for the first
-    for (var i = 0; i < indices.length; i++) {
-      if (i === 0) {
-        parts.push({ type: "ref", turnIndex: indices[i], value: full });
-      } else {
-        parts.push({ type: "ref", turnIndex: indices[i], value: "" });
-      }
+    bracketRegex.lastIndex = close + 1;
+  }
+
+  // Pass 2: unbracketed "Turn N" not already inside a bracketed group
+  var unbracketedRegex = /Turn\s+(\d+)/gi;
+  var um;
+  while ((um = unbracketedRegex.exec(text)) !== null) {
+    var inside = markers.some(function (m) { return um.index >= m.start && um.index < m.end; });
+    if (inside) continue;
+    markers.push({ start: um.index, end: unbracketedRegex.lastIndex, value: um[0], indices: [parseInt(um[1], 10)] });
+  }
+
+  // Sort by position
+  markers.sort(function (a, b) { return a.start - b.start; });
+
+  // Build parts
+  var parts = [];
+  var lastIndex = 0;
+  for (var i = 0; i < markers.length; i++) {
+    var m = markers[i];
+    if (m.start > lastIndex) {
+      parts.push({ type: "text", value: text.substring(lastIndex, m.start) });
     }
-    lastIndex = close + 1;
-    regex.lastIndex = lastIndex;
+    for (var j = 0; j < m.indices.length; j++) {
+      parts.push({ type: "ref", turnIndex: m.indices[j], value: j === 0 ? m.value : "" });
+    }
+    lastIndex = m.end;
   }
   if (lastIndex < text.length) {
     parts.push({ type: "text", value: text.substring(lastIndex) });
