@@ -85,13 +85,13 @@ function FaxMetadataHeader({ faxEntry, onBack, onPickUp }) {
     React.createElement("span", {
       style: { fontSize: 14, fontWeight: 600, color: theme.text.primary },
     }, faxEntry.label),
-    faxEntry.importance !== "normal" && React.createElement("span", {
+    React.createElement("span", {
       style: {
         fontSize: 10, fontWeight: 700, color: importanceColor,
         border: "1px solid " + importanceColor, borderRadius: 3,
         padding: "1px 5px", letterSpacing: 1,
       },
-    }, faxEntry.importance.toUpperCase()),
+    }, (faxEntry.importance || "normal").toUpperCase()),
     React.createElement("div", { style: { flex: 1 } }),
     React.createElement("button", {
       className: "av-btn",
