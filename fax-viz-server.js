@@ -22,6 +22,10 @@ import {
   saveSessionQACacheEntry,
   getSessionQACacheEntry,
   removeSessionQACacheEntry,
+  getSessionQAHistoryFilePath,
+  getSessionQAHistoryEntry,
+  saveSessionQAHistoryEntry,
+  removeSessionQAHistoryEntry,
 } from "./server.js";
 
 var MIME = {
@@ -243,29 +247,65 @@ export function createFaxVizServer({ faxDir, distDir }) {
       return;
     }
 
-    // Session Q&A history: persists conversation history (stub)
+    // Session Q&A history: persists conversation history to disk
     if (pathname === "/api/session-qa-history") {
       res.setHeader("Content-Type", "application/json");
+      var qaHistoryFile = getSessionQAHistoryFilePath();
 
       if (req.method === "GET") {
+        var historySessionKey = parsed.query.sessionKey || "";
+        if (!historySessionKey) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "sessionKey is required" }));
+          return;
+        }
         res.writeHead(200);
-        res.end(JSON.stringify({ history: null }));
+        res.end(JSON.stringify({ history: getSessionQAHistoryEntry(qaHistoryFile, historySessionKey) }));
         return;
       }
 
-      if (req.method === "POST" || req.method === "DELETE") {
-        readBody(req).then(function () {
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-        }).catch(function () {
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-        });
+      if (req.method === "DELETE") {
+        var deleteHistoryKey = parsed.query.sessionKey || "";
+        if (!deleteHistoryKey) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "sessionKey is required" }));
+          return;
+        }
+        removeSessionQAHistoryEntry(qaHistoryFile, deleteHistoryKey);
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true }));
         return;
       }
 
-      res.writeHead(405);
-      res.end(JSON.stringify({ error: "Method not allowed" }));
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end(JSON.stringify({ error: "Method not allowed" }));
+        return;
+      }
+
+      readBody(req).then(function (body) {
+        try {
+          var historyPayload = JSON.parse(body || "{}");
+          if (!historyPayload.sessionKey) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "sessionKey is required" }));
+            return;
+          }
+          var savedHistory = saveSessionQAHistoryEntry(
+            qaHistoryFile,
+            historyPayload.sessionKey,
+            historyPayload.history || historyPayload
+          );
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, history: savedHistory }));
+        } catch (error) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: error.message || "Could not persist session Q&A history" }));
+        }
+      }).catch(function (e) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: e.message }));
+      });
       return;
     }
 
