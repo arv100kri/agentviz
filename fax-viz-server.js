@@ -27,6 +27,7 @@ import {
   getSessionQAHistoryEntry,
   saveSessionQAHistoryEntry,
   removeSessionQAHistoryEntry,
+  resolveSessionQAArtifacts,
 } from "./server.js";
 import { buildReplyIntent, writeReplyIntent } from "./src/fax-viz/lib/faxReplyIntent.js";
 
@@ -140,18 +141,42 @@ function serveStatic(res, filePath) {
   }
 }
 
-function readBody(req) {
+var MAX_BODY_BYTES = 100 * 1024 * 1024; // 100MB -- localhost only, no DoS surface
+
+function readBody(req, res) {
   return new Promise(function (resolve, reject) {
-    var body = "";
-    var MAX_BYTES = 10 * 1024 * 1024;
+    var chunks = [];
+    var bytes = 0;
+    var overflow = false;
     req.on("data", function (chunk) {
-      body += chunk;
-      if (body.length > MAX_BYTES) {
-        req.destroy();
-        reject(new Error("Request body too large"));
+      if (overflow) return;
+      var chunkBytes = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
+      bytes += chunkBytes;
+      if (bytes > MAX_BODY_BYTES) {
+        overflow = true;
+        chunks = [];
+        req.resume(); // graceful drain to avoid ECONNRESET
+        return;
       }
+      chunks.push(chunk);
     });
-    req.on("end", function () { resolve(body); });
+    req.on("end", function () {
+      if (overflow) {
+        if (res && !res.headersSent) {
+          res.writeHead(413, {
+            "Content-Type": "application/json",
+            "Connection": "keep-alive",
+          });
+          res.end(JSON.stringify({ error: "Request body too large" }));
+        }
+        reject(new Error("Request body too large"));
+        return;
+      }
+      var body = chunks.length > 0
+        ? (Buffer.isBuffer(chunks[0]) ? Buffer.concat(chunks).toString("utf8") : chunks.join(""))
+        : "";
+      resolve(body);
+    });
     req.on("error", reject);
   });
 }
@@ -210,7 +235,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
       }
 
       if (req.method === "POST") {
-        readBody(req).then(function (body) {
+        readBody(req, res).then(function (body) {
           try {
             var payload = JSON.parse(body);
             if (!payload.sessionKey) {
@@ -286,7 +311,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
         return;
       }
 
-      readBody(req).then(function (body) {
+      readBody(req, res).then(function (body) {
         try {
           var historyPayload = JSON.parse(body || "{}");
           if (!historyPayload.sessionKey) {
@@ -338,7 +363,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
       }
 
       if (req.method === "POST") {
-        readBody(req).then(function (body) {
+        readBody(req, res).then(function (body) {
           try {
             var payload = JSON.parse(body);
             var status = readReadStatus();
@@ -449,7 +474,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
         return;
       }
 
-      readBody(req).then(async function (body) {
+      readBody(req, res).then(async function (body) {
         var payload;
         try {
           payload = JSON.parse(body);
@@ -473,14 +498,8 @@ export function createFaxVizServer({ faxDir, distDir }) {
           return;
         }
 
-        // Resolve session from cache (lean payload) or from the request body
-        var resolvedSession = null;
-        if (sessionKey) {
-          resolvedSession = getSessionQACacheEntry(sessionQACache, sessionKey);
-        }
-        if (!resolvedSession && Array.isArray(payload.events) && payload.events.length > 0) {
-          resolvedSession = saveSessionQACacheEntry(sessionQACache, sessionKey || "inline", payload);
-        }
+        // Resolve session from cache or inline payload (shared logic with server.js)
+        var resolvedSession = resolveSessionQAArtifacts(sessionQACache, payload);
 
         if (!resolvedSession) {
           res.setHeader("Content-Type", "application/json");
@@ -553,9 +572,11 @@ export function createFaxVizServer({ faxDir, distDir }) {
 
         if (!res.writableEnded) res.end();
       }).catch(function (e) {
-        res.setHeader("Content-Type", "application/json");
-        res.writeHead(500);
-        res.end(JSON.stringify({ error: e.message }));
+        if (!res.headersSent) {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: e.message }));
+        }
       });
       return;
     }
@@ -701,7 +722,8 @@ export function createFaxVizServer({ faxDir, distDir }) {
       }
       return;
     }
-
+
+
     // POST /api/browse-folder -- opens a native folder picker dialog
     if (pathname === "/api/browse-folder") {
       res.setHeader("Content-Type", "application/json");
@@ -710,7 +732,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
         res.end(JSON.stringify({ error: "Method not allowed" }));
         return;
       }
-      readBody(req).then(function (body) {
+      readBody(req, res).then(function (body) {
         try {
           var payload = JSON.parse(body || "{}");
           var startDir = payload.startDir || os.homedir();
@@ -765,7 +787,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
         return;
       }
 
-      readBody(req).then(function (body) {
+      readBody(req, res).then(function (body) {
         try {
           var payload = JSON.parse(body);
           var tool = payload.tool;
