@@ -26,8 +26,11 @@ import CompareLandingState from "./components/app/CompareLandingState.jsx";
 import CompareShell from "./components/app/CompareShell.jsx";
 import { APP_VIEWS, PLAYBACK_SPEEDS } from "./components/app/constants.js";
 import DebriefView from "./components/DebriefView.jsx";
+import QAView from "./components/QAView.jsx";
+import useSessionQA from "./hooks/useSessionQA.js";
 import { buildAutonomyMetrics, buildAutonomySummary } from "./lib/autonomyMetrics.js";
 import {
+  createSessionStorageId,
   loadStoredSessionContent,
   persistSessionSnapshot,
   readSessionLibrary,
@@ -95,6 +98,27 @@ function renderActiveView(activeView, props) {
         onSetRecommendationState={props.onSetRecommendationState}
         metadata={props.session.metadata}
         rawSession={{ events: props.session.events, turns: props.session.turns, metadata: props.session.metadata, autonomyMetrics: props.autonomyMetrics }}
+      />
+    );
+  }
+
+  if (activeView === "qa") {
+    return (
+      <QAView
+        qa={props.qa}
+        events={props.session.events}
+        turns={props.session.turns}
+        metadata={props.session.metadata}
+        sessionFilePath={props.session.filePath}
+        rawText={
+          props.session.filePath
+            ? ""
+            : props.session.getRawText
+              ? props.session.getRawText()
+              : ""
+        }
+        onSeekTurn={props.playback.seek}
+        onSetView={props.onSetView}
       />
     );
   }
@@ -227,6 +251,29 @@ export default function App() {
   }, [session.events]);
 
   var search = useSearch(filteredEventEntries);
+  var qa = useSessionQA();
+  var rawSessionText = session.getRawText();
+  var qaSessionDescriptor = useMemo(function () {
+    if (!session.file) return { key: null, aliases: [] };
+    var fallbackKey = createSessionStorageId(session.file, session.metadata || {}, rawSessionText);
+    var primaryKey = session.filePath ? "path:" + String(session.filePath).toLowerCase() : fallbackKey;
+    var aliases = [];
+    if (session.file && session.file !== primaryKey) aliases.push(session.file);
+    if (fallbackKey && fallbackKey !== primaryKey) aliases.push(fallbackKey);
+    return { key: primaryKey, aliases: aliases };
+  }, [rawSessionText, session.file, session.filePath, session.metadata]);
+
+  // Switch Q&A conversation when a different session is loaded
+  useEffect(function () {
+    if (!qaSessionDescriptor.key) return;
+    qa.switchSession(qaSessionDescriptor.key, qaSessionDescriptor.aliases, {
+      events: session.events || [],
+      turns: session.turns || [],
+      metadata: session.metadata || null,
+      sessionFilePath: session.filePath || null,
+      rawText: session.filePath ? null : rawSessionText,
+    });
+  }, [qa.switchSession, qaSessionDescriptor]);
 
   useEffect(function () {
     if (session.total > 0) {
@@ -275,6 +322,7 @@ export default function App() {
     function afterLoad(rawText) {
       setView("stats");
       handleFile(rawText, entry.file);
+      session.setFilePath(entry.discoveredPath || null);
       // Persist discoveredPath onto library entry so future loads can refetch from disk
       if (entry.discoveredPath) {
         setLibraryEntries(function (prev) {
@@ -563,6 +611,8 @@ export default function App() {
           turnStartMap: turnStartMap,
           autonomyMetrics: autonomyMetrics,
           debrief: debrief,
+          qa: qa,
+          onSetView: setView,
           onOpenCoach: function () { setView("coach"); },
         })}
       </div>

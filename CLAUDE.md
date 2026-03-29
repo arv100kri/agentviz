@@ -23,6 +23,7 @@ src/
     useDiscoveredSessions.js # Auto-discovery of Copilot CLI sessions via /api/sessions
     useHashRouter.js   # Hash-based routing between inbox and session views
     useAsyncStatus.js  # Async operation state machine (idle/loading/success/error)
+    useSessionQA.js    # Session Q&A conversation state, persistence, and streaming
   lib/
     theme.js           # Design token system, TRACK_TYPES, AGENT_COLORS
     constants.js       # SAMPLE_EVENTS data for demo mode
@@ -42,6 +43,9 @@ src/
     waterfall.ts       # Waterfall view helpers: item building, stats, layout, windowing
     graphLayout.js     # Graph view helpers: ELKjs DAG builder, layout runner, position merger
     pricing.js         # Claude model pricing table and cost estimation
+    sessionQA.js       # Session Q&A helpers: context building, routing, chunk scoring
+    sessionQAFactStore.js # SQLite fact store for deterministic Q&A lookups
+    sessionSearchIndex.js # lunr.js full-text search index for domain-specific Q&A retrieval
     exportHtml.js      # Self-contained HTML export for single sessions and comparisons
     dataInspector.js   # Payload summary and preview helpers for inspector panels
     formatTime.js      # Duration and date formatting utilities
@@ -56,6 +60,7 @@ src/
     WaterfallView.jsx  # Tool execution waterfall with nesting, inspector sidebar
     GraphView.jsx      # Interactive DAG of turns/tool calls with ELKjs layout, pan/zoom, animations
     StatsView.jsx      # Aggregate metrics, tool ranking, turn summary
+    QAView.jsx         # AI-powered Session Q&A panel with suggested questions
     CompareView.jsx    # Side-by-side session comparison: Scorecard + Tools tabs
     CommandPalette.jsx # Cmd+K fuzzy search overlay (events, turns, views)
     DiffViewer.jsx     # Inline unified diff view for file-editing tool calls

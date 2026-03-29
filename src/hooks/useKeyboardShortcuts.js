@@ -17,7 +17,7 @@ export function handleKeyboardShortcut(e, options) {
     return true;
   }
 
-  if (options.showHero && (e.code === "Space" || e.code === "Enter")) {
+  if (options.showHero && (e.code === "Space" || e.code === "Enter") && !isEditableTarget(e.target)) {
     e.preventDefault();
     options.onDismissHero();
     return true;
@@ -61,6 +61,10 @@ export function handleKeyboardShortcut(e, options) {
   }
   if (e.key === "5") {
     options.onSetView("stats");
+    return true;
+  }
+  if (e.key === "6") {
+    options.onSetView("qa");
     return true;
   }
 
