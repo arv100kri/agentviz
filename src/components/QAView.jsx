@@ -18,23 +18,73 @@ var SUGGESTED_QUESTIONS = [
   "What happened around the first error?",
 ];
 
+function expandTurnIndices(body) {
+  var indices = [];
+  // Split on commas and "and" to handle lists like "Turn 0, Turn 1, and Turn 2"
+  var segments = body.split(/,|\band\b/);
+  for (var i = 0; i < segments.length; i++) {
+    var seg = segments[i].trim();
+    // Range: "0 - 5", "Turn 0 - Turn 5", "0-5", "Turns 0-5"
+    var rangeMatch = seg.match(/(?:Turns?\s*)?(\d+)\s*[-\u2013]\s*(?:Turn\s*)?(\d+)/i);
+    if (rangeMatch) {
+      var lo = parseInt(rangeMatch[1], 10);
+      var hi = parseInt(rangeMatch[2], 10);
+      for (var n = lo; n <= hi; n++) indices.push(n);
+      continue;
+    }
+    // Single: "Turn 3" or bare "3"
+    var singleMatch = seg.match(/(?:Turns?\s*)?(\d+)/i);
+    if (singleMatch) {
+      var idx = parseInt(singleMatch[1], 10);
+      indices.push(idx);
+    }
+  }
+  // Deduplicate while preserving order
+  var seen = {};
+  return indices.filter(function (v) {
+    if (seen[v]) return false;
+    seen[v] = true;
+    return true;
+  });
+}
+
 function parseTurnReferences(text) {
   var parts = [];
-  var regex = /\[Turn (\d+)\]/g;
+  // Match bracketed numeric turn references: [Turn 0], [Turns 0-5], [Turn 0, Turn 1],
+  // [Turn 10 - Turn 12], [Turn 0, 1, and 2], etc.
+  var regex = /\[Turns?\s+[\d][\d\s,\-\u2013andTurn]*/gi;
   var lastIndex = 0;
   var match;
   while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: "text", value: text.substring(lastIndex, match.index) });
+    // Find the closing bracket
+    var start = match.index;
+    var close = text.indexOf("]", start);
+    if (close === -1) continue;
+    var full = text.substring(start, close + 1);
+    var body = full.slice(1, -1); // strip brackets
+    var indices = expandTurnIndices(body);
+    if (indices.length === 0) continue;
+    if (start > lastIndex) {
+      parts.push({ type: "text", value: text.substring(lastIndex, start) });
     }
-    parts.push({ type: "ref", turnIndex: parseInt(match[1], 10), value: match[0] });
-    lastIndex = regex.lastIndex;
+    // Emit one ref per turn index, using the full bracketed text for the first
+    for (var i = 0; i < indices.length; i++) {
+      if (i === 0) {
+        parts.push({ type: "ref", turnIndex: indices[i], value: full });
+      } else {
+        parts.push({ type: "ref", turnIndex: indices[i], value: "" });
+      }
+    }
+    lastIndex = close + 1;
+    regex.lastIndex = lastIndex;
   }
   if (lastIndex < text.length) {
     parts.push({ type: "text", value: text.substring(lastIndex) });
   }
-  return parts;
+  return parts.filter(function (p) { return p.type === "ref" || p.value; });
 }
+
+export { parseTurnReferences, expandTurnIndices };
 
 function formatAnswerTiming(timing) {
   var totalMs = timing && timing.totalMs;

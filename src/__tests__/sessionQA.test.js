@@ -1115,3 +1115,97 @@ describe("session search index", function () {
     expect(route.searchResults.length).toBeGreaterThan(0);
   });
 });
+
+describe("parseTurnReferences", function () {
+  var parseTurnReferences;
+  var expandTurnIndices;
+
+  async function load() {
+    if (parseTurnReferences) return;
+    var mod = await import("../components/QAView.jsx");
+    parseTurnReferences = mod.parseTurnReferences;
+    expandTurnIndices = mod.expandTurnIndices;
+  }
+
+  it("parses simple [Turn N] references", async function () {
+    await load();
+    var parts = parseTurnReferences("See [Turn 0] and [Turn 3] for details.");
+    var refs = parts.filter(function (p) { return p.type === "ref"; });
+    expect(refs).toHaveLength(2);
+    expect(refs[0].turnIndex).toBe(0);
+    expect(refs[0].value).toBe("[Turn 0]");
+    expect(refs[1].turnIndex).toBe(3);
+  });
+
+  it("parses comma-separated turns: [Turn 0, Turn 1, Turn 2]", async function () {
+    await load();
+    var parts = parseTurnReferences("Found in [Turn 0, Turn 1, Turn 2].");
+    var refs = parts.filter(function (p) { return p.type === "ref"; });
+    expect(refs).toHaveLength(3);
+    expect(refs.map(function (r) { return r.turnIndex; })).toEqual([0, 1, 2]);
+  });
+
+  it("parses ranges: [Turn 10 - 12]", async function () {
+    await load();
+    var parts = parseTurnReferences("See [Turn 10 - 12] for the fix.");
+    var refs = parts.filter(function (p) { return p.type === "ref"; });
+    expect(refs).toHaveLength(3);
+    expect(refs.map(function (r) { return r.turnIndex; })).toEqual([10, 11, 12]);
+  });
+
+  it("parses ranges with Turn keyword on both sides: [Turn 10 - Turn 12]", async function () {
+    await load();
+    var parts = parseTurnReferences("See [Turn 10 - Turn 12].");
+    var refs = parts.filter(function (p) { return p.type === "ref"; });
+    expect(refs).toHaveLength(3);
+    expect(refs.map(function (r) { return r.turnIndex; })).toEqual([10, 11, 12]);
+  });
+
+  it("parses Turns plural with range: [Turns 0-5]", async function () {
+    await load();
+    var parts = parseTurnReferences("Review [Turns 0-5] carefully.");
+    var refs = parts.filter(function (p) { return p.type === "ref"; });
+    expect(refs).toHaveLength(6);
+    expect(refs[0].turnIndex).toBe(0);
+    expect(refs[5].turnIndex).toBe(5);
+  });
+
+  it("parses comma-separated bare numbers: [Turn 1, 3, 5]", async function () {
+    await load();
+    var parts = parseTurnReferences("See [Turn 1, 3, 5].");
+    var refs = parts.filter(function (p) { return p.type === "ref"; });
+    expect(refs).toHaveLength(3);
+    expect(refs.map(function (r) { return r.turnIndex; })).toEqual([1, 3, 5]);
+  });
+
+  it("parses 'and' separator: [Turn 0 and Turn 2]", async function () {
+    await load();
+    var parts = parseTurnReferences("See [Turn 0 and Turn 2].");
+    var refs = parts.filter(function (p) { return p.type === "ref"; });
+    expect(refs).toHaveLength(2);
+    expect(refs.map(function (r) { return r.turnIndex; })).toEqual([0, 2]);
+  });
+
+  it("preserves surrounding text between references", async function () {
+    await load();
+    var parts = parseTurnReferences("Start [Turn 0] middle [Turns 2-3] end.");
+    var texts = parts.filter(function (p) { return p.type === "text"; });
+    expect(texts[0].value).toBe("Start ");
+    expect(texts[1].value).toBe(" middle ");
+    expect(texts[2].value).toBe(" end.");
+  });
+
+  it("returns plain text when no references exist", async function () {
+    await load();
+    var parts = parseTurnReferences("No turn references here.");
+    expect(parts).toHaveLength(1);
+    expect(parts[0].type).toBe("text");
+    expect(parts[0].value).toBe("No turn references here.");
+  });
+
+  it("deduplicates overlapping indices", async function () {
+    await load();
+    var indices = expandTurnIndices("Turn 0, Turn 0, Turn 1");
+    expect(indices).toEqual([0, 1]);
+  });
+});
