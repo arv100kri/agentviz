@@ -246,6 +246,14 @@ AI-powered session coaching available directly from any session. The coach reads
 <img src="docs/screenshots/coach-view.svg" alt="Coach View" width="800" />
 </div>
 
+### Q&A View
+
+Ask natural-language questions about any loaded session and get answers grounded in the session data. Uses a multi-tier retrieval pipeline: deterministic metric queries are answered instantly from precomputed stats, structured lookups query a SQLite fact store, and open-ended questions use full-text search with lunr.js before falling back to a model. Answers include clickable `[Turn N]` references that jump to the Replay view. Supports ranges (`[Turn 0-5]`), comma lists (`[Turn 0, Turn 1]`), and model selection across 17 GPT and Claude models.
+
+<div align="center">
+<img src="docs/screenshots/qa-view.svg" alt="Q&A View" width="800" />
+</div>
+
 ### More Features
 
 | Feature | Description |
@@ -265,6 +273,7 @@ AI-powered session coaching available directly from any session. The coach reads
 | **HTML Export** | One-click export of any session or comparison to a self-contained shareable `.html` file. |
 | **Inbox Auto-discovery** | Automatically finds recent Copilot CLI sessions and ranks them by review priority. |
 | **AI Coach** | Agentic analysis powered by Copilot SDK. Recommends prompts, skills, and MCP config with one-click apply. |
+| **Session Q&A** | Ask questions about any session. Hybrid retrieval with precomputed metrics, SQLite fact store, lunr.js search, and model fallback. |
 | **Autonomy Metrics** | Measures human response time, idle gaps, and intervention frequency per session. |
 
 ## Keyboard Shortcuts
@@ -273,7 +282,7 @@ AI-powered session coaching available directly from any session. The coach reads
 |-----|--------|
 | `Space` | Play / Pause |
 | `Left` / `Right` | Seek 2 seconds |
-| `1` / `2` / `3` / `4` / `5` | Switch view (Replay / Tracks / Waterfall / Graph / Stats) |
+| `1` / `2` / `3` / `4` / `5` / `6` | Switch view (Replay / Tracks / Waterfall / Graph / Stats / Q&A) |
 | `/` | Focus search |
 | `E` / `Shift+E` | Next / Previous error |
 | `Cmd+K` | Command palette |
@@ -303,6 +312,7 @@ src/
     useDiscoveredSessions.js # Auto-discovery of Copilot CLI sessions via /api/sessions
     useHashRouter.js     # Hash-based routing between inbox and session views
     useAsyncStatus.js    # Async operation state machine (idle/loading/success/error)
+    useSessionQA.js      # Session Q&A conversation state, persistence, and streaming
   lib/
     parseSession.ts      # Auto-detect format router
     parser.ts            # Claude Code JSONL parser
@@ -322,6 +332,9 @@ src/
     waterfall.ts         # Waterfall view helpers: item building, stats, layout
     graphLayout.js       # ELKjs graph builder and layout merger for Graph view
     pricing.js           # Claude model pricing table and cost estimation
+    sessionQA.js         # Q&A retrieval: context building, query routing, fact store queries
+    sessionQAFactStore.js # SQLite fact store for deterministic Q&A lookups
+    sessionSearchIndex.js # lunr.js full-text search index for Q&A retrieval
     exportHtml.js        # Self-contained HTML export for single sessions and comparisons
     formatTime.js        # Duration and date formatting utilities
     playbackUtils.js     # Playback state helpers
@@ -333,6 +346,7 @@ src/
     WaterfallView.jsx    # Tool execution waterfall with nesting and inspector
     GraphView.jsx        # Interactive turn graph with expandable tool-call nodes
     StatsView.jsx        # Aggregate metrics and tool ranking
+    QAView.jsx           # Session Q&A chat with streaming answers and turn references
     CompareView.jsx      # Side-by-side session comparison (Scorecard + Tools tabs)
     CommandPalette.jsx   # Cmd+K fuzzy search overlay
     Timeline.jsx         # Scrubable playback bar with event markers
