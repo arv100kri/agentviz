@@ -486,13 +486,13 @@ describe("Q&A fact store", function () {
 describe("Q&A body overflow handling", function () {
   it("returns 413 with Connection: keep-alive for oversized /api/session-qa-cache POST", async function () {
     var http = await import("node:http");
-    var server = createServer({ distDir: "./dist" });
+    var server = createServer({ distDir: "./dist", maxBodyBytes: 1024 });
     await new Promise(function (resolve) { server.listen(0, resolve); });
     var port = server.address().port;
 
     try {
       var response = await new Promise(function (resolve, reject) {
-        var body = JSON.stringify({ sessionKey: "test", rawText: "x".repeat(110 * 1024 * 1024) });
+        var body = JSON.stringify({ sessionKey: "test", rawText: "x".repeat(2048) });
         var req = http.request({
           hostname: "127.0.0.1",
           port: port,

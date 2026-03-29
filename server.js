@@ -725,7 +725,7 @@ function serveStatic(res, filePath) {
   }
 }
 
-export function createServer({ sessionFile, distDir }) {
+export function createServer({ sessionFile, distDir, maxBodyBytes }) {
   var clients = new Set();
   var lastLineIdx = 0;
   var watcher = null;
@@ -1137,7 +1137,7 @@ export function createServer({ sessionFile, distDir }) {
       var qaCacheChunks = [];
       var qaCacheBytes = 0;
       var qaCacheOverflow = false;
-      var MAX_CACHE_BODY_BYTES = 100 * 1024 * 1024; // 100MB (local server, no DoS risk)
+      var MAX_CACHE_BODY_BYTES = maxBodyBytes || 100 * 1024 * 1024; // 100MB default
       req.on("data", function (chunk) {
         if (qaCacheOverflow) return;
         var chunkBytes = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
@@ -1211,7 +1211,7 @@ export function createServer({ sessionFile, distDir }) {
       var qaChunks = [];
       var qaBytes = 0;
       var qaOverflow = false;
-      var MAX_QA_BODY_BYTES = 100 * 1024 * 1024; // 100MB (local server, no DoS risk)
+      var MAX_QA_BODY_BYTES = maxBodyBytes || 100 * 1024 * 1024; // 100MB default
       req.on("data", function (chunk) {
         if (qaOverflow) return;
         var chunkBytes = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);

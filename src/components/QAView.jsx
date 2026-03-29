@@ -22,7 +22,6 @@ function expandTurnIndices(body) {
   var indices = [];
   // Split on commas and "and" to handle lists like "Turn 0, Turn 1, and Turn 2"
   var segments = body.split(/,|\band\b/);
-  var lastSeen = null;
   for (var i = 0; i < segments.length; i++) {
     var seg = segments[i].trim();
     // Range: "0 - 5", "Turn 0 - Turn 5", "0-5", "Turns 0-5"
@@ -31,7 +30,6 @@ function expandTurnIndices(body) {
       var lo = parseInt(rangeMatch[1], 10);
       var hi = parseInt(rangeMatch[2], 10);
       for (var n = lo; n <= hi; n++) indices.push(n);
-      lastSeen = hi;
       continue;
     }
     // Single: "Turn 3" or bare "3"
@@ -39,7 +37,6 @@ function expandTurnIndices(body) {
     if (singleMatch) {
       var idx = parseInt(singleMatch[1], 10);
       indices.push(idx);
-      lastSeen = idx;
     }
   }
   // Deduplicate while preserving order
@@ -53,8 +50,8 @@ function expandTurnIndices(body) {
 
 function parseTurnReferences(text) {
   var parts = [];
-  // Match bracketed turn references: [Turn 0], [Turns 0-5], [Turn 0, Turn 1],
-  // [Turn 10 - Turn 12], [Turn 0, 1, and 2], [Session Overview], etc.
+  // Match bracketed numeric turn references: [Turn 0], [Turns 0-5], [Turn 0, Turn 1],
+  // [Turn 10 - Turn 12], [Turn 0, 1, and 2], etc.
   var regex = /\[Turns?\s+[\d][\d\s,\-\u2013andTurn]*/gi;
   var lastIndex = 0;
   var match;
