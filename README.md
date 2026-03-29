@@ -289,6 +289,7 @@ Ask natural-language questions about any loaded session and get answers grounded
 | **AI Coach** | Agentic analysis powered by Copilot SDK. Recommends prompts, skills, and MCP config with one-click apply. |
 | **Session Q&A** | Ask natural-language questions about any session. Answers are grounded in session data with clickable turn references. Uses precomputed artifacts, a SQLite fact store, lunr.js search index, and query-aware retrieval. Deterministic answers in <10ms. |
 | **Autonomy Metrics** | Measures human response time, idle gaps, and intervention frequency per session. |
+| **Fax-Viz** | Companion viewer for fax context bundles. Pick up a fax in Copilot CLI or Claude Code, launch a new session or resume a recent one, and deep-link with `--open <fax-name>`. Shares the same Q&A pipeline (deterministic fast paths, search index, caching) as AGENTVIZ. |
 
 ## Keyboard Shortcuts
 
@@ -353,6 +354,7 @@ src/
     pricing.js           # Claude model pricing table and cost estimation
     sessionQA.js         # Session Q&A helpers: context building, routing, chunk scoring
     sessionQAFactStore.js # SQLite fact store for deterministic Q&A lookups
+    sessionQAPipeline.js # Shared Q&A pipeline used by both server.js and fax-viz-server.js
     sessionSearchIndex.js # lunr.js full-text search index for domain-specific Q&A retrieval
     exportHtml.js        # Self-contained HTML export for single sessions and comparisons
     formatTime.js        # Duration and date formatting utilities
@@ -382,6 +384,14 @@ src/
     app/                 # Shell components: AppHeader, AppLandingState, AppLoadingState
     ui/                  # Shared primitives: BrandWordmark, ShellFrame, ToolbarButton
     waterfall/           # Waterfall sub-components: WaterfallChart, WaterfallRow, TimeAxis
+  fax-viz/
+    FaxApp.jsx           # Fax-viz main app with inbox and observe views
+    components/
+      FaxInboxView.jsx   # Fax bundle inbox with Pick Up buttons
+      FaxObserveShell.jsx # Fax observe view with header and markdown display
+      PickUpModal.jsx    # Pick Up modal with tool selector and session picker
+    lib/
+      faxReplyIntent.js  # Read/write helpers for .fax-reply-intent.json
 bin/
   agentviz.js            # Multi-mode CLI: launch replay UI, emit stats, or generate a digest
 mcp/

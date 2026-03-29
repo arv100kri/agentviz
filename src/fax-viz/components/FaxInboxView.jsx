@@ -6,6 +6,7 @@ import {
   IMPORTANCE_ORDER,
   SORT_OPTIONS,
 } from "../lib/faxConstants.js";
+import PickUpModal from "./PickUpModal.jsx";
 
 function ImportanceBadge({ importance }) {
   var color = IMPORTANCE_COLORS[importance] || IMPORTANCE_COLORS.normal;
@@ -77,6 +78,10 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
   var _filter = useState("all");
   var importanceFilter = _filter[0];
   var setImportanceFilter = _filter[1];
+
+  var _pickupFax = useState(null);
+  var pickupFax = _pickupFax[0];
+  var setPickupFax = _pickupFax[1];
 
   // Group by thread
   var threadCounts = useMemo(function () {
@@ -299,9 +304,36 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
           // Date
           React.createElement("span", {
             style: { fontSize: 11, color: theme.text.dim, flexShrink: 0, whiteSpace: "nowrap" },
-          }, formatDate(fax.createdUtc))
+          }, formatDate(fax.createdUtc)),
+          // Pick Up button
+          React.createElement("button", {
+            className: "av-btn",
+            onClick: function (e) {
+              e.stopPropagation();
+              setPickupFax(fax);
+            },
+            style: {
+              background: theme.accent.primary,
+              color: theme.text.primary,
+              border: "none",
+              borderRadius: theme.radius.md + "px",
+              padding: theme.space.sm + "px " + theme.space.lg + "px",
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.font.mono,
+              fontWeight: 600,
+              cursor: "pointer",
+              flexShrink: 0,
+            },
+          }, "Pick Up")
         );
       })
-    )
+    ),
+    pickupFax && React.createElement(PickUpModal, {
+      isOpen: true,
+      onClose: function () { setPickupFax(null); },
+      faxId: pickupFax.id,
+      faxLabel: pickupFax.label,
+      senderAlias: pickupFax.sender && pickupFax.sender.alias ? pickupFax.sender.alias : "Unknown",
+    })
   );
 }

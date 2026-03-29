@@ -14,6 +14,7 @@ import Timeline from "../../components/Timeline.jsx";
 import useSessionQA from "../../hooks/useSessionQA.js";
 import { IMPORTANCE_COLORS } from "../lib/faxConstants.js";
 import Icon from "../../components/Icon.jsx";
+import PickUpModal from "./PickUpModal.jsx";
 
 var FAX_VIEWS = [
   { id: "replay", label: "Replay", icon: "play" },
@@ -71,6 +72,21 @@ function FaxMetadataHeader({ faxEntry, onBack }) {
       style: { fontSize: 11, color: theme.text.dim },
     }, "\u2192 " + faxEntry.git.branch),
     React.createElement("div", { style: { flex: 1 } }),
+    React.createElement("button", {
+      className: "av-btn",
+      onClick: function () { setShowPickup(true); },
+      style: {
+        background: theme.accent.primary,
+        color: theme.text.primary,
+        border: "none",
+        borderRadius: theme.radius.md + "px",
+        padding: theme.space.sm + "px " + theme.space.lg + "px",
+        fontSize: theme.fontSize.sm,
+        fontFamily: theme.font.mono,
+        fontWeight: 600,
+        cursor: "pointer",
+      },
+    }, "Pick Up"),
     React.createElement("span", {
       style: { fontSize: 11, color: theme.text.dim },
     }, faxEntry.createdUtc ? new Date(faxEntry.createdUtc).toLocaleString() : "")
@@ -170,6 +186,10 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
   var _view = usePersistentState("fax-viz:view", faxEntry.hasEvents ? "replay" : "qa");
   var activeView = _view[0];
   var setActiveView = _view[1];
+
+  var _showPickup = useState(false);
+  var showPickup = _showPickup[0];
+  var setShowPickup = _showPickup[1];
 
   var _trackFilters = usePersistentState("fax-viz:track-filters", {});
   var trackFilters = _trackFilters[0];
@@ -412,6 +432,13 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
     }),
     React.createElement("div", {
       style: { flex: 1, overflow: "hidden" },
-    }, renderView())
+    }, renderView()),
+    showPickup && React.createElement(PickUpModal, {
+      isOpen: true,
+      onClose: function () { setShowPickup(false); },
+      faxId: faxEntry.id,
+      faxLabel: faxEntry.label,
+      senderAlias: faxEntry.sender && faxEntry.sender.alias ? faxEntry.sender.alias : "Unknown",
+    })
   );
 }

@@ -45,6 +45,7 @@ src/
     pricing.js         # Claude model pricing table and cost estimation
     sessionQA.js       # Session Q&A helpers: context building, routing, chunk scoring
     sessionQAFactStore.js # SQLite fact store for deterministic Q&A lookups
+    sessionQAPipeline.js # Shared Q&A pipeline used by both server.js and fax-viz-server.js
     sessionSearchIndex.js # lunr.js full-text search index for domain-specific Q&A retrieval
     exportHtml.js      # Self-contained HTML export for single sessions and comparisons
     dataInspector.js   # Payload summary and preview helpers for inspector panels
@@ -75,6 +76,14 @@ src/
     app/               # Shell components: AppHeader, AppLandingState, AppLoadingState, CompareShell
     ui/                # Shared primitives: BrandWordmark, ShellFrame, ToolbarButton, ExportStatusButton
     waterfall/         # Waterfall sub-components: WaterfallChart, WaterfallRow, TimeAxis
+  fax-viz/
+    FaxApp.jsx           # Fax-viz main app with inbox and observe views
+    components/
+      FaxInboxView.jsx   # Fax bundle inbox with Pick Up buttons
+      FaxObserveShell.jsx # Fax observe view with header and markdown display
+      PickUpModal.jsx    # Pick Up modal with tool selector and session picker
+    lib/
+      faxReplyIntent.js  # Read/write helpers for .fax-reply-intent.json
 bin/
   agentviz.js          # CLI entry point: finds free port, starts server, opens browser
 mcp/

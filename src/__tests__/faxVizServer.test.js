@@ -160,6 +160,26 @@ describe("fax-viz-server", function () {
       var handoff = body.markdownFiles.find(function (f) { return f.name === "handoff.md"; });
       expect(handoff.content).toContain("Test handoff content");
     });
+
+    it("returns 404 for nonexistent bundle", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "GET", "/api/fax/nonexistent-bundle-99999/manifest");
+      expect(response.status).toBe(404);
+      var body = JSON.parse(response.body);
+      expect(body.error).toContain("not found");
+    });
+
+    it("blocks path traversal", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "GET", "/api/fax/" + encodeURIComponent("../../etc") + "/manifest");
+      expect(response.status).toBe(403);
+    });
+
+    it("returns 405 for POST requests", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/fax/fax-context-test-bundle-20260326-180423/manifest");
+      expect(response.status).toBe(405);
+    });
   });
 
   describe("read status", function () {
@@ -220,6 +240,41 @@ describe("fax-viz-server", function () {
       var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
       var response = await makeRequest(server, "POST", "/api/fax/" + encodeURIComponent("../../etc") + "/pickup");
       expect(response.status).toBe(403);
+    });
+
+    it("handles nonexistent bundle gracefully", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/fax/nonexistent-bundle-99999/pickup");
+      // Server returns 200 with empty bootstrap (no bootstrap-prompt.txt)
+      // and writes a minimal reply intent
+      expect(response.status).toBe(200);
+      var body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.bootstrap).toBe("");
+
+      // Clean up intent file
+      var intentPath = path.join(tmpDir, ".fax-reply-intent.json");
+      if (fs.existsSync(intentPath)) fs.unlinkSync(intentPath);
+    });
+
+    it("returns 405 for GET requests", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "GET", "/api/fax/fax-context-test-bundle-20260326-180423/pickup");
+      expect(response.status).toBe(405);
+    });
+
+    it("returns empty bootstrap when bootstrap-prompt.txt is missing", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      // Use the no-events bundle which has no bootstrap-prompt.txt
+      var response = await makeRequest(server, "POST", "/api/fax/fax-context-no-events-20260325-120000/pickup");
+      expect(response.status).toBe(200);
+      var body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.bootstrap).toBe("");
+
+      // Clean up intent file
+      var intentPath = path.join(tmpDir, ".fax-reply-intent.json");
+      if (fs.existsSync(intentPath)) fs.unlinkSync(intentPath);
     });
   });
 
@@ -371,6 +426,35 @@ describe("fax-viz-server", function () {
         prompt: "Do something",
       });
       expect(response.status).toBe(400);
+    });
+
+    it("rejects when only tool is provided without mode", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/launch-session", {
+        tool: "copilot-cli",
+        prompt: "Do something",
+      });
+      expect(response.status).toBe(400);
+      var body = JSON.parse(response.body);
+      expect(body.error).toContain("required");
+    });
+
+    it("rejects invalid mode value", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/launch-session", {
+        tool: "copilot-cli",
+        mode: "restart",
+        prompt: "Do something",
+      });
+      expect(response.status).toBe(400);
+      var body = JSON.parse(response.body);
+      expect(body.error).toContain("Unsupported");
+    });
+
+    it("returns 405 for GET requests", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "GET", "/api/launch-session");
+      expect(response.status).toBe(405);
     });
   });
 });

@@ -664,6 +664,8 @@ Three overlay patterns exist:
 
 All overlays dismiss on backdrop click via `e.stopPropagation()` on the inner container.
 
+**Pick Up Modal** (fax-viz PickUpModal) -- follows the Dialog Modal pattern with `role="dialog"`. Closes on Escape key and overlay backdrop click.
+
 ### Modal Container
 
 ```jsx

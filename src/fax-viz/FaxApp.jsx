@@ -1,10 +1,16 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { theme } from "../lib/theme.js";
 import useFaxDiscovery from "./hooks/useFaxDiscovery.js";
 import useFaxReadStatus from "./hooks/useFaxReadStatus.js";
 import useKeyboardShortcuts from "../hooks/useKeyboardShortcuts.js";
 import FaxInboxView from "./components/FaxInboxView.jsx";
 import FaxObserveShell from "./components/FaxObserveShell.jsx";
+
+function parseFaxHash() {
+  var hash = window.location.hash || "";
+  var match = hash.match(/^#\/fax\/(.+)$/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
 
 export default function FaxApp() {
   var discovery = useFaxDiscovery();
@@ -13,6 +19,22 @@ export default function FaxApp() {
   var _route = useState({ view: "inbox", faxId: null });
   var route = _route[0];
   var setRoute = _route[1];
+
+  // Handle #/fax/:id hash route for direct open (e.g. --open flag)
+  var _hashHandled = useRef(false);
+  useEffect(function () {
+    if (_hashHandled.current || discovery.loading) return;
+    var hashFaxId = parseFaxHash();
+    if (!hashFaxId) return;
+    var faxEntry = discovery.faxes.find(function (f) { return f.id === hashFaxId; });
+    if (faxEntry) {
+      _hashHandled.current = true;
+      readStatus.markRead(faxEntry.folderName);
+      setRoute({ view: "observe", faxId: faxEntry.id, faxEntry: faxEntry });
+    } else if (!discovery.loading && discovery.faxes.length > 0) {
+      _hashHandled.current = true;
+    }
+  }, [discovery.faxes, discovery.loading]);
 
   var openFax = useCallback(function (faxEntry) {
     readStatus.markRead(faxEntry.folderName);
