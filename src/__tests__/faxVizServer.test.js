@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { createFaxVizServer } from "../../fax-viz-server.js";
 
 // Create a temporary fax directory with test bundles
@@ -50,6 +50,7 @@ beforeAll(function () {
   fs.writeFileSync(path.join(bundleDir, "handoff.md"), "# Handoff\n\nTest handoff content.");
   fs.writeFileSync(path.join(bundleDir, "analysis.md"), "# Analysis\n\nTest analysis.");
   fs.writeFileSync(path.join(bundleDir, "events.jsonl"), '{"type":"assistant","message":{"content":"hello"}}\n');
+  fs.writeFileSync(path.join(bundleDir, "bootstrap-prompt.txt"), "You are continuing work on a fax bundle. Pick up where the sender left off.");
 
   // Bundle without events
   var noEventsDir = path.join(tmpDir, "fax-context-no-events-20260325-120000");
@@ -190,6 +191,186 @@ describe("fax-viz-server", function () {
       var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
       var response = await makeRequest(server, "GET", "/api/fax/fax-context-test-bundle-20260326-180423/file/" + encodeURIComponent("../../manifest.json"));
       expect(response.status).toBe(403);
+    });
+  });
+
+  describe("POST /api/fax/:id/pickup", function () {
+    it("returns bootstrap prompt and writes reply intent", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/fax/fax-context-test-bundle-20260326-180423/pickup");
+      expect(response.status).toBe(200);
+      var body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.bootstrap).toContain("Pick up where the sender left off");
+
+      // Verify reply intent was written to fax dir root
+      var intentPath = path.join(tmpDir, ".fax-reply-intent.json");
+      expect(fs.existsSync(intentPath)).toBe(true);
+      var intent = JSON.parse(fs.readFileSync(intentPath, "utf8"));
+      expect(intent.threadId).toBe("thread-001");
+      expect(intent.parentFax).toBe("fax-context-test-bundle-20260326-180423");
+      expect(intent.parentSender).toBe("Test User");
+      expect(intent.pickedUpAt).toBeTruthy();
+
+      // Clean up intent file
+      fs.unlinkSync(intentPath);
+    });
+
+    it("returns 403 for path traversal attempts", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/fax/" + encodeURIComponent("../../etc") + "/pickup");
+      expect(response.status).toBe(403);
+    });
+  });
+
+  describe("GET /api/copilot-sessions", function () {
+    var copilotTmpDir;
+    var originalHome;
+    var originalUserProfile;
+
+    beforeAll(function () {
+      // Save original env
+      originalHome = process.env.HOME;
+      originalUserProfile = process.env.USERPROFILE;
+
+      // Create mock copilot session-state directory
+      copilotTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "fax-viz-copilot-test-"));
+      var sessionStateDir = path.join(copilotTmpDir, ".copilot", "session-state");
+
+      // Session 1: valid, large enough
+      var session1Dir = path.join(sessionStateDir, "aaaaaaaa-1111-2222-3333-444444444444");
+      fs.mkdirSync(session1Dir, { recursive: true });
+      // Create events.jsonl > 5KB
+      var largeContent = "";
+      for (var j = 0; j < 200; j++) {
+        largeContent += '{"type":"assistant","message":{"content":"line ' + j + ' padding data to make the file large enough"}}\n';
+      }
+      fs.writeFileSync(path.join(session1Dir, "events.jsonl"), largeContent);
+      fs.writeFileSync(path.join(session1Dir, "workspace.yaml"), [
+        "summary: Implemented auth flow",
+        "repository: myorg/myrepo",
+        "branch: feature/auth",
+        "cwd: /home/user/projects/myrepo",
+      ].join("\n"));
+
+      // Session 2: too small (< 5KB), should be filtered
+      var session2Dir = path.join(sessionStateDir, "bbbbbbbb-1111-2222-3333-444444444444");
+      fs.mkdirSync(session2Dir, { recursive: true });
+      fs.writeFileSync(path.join(session2Dir, "events.jsonl"), '{"small":true}\n');
+      fs.writeFileSync(path.join(session2Dir, "workspace.yaml"), "summary: Tiny session\n");
+
+      // Session 3: AGENTVIZ subprocess session, should be filtered
+      var session3Dir = path.join(sessionStateDir, "cccccccc-1111-2222-3333-444444444444");
+      fs.mkdirSync(session3Dir, { recursive: true });
+      var subContent = "";
+      for (var k = 0; k < 200; k++) {
+        subContent += '{"type":"assistant","message":{"content":"analyzing session ' + k + '"}}\n';
+      }
+      fs.writeFileSync(path.join(session3Dir, "events.jsonl"), subContent);
+      fs.writeFileSync(path.join(session3Dir, "workspace.yaml"), "summary: Analyze this coding session\n");
+
+      // Point HOME/USERPROFILE to our temp dir
+      process.env.HOME = copilotTmpDir;
+      process.env.USERPROFILE = copilotTmpDir;
+    });
+
+    afterAll(function () {
+      // Restore env
+      if (originalHome !== undefined) process.env.HOME = originalHome;
+      else delete process.env.HOME;
+      if (originalUserProfile !== undefined) process.env.USERPROFILE = originalUserProfile;
+      else delete process.env.USERPROFILE;
+
+      fs.rmSync(copilotTmpDir, { recursive: true, force: true });
+    });
+
+    it("discovers valid copilot sessions and filters small ones", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "GET", "/api/copilot-sessions");
+      expect(response.status).toBe(200);
+      var body = JSON.parse(response.body);
+      // Only session 1 should appear (session 2 is too small, session 3 is AGENTVIZ subprocess)
+      expect(body.sessions).toHaveLength(1);
+      expect(body.sessions[0].id).toBe("aaaaaaaa-1111-2222-3333-444444444444");
+      expect(body.sessions[0].tool).toBe("copilot-cli");
+      expect(body.sessions[0].summary).toBe("Implemented auth flow");
+      expect(body.sessions[0].branch).toBe("feature/auth");
+      expect(body.sessions[0].project).toBe("myrepo");
+      expect(body.sessions[0].mtime).toBeTruthy();
+    });
+  });
+
+  describe("POST /api/launch-session", function () {
+    it("constructs copilot-cli new session command", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/launch-session", {
+        tool: "copilot-cli",
+        mode: "new",
+        prompt: "Fix the auth bug",
+      });
+      expect(response.status).toBe(200);
+      var body = JSON.parse(response.body);
+      expect(body.status).toBe("launched");
+      expect(body.tool).toBe("copilot-cli");
+    });
+
+    it("constructs copilot-cli resume session command", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/launch-session", {
+        tool: "copilot-cli",
+        mode: "resume",
+        sessionId: "sess-123",
+        prompt: "Continue work",
+      });
+      expect(response.status).toBe(200);
+      var body = JSON.parse(response.body);
+      expect(body.status).toBe("launched");
+      expect(body.tool).toBe("copilot-cli");
+    });
+
+    it("constructs claude-code new session command", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/launch-session", {
+        tool: "claude-code",
+        mode: "new",
+        prompt: "Add logging",
+      });
+      expect(response.status).toBe(200);
+      var body = JSON.parse(response.body);
+      expect(body.status).toBe("launched");
+      expect(body.tool).toBe("claude-code");
+    });
+
+    it("constructs claude-code resume session command", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/launch-session", {
+        tool: "claude-code",
+        mode: "resume",
+        sessionId: "sess-456",
+        prompt: "Continue logging work",
+      });
+      expect(response.status).toBe(200);
+      var body = JSON.parse(response.body);
+      expect(body.status).toBe("launched");
+      expect(body.tool).toBe("claude-code");
+    });
+
+    it("rejects missing tool/mode", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/launch-session", {
+        prompt: "Do something",
+      });
+      expect(response.status).toBe(400);
+    });
+
+    it("rejects unsupported tool/mode combination", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "POST", "/api/launch-session", {
+        tool: "unknown-tool",
+        mode: "new",
+        prompt: "Do something",
+      });
+      expect(response.status).toBe(400);
     });
   });
 });

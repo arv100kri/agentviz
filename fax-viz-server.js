@@ -15,6 +15,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import url from "url";
+import { spawn } from "child_process";
 import { handleSessionQA } from "./src/lib/sessionQAPipeline.js";
 import {
   ensureSessionQAPrecomputed,
@@ -27,6 +28,7 @@ import {
   saveSessionQAHistoryEntry,
   removeSessionQAHistoryEntry,
 } from "./server.js";
+import { buildReplyIntent, writeReplyIntent } from "./src/fax-viz/lib/faxReplyIntent.js";
 
 var MIME = {
   ".html": "text/html; charset=utf-8",
@@ -551,6 +553,212 @@ export function createFaxVizServer({ faxDir, distDir }) {
         if (!res.writableEnded) res.end();
       }).catch(function (e) {
         res.setHeader("Content-Type", "application/json");
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: e.message }));
+      });
+      return;
+    }
+
+    // GET /api/copilot-sessions
+    if (pathname === "/api/copilot-sessions") {
+      res.setHeader("Content-Type", "application/json");
+      if (req.method !== "GET") {
+        res.writeHead(405);
+        res.end(JSON.stringify({ error: "Method not allowed" }));
+        return;
+      }
+
+      var homeDir = process.env.HOME || process.env.USERPROFILE || "";
+      var copilotRoot = path.join(homeDir, ".copilot", "session-state");
+      var sessions = [];
+
+      try {
+        var sessionDirs = fs.readdirSync(copilotRoot, { withFileTypes: true });
+        for (var si = 0; si < sessionDirs.length; si++) {
+          if (!sessionDirs[si].isDirectory()) continue;
+          var sessionDirName = sessionDirs[si].name;
+          var sessionDir = path.join(copilotRoot, sessionDirName);
+          var eventsFile = path.join(sessionDir, "events.jsonl");
+
+          try {
+            var evStat = fs.statSync(eventsFile);
+            // Filter out sessions smaller than 5KB
+            if (evStat.size < 5120) continue;
+
+            var summary = null;
+            var repo = null;
+            var branch = null;
+            var cwd = null;
+
+            try {
+              var yamlText = fs.readFileSync(path.join(sessionDir, "workspace.yaml"), "utf8");
+              var inlineMatch = yamlText.match(/^summary:\s+(?!\|-\s*$)(.+)$/m);
+              var blockMatch = yamlText.match(/^summary:\s*\|-\s*\n([ \t]+)(.+)$/m);
+              var repoMatch = yamlText.match(/^repository:\s*(.+)$/m);
+              var branchMatch = yamlText.match(/^branch:\s*(.+)$/m);
+              var cwdMatch = yamlText.match(/^cwd:\s*(.+)$/m);
+
+              if (inlineMatch && inlineMatch[1].trim()) {
+                summary = inlineMatch[1].trim();
+              } else if (blockMatch && blockMatch[2].trim()) {
+                summary = blockMatch[2].trim();
+              }
+              if (repoMatch) repo = repoMatch[1].trim();
+              if (branchMatch) branch = branchMatch[1].trim();
+              if (cwdMatch) cwd = cwdMatch[1].trim();
+
+              // Filter out AGENTVIZ subprocess sessions
+              if (summary && (
+                summary.startsWith("Analyze this") ||
+                (summary.includes("Session stats") && summary.includes("read_config")) ||
+                summary.includes("SESSION DATA:") ||
+                summary.includes("SESSION OVERVIEW") ||
+                summary.includes("You are an AI assistant that answers questions about a coding session") ||
+                summary.includes("[AGENTVIZ-QA]")
+              )) {
+                continue;
+              }
+            } catch (yamlErr) {}
+
+            // Derive project label from repo or cwd
+            var project = null;
+            if (repo) {
+              var repoParts = repo.split("/").filter(Boolean);
+              project = repoParts[repoParts.length - 1] || repo;
+            } else if (cwd) {
+              var cwdParts = cwd.replace(/\\/g, "/").split("/").filter(Boolean);
+              project = cwdParts[cwdParts.length - 1] || cwd;
+            }
+
+            sessions.push({
+              id: sessionDirName,
+              tool: "copilot-cli",
+              summary: summary || null,
+              project: project,
+              branch: branch,
+              cwd: cwd,
+              mtime: evStat.mtime.toISOString(),
+            });
+          } catch (evErr) {}
+        }
+      } catch (rootErr) {}
+
+      sessions.sort(function (a, b) {
+        return new Date(b.mtime) - new Date(a.mtime);
+      });
+
+      res.writeHead(200);
+      res.end(JSON.stringify({ sessions: sessions }));
+      return;
+    }
+
+    // POST /api/fax/:id/pickup
+    var pickupMatch = pathname.match(/^\/api\/fax\/([^/]+)\/pickup$/);
+    if (pickupMatch) {
+      res.setHeader("Content-Type", "application/json");
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end(JSON.stringify({ error: "Method not allowed" }));
+        return;
+      }
+
+      var pickupFaxId = decodeURIComponent(pickupMatch[1]);
+      var pickupBundlePath = path.join(faxDir, pickupFaxId);
+
+      // Prevent directory traversal
+      if (!pickupBundlePath.startsWith(faxDir)) {
+        res.writeHead(403);
+        res.end(JSON.stringify({ error: "Forbidden" }));
+        return;
+      }
+
+      try {
+        // Read bootstrap prompt
+        var bootstrapPath = path.join(pickupBundlePath, "bootstrap-prompt.txt");
+        var bootstrap = "";
+        try {
+          bootstrap = fs.readFileSync(bootstrapPath, "utf8");
+        } catch (bsErr) {}
+
+        // Read manifest for reply intent
+        var pickupManifest = parseManifest(pickupBundlePath);
+
+        // Write reply intent to fax directory root (parent of bundle folders)
+        var intent = buildReplyIntent(pickupManifest, pickupFaxId);
+        writeReplyIntent(faxDir, intent);
+
+        // Mark as read
+        var readStatus = readReadStatus();
+        readStatus[pickupFaxId] = new Date().toISOString();
+        writeReadStatus(readStatus);
+
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, bootstrap: bootstrap }));
+      } catch (pickupErr) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: pickupErr.message || "Pickup failed" }));
+      }
+      return;
+    }
+
+    // POST /api/launch-session
+    if (pathname === "/api/launch-session") {
+      res.setHeader("Content-Type", "application/json");
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end(JSON.stringify({ error: "Method not allowed" }));
+        return;
+      }
+
+      readBody(req).then(function (body) {
+        try {
+          var payload = JSON.parse(body);
+          var tool = payload.tool;
+          var mode = payload.mode;
+          var sessionId = payload.sessionId || null;
+          var prompt = payload.prompt || "";
+
+          if (!tool || !mode) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "tool and mode are required" }));
+            return;
+          }
+
+          var cmd;
+          var cmdArgs;
+
+          if (tool === "copilot-cli" && mode === "new") {
+            cmd = "copilot";
+            cmdArgs = ["-i", prompt];
+          } else if (tool === "copilot-cli" && mode === "resume") {
+            cmd = "copilot";
+            cmdArgs = ["--resume=" + sessionId, "-i", prompt];
+          } else if (tool === "claude-code" && mode === "new") {
+            cmd = "claude";
+            cmdArgs = [prompt];
+          } else if (tool === "claude-code" && mode === "resume") {
+            cmd = "claude";
+            cmdArgs = ["--resume", sessionId, prompt];
+          } else {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "Unsupported tool/mode combination: " + tool + "/" + mode }));
+            return;
+          }
+
+          var child = spawn(cmd, cmdArgs, {
+            detached: true,
+            stdio: "ignore",
+            shell: true,
+          });
+          child.unref();
+
+          res.writeHead(200);
+          res.end(JSON.stringify({ status: "launched", tool: tool }));
+        } catch (launchErr) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: launchErr.message || "Launch failed" }));
+        }
+      }).catch(function (e) {
         res.writeHead(500);
         res.end(JSON.stringify({ error: e.message }));
       });

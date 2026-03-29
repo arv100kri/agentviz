@@ -31,10 +31,12 @@ function exitWithError(msg) {
 }
 
 function parseArgs(argv) {
-  var args = { faxDir: null, noOpen: false };
+  var args = { faxDir: null, noOpen: false, open: null };
   for (var i = 2; i < argv.length; i++) {
     if (argv[i] === "--fax-dir" && argv[i + 1]) {
       args.faxDir = argv[++i];
+    } else if (argv[i] === "--open" && argv[i + 1]) {
+      args.open = argv[++i];
     } else if (argv[i] === "--no-open") {
       args.noOpen = true;
     } else if (argv[i] === "--help" || argv[i] === "-h") {
@@ -46,6 +48,7 @@ function parseArgs(argv) {
         "",
         "  Options:",
         "    --fax-dir <path>  Path to directory containing fax bundles (required)",
+        "    --open <name>     Open browser directly to a specific fax bundle",
         "    --no-open         Don't open browser automatically",
         "    -h, --help        Show this help",
         "",
@@ -116,7 +119,8 @@ findFreePort(FAX_VIZ_PORT, function (err, port) {
     process.stdout.write("  Press Ctrl+C to stop.\n\n");
 
     if (!args.noOpen) {
-      openBrowser(serverUrl);
+      var browserUrl = args.open ? serverUrl + "#/fax/" + args.open : serverUrl;
+      openBrowser(browserUrl);
     }
 
     process.on("SIGINT", function () {
