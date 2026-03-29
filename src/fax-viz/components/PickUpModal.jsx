@@ -75,7 +75,7 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
         return res.json();
       })
       .then(function (data) {
-        setSessions(Array.isArray(data) ? data : []);
+        setSessions(Array.isArray(data) ? data : Array.isArray(data.sessions) ? data.sessions : []);
         setLoading(false);
       })
       .catch(function (err) {

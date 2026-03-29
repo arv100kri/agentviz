@@ -28,7 +28,7 @@ var FAX_VIEWS = [
 // Views that require events.jsonl
 var SESSION_VIEWS = ["replay", "tracks", "stats"];
 
-function FaxMetadataHeader({ faxEntry, onBack }) {
+function FaxMetadataHeader({ faxEntry, onBack, onPickUp }) {
   var importanceColor = IMPORTANCE_COLORS[faxEntry.importance] || IMPORTANCE_COLORS.normal;
   return React.createElement("div", {
     style: {
@@ -76,7 +76,7 @@ function FaxMetadataHeader({ faxEntry, onBack }) {
     React.createElement("div", { style: { flex: 1 } }),
     React.createElement("button", {
       className: "av-btn",
-      onClick: function () { setShowPickup(true); },
+      onClick: function () { if (onPickUp) onPickUp(); },
       style: {
         background: theme.accent.primary,
         color: theme.text.primary,
@@ -672,7 +672,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
     ref: containerRef,
     style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" },
   },
-    React.createElement(FaxMetadataHeader, { faxEntry: faxEntry, onBack: onBack }),
+    React.createElement(FaxMetadataHeader, { faxEntry: faxEntry, onBack: onBack, onPickUp: function () { setShowPickup(true); } }),
     React.createElement(ViewTabs, {
       activeView: activeView,
       views: FAX_VIEWS,
