@@ -40,3 +40,7 @@ ag.log
 ag-*.log
 ag.*.log
 *.ag.log
+dist-fax-viz/
+fax-viz-server.log
+agentviz-reference.png
+agentviz-snapshot.md
