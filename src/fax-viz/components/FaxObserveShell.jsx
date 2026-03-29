@@ -28,16 +28,41 @@ var FAX_VIEWS = [
 // Views that require events.jsonl
 var SESSION_VIEWS = ["replay", "tracks", "stats"];
 
+function formatSenderProgram(program) {
+  if (!program) return null;
+  if (program === "copilot-cli") return "Copilot CLI";
+  if (program === "claude-code") return "Claude";
+  // Capitalize first letter for unknown programs
+  return program.charAt(0).toUpperCase() + program.slice(1);
+}
+
 function FaxMetadataHeader({ faxEntry, onBack, onPickUp }) {
   var importanceColor = IMPORTANCE_COLORS[faxEntry.importance] || IMPORTANCE_COLORS.normal;
-  return React.createElement("div", {
+
+  var progress = faxEntry.progress;
+  var progressCompleted = progress && Array.isArray(progress.stepsCompleted) ? progress.stepsCompleted.length : 0;
+  var progressRemaining = progress && Array.isArray(progress.stepsRemaining) ? progress.stepsRemaining.length : 0;
+  var progressTotal = progressCompleted + progressRemaining;
+  var progressAllDone = progressTotal > 0 && progressCompleted === progressTotal;
+
+  var programLabel = formatSenderProgram(faxEntry.sender.program);
+
+  var metaPillStyle = {
+    fontSize: theme.fontSize.xs,
+    color: theme.text.dim,
+    background: theme.bg.raised,
+    border: "1px solid " + theme.border.subtle,
+    borderRadius: 3,
+    padding: "1px 5px",
+    flexShrink: 0,
+  };
+
+  // Row 1: Back | label | importance | spacer | Pick Up
+  var row1 = React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 12,
-      padding: "8px 16px",
-      borderBottom: "1px solid " + theme.border.default,
-      flexShrink: 0,
     },
   },
     React.createElement("button", {
@@ -67,12 +92,6 @@ function FaxMetadataHeader({ faxEntry, onBack, onPickUp }) {
         padding: "1px 5px", letterSpacing: 1,
       },
     }, faxEntry.importance.toUpperCase()),
-    React.createElement("span", {
-      style: { fontSize: 11, color: theme.text.dim },
-    }, faxEntry.sender.alias || faxEntry.sender.email),
-    faxEntry.git && faxEntry.git.branch && React.createElement("span", {
-      style: { fontSize: 11, color: theme.text.dim },
-    }, "\u2192 " + faxEntry.git.branch),
     React.createElement("div", { style: { flex: 1 } }),
     React.createElement("button", {
       className: "av-btn",
@@ -88,11 +107,129 @@ function FaxMetadataHeader({ faxEntry, onBack, onPickUp }) {
         fontWeight: 600,
         cursor: "pointer",
       },
-    }, "Pick Up"),
+    }, "Pick Up")
+  );
+
+  // Row 2: sender + program | branch | progress | artifacts | thread | session | date
+  var row2Items = [];
+
+  // Sender alias/email
+  row2Items.push(
     React.createElement("span", {
+      key: "sender",
+      style: { fontSize: 11, color: theme.text.dim },
+    }, faxEntry.sender.alias || faxEntry.sender.email)
+  );
+
+  // Sender program pill
+  if (programLabel) {
+    row2Items.push(
+      React.createElement("span", {
+        key: "program",
+        style: metaPillStyle,
+      }, programLabel)
+    );
+  }
+
+  // Branch
+  if (faxEntry.git && faxEntry.git.branch) {
+    row2Items.push(
+      React.createElement("span", {
+        key: "branch",
+        style: { fontSize: 11, color: theme.text.dim },
+      }, "\u2192 " + faxEntry.git.branch)
+    );
+  }
+
+  // Progress summary
+  if (progressTotal > 0) {
+    row2Items.push(
+      React.createElement("span", {
+        key: "progress",
+        style: {
+          fontSize: 11,
+          color: progressAllDone ? theme.semantic.success : theme.text.dim,
+        },
+      }, progressAllDone
+        ? "\u2713 " + progressTotal + "/" + progressTotal + " steps"
+        : progressCompleted + "/" + progressTotal + " steps"
+      )
+    );
+  }
+
+  // Artifact count
+  if (faxEntry.artifactCount > 0) {
+    var artifactText = faxEntry.artifactCount + " file" + (faxEntry.artifactCount !== 1 ? "s" : "");
+    if (faxEntry.sharedArtifactCount > 0) {
+      artifactText += ", " + faxEntry.sharedArtifactCount + " shared";
+    }
+    row2Items.push(
+      React.createElement("span", {
+        key: "artifacts",
+        style: { fontSize: 11, color: theme.text.dim },
+      }, "\uD83D\uDCC4 " + artifactText)
+    );
+  }
+
+  // Thread indicator
+  if (faxEntry.threadId) {
+    row2Items.push(
+      React.createElement("span", {
+        key: "thread",
+        style: metaPillStyle,
+      }, "\uD83D\uDD17 Thread")
+    );
+  }
+
+  // Session badge
+  if (faxEntry.hasEvents) {
+    row2Items.push(
+      React.createElement("span", {
+        key: "session",
+        style: {
+          fontSize: 10,
+          fontWeight: 700,
+          color: theme.semantic.success,
+          border: "1px solid " + theme.semantic.success,
+          borderRadius: 3,
+          padding: "0px 4px",
+          letterSpacing: 1,
+          flexShrink: 0,
+        },
+      }, "SESSION")
+    );
+  }
+
+  // Date (pushed to end)
+  row2Items.push(
+    React.createElement("div", { key: "spacer", style: { flex: 1 } })
+  );
+  row2Items.push(
+    React.createElement("span", {
+      key: "date",
       style: { fontSize: 11, color: theme.text.dim },
     }, faxEntry.createdUtc ? new Date(faxEntry.createdUtc).toLocaleString() : "")
   );
+
+  var row2 = React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      paddingLeft: 68,
+    },
+  }, row2Items);
+
+  return React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      padding: "8px 16px",
+      borderBottom: "1px solid " + theme.border.default,
+      flexShrink: 0,
+    },
+  }, row1, row2);
 }
 
 function ViewTabs({ activeView, views, onSetView, hasEvents }) {
