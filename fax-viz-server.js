@@ -745,11 +745,28 @@ export function createFaxVizServer({ faxDir, distDir }) {
             return;
           }
 
-          var child = spawn(cmd, cmdArgs, {
-            detached: true,
-            stdio: "ignore",
-            shell: true,
-          });
+          // On Windows, Copilot CLI needs an interactive terminal.
+          // Use 'start' to open a new console window that stays alive.
+          var isWindows = process.platform === "win32";
+          var child;
+
+          if (isWindows) {
+            // 'start' opens a new cmd window; 'cmd /k' keeps it open after launch
+            var fullCmd = cmd + " " + cmdArgs.map(function (a) {
+              return a.indexOf(" ") !== -1 ? '"' + a + '"' : a;
+            }).join(" ");
+            child = spawn("cmd", ["/c", "start", "cmd", "/k", fullCmd], {
+              detached: true,
+              stdio: "ignore",
+              shell: false,
+            });
+          } else {
+            child = spawn(cmd, cmdArgs, {
+              detached: true,
+              stdio: "ignore",
+              shell: true,
+            });
+          }
           child.unref();
 
           res.writeHead(200);
