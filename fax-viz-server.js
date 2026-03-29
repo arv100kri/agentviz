@@ -15,13 +15,8 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import url from "url";
-import {
-  buildQAContext,
-  buildQAPrompt,
-  buildSessionQAArtifacts,
-  compileSessionQAQueryProgram,
-  routeSessionQAQuestion,
-} from "./src/lib/sessionQA.js";
+import { handleSessionQA } from "./src/lib/sessionQAPipeline.js";
+import { ensureSessionQAPrecomputed } from "./server.js";
 
 var MIME = {
   ".html": "text/html; charset=utf-8",
@@ -218,6 +213,9 @@ export function createFaxVizServer({ faxDir, distDir }) {
               rawText: payload.rawText || null,
               updatedAt: new Date().toISOString(),
             };
+            try {
+              ensureSessionQAPrecomputed(sessionQACache[payload.sessionKey]);
+            } catch (preErr) {}
             res.writeHead(200);
             res.end(JSON.stringify({
               success: true,
@@ -416,6 +414,9 @@ export function createFaxVizServer({ faxDir, distDir }) {
 
         var question = payload.question;
         var sessionKey = payload.sessionKey || null;
+        var requestedModel = payload.model || null;
+        var qaSessionId = payload.qaSessionId || null;
+        var qaRequestStartedAt = Date.now();
 
         if (!question) {
           res.setHeader("Content-Type", "application/json");
@@ -436,46 +437,47 @@ export function createFaxVizServer({ faxDir, distDir }) {
           };
         }
 
+        if (!resolvedSession) {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Missing session data" }));
+          return;
+        }
+
         // Extract faxId from sessionKey (format: "fax:<faxId>")
         var faxId = null;
         if (sessionKey && sessionKey.startsWith("fax:")) {
           faxId = sessionKey.substring(4);
         }
 
-        // Build fax context from bundle markdown files
-        var faxContext = "";
+        // Ensure precomputed artifacts and program cache exist
+        try {
+          ensureSessionQAPrecomputed(resolvedSession);
+        } catch (preErr) {}
+        if (!resolvedSession.programCache) {
+          resolvedSession.programCache = {};
+        }
+
+        // Build contextExtender that prepends fax markdown context
+        var contextExtender = null;
         if (faxId) {
           var bundlePath = path.join(faxDir, faxId);
           if (bundlePath.startsWith(faxDir)) {
             var mdFiles = readBundleMarkdownFiles(bundlePath);
             if (mdFiles.length > 0) {
-              faxContext = "\n\n--- FAX BUNDLE CONTEXT ---\n\n";
-              for (var i = 0; i < mdFiles.length; i++) {
-                faxContext += "## " + mdFiles[i].name + "\n\n" + mdFiles[i].content + "\n\n";
-              }
-              faxContext += "--- END FAX BUNDLE CONTEXT ---\n\n";
+              contextExtender = function (sessionContext) {
+                var faxContext = "\n\n--- FAX BUNDLE CONTEXT ---\n\n";
+                for (var i = 0; i < mdFiles.length; i++) {
+                  faxContext += "## " + mdFiles[i].name + "\n\n" + mdFiles[i].content + "\n\n";
+                }
+                faxContext += "--- END FAX BUNDLE CONTEXT ---\n\n";
+                return faxContext + sessionContext;
+              };
             }
           }
         }
 
-        // Build Q&A context from session events if available
-        var events = resolvedSession ? resolvedSession.events : [];
-        var turns = resolvedSession ? resolvedSession.turns : [];
-        var metadata = resolvedSession ? resolvedSession.metadata : {};
-
-        var sessionContext = "";
-        if (events.length > 0) {
-          try {
-            sessionContext = buildQAContext(events, turns, metadata, { question: question });
-          } catch (e) {
-            sessionContext = "";
-          }
-        }
-
-        var fullContext = faxContext + sessionContext;
-        var prompt = buildQAPrompt(question, fullContext, { sessionFilePath: null });
-
-        // Stream the response
+        // SSE streaming response
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
@@ -486,78 +488,25 @@ export function createFaxVizServer({ faxDir, distDir }) {
         }
 
         try {
-          var sdk = await import("@github/copilot-sdk");
-          var CopilotClient = sdk.CopilotClient;
-          var approveAll = sdk.approveAll;
-          var client = new CopilotClient();
-          var answer = "";
-
-          await client.start();
-
-          var qaSessionConfig = {
-            onPermissionRequest: approveAll,
-            streaming: true,
-            systemMessage: {
-              mode: "replace",
-              content: prompt.system || "You are a helpful assistant that answers questions about fax context bundles and coding sessions.",
+          await handleSessionQA({
+            question: question,
+            resolvedSession: resolvedSession,
+            requestedModel: requestedModel,
+            qaSessionId: qaSessionId,
+            contextExtender: contextExtender,
+            sseSend: sseSend,
+            homeDir: os.homedir(),
+            requestKind: payload.requestKind || null,
+            qaRequestStartedAt: qaRequestStartedAt,
+            onAbort: function (abortFn) {
+              res.on("close", abortFn);
             },
-          };
-
-          var qaSession = await client.createSession(qaSessionConfig);
-
-          // Abort on client disconnect
-          res.on("close", function () {
-            qaSession && qaSession.abort && qaSession.abort().catch(function () {});
           });
-
-          await new Promise(function (resolve, reject) {
-            var done = false;
-            var unsubscribe = qaSession.on(function (event) {
-              if (done) return;
-              if (event.type === "session.idle") {
-                done = true;
-                unsubscribe();
-                resolve();
-              } else if (event.type === "session.error") {
-                done = true;
-                unsubscribe();
-                reject(new Error(event.data && event.data.message ? event.data.message : "Session error"));
-              } else if (event.type === "assistant.message_delta" || event.type === "assistant.message.delta") {
-                var delta = event.data && (event.data.text || event.data.content || "");
-                if (delta) {
-                  answer += delta;
-                  sseSend({ delta: delta });
-                }
-              } else if (event.type === "assistant.message") {
-                var text = event.data && (event.data.text || event.data.content || "");
-                if (text && !answer) {
-                  answer = text;
-                  sseSend({ delta: text });
-                }
-              }
-            });
-
-            qaSession.send({ prompt: prompt.user || question }).catch(function (err) {
-              if (!done) { done = true; unsubscribe(); reject(err); }
-            });
-          });
-
-          await qaSession.disconnect();
-          await client.stop().catch(function () {});
-
-          sseSend({
-            done: true,
-            answer: answer,
-            model: "copilot",
-            references: [],
-          });
-        } catch (modelError) {
-          sseSend({
-            error: modelError.message || "Model call failed",
-          });
+        } catch (pipelineError) {
+          sseSend({ error: pipelineError.message || "Q&A failed" });
         }
 
-        res.end();
+        if (!res.writableEnded) res.end();
       }).catch(function (e) {
         res.setHeader("Content-Type", "application/json");
         res.writeHead(500);
