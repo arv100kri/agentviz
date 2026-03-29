@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { theme } from "../../lib/theme.js";
 import { parseSession } from "../../lib/parseSession.ts";
-import { buildFilteredEventEntries, buildTurnStartMap, buildTimeMap } from "../../lib/session";
+import { getSessionTotal, buildFilteredEventEntries, buildTurnStartMap, buildTimeMap } from "../../lib/session";
 import usePlayback from "../../hooks/usePlayback.js";
 import useSearch from "../../hooks/useSearch.js";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts.js";
+import usePersistentState from "../../hooks/usePersistentState.js";
 import ReplayView from "../../components/ReplayView.jsx";
 import TracksView from "../../components/TracksView.jsx";
 import WaterfallView from "../../components/WaterfallView.jsx";
@@ -28,9 +29,6 @@ var FAX_VIEWS = [
 
 // Views that require events.jsonl
 var SESSION_VIEWS = ["replay", "tracks", "waterfall", "graph", "stats"];
-
-// Fax metadata views (always available)
-var ALWAYS_VIEWS = ["qa"];
 
 function FaxMetadataHeader({ faxEntry, onBack }) {
   var importanceColor = IMPORTANCE_COLORS[faxEntry.importance] || IMPORTANCE_COLORS.normal;
@@ -121,14 +119,61 @@ function ViewTabs({ activeView, views, onSetView, hasEvents }) {
   );
 }
 
+function SearchToolbar({ search, searchInputRef, metadata }) {
+  var errorCount = metadata && metadata.errorCount ? metadata.errorCount : 0;
+  return React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "6px 16px",
+      borderBottom: "1px solid " + theme.border.default,
+      flexShrink: 0,
+    },
+  },
+    React.createElement("div", {
+      style: { display: "flex", alignItems: "center", gap: 4, flex: 1 },
+    },
+      React.createElement("input", {
+        ref: searchInputRef,
+        className: "av-search",
+        type: "text",
+        placeholder: "Search (/)",
+        value: search.searchQuery,
+        onChange: function (e) { search.setSearchQuery(e.target.value); },
+        style: {
+          background: theme.bg.secondary,
+          border: "1px solid " + theme.border.default,
+          borderRadius: 6,
+          color: theme.text.primary,
+          padding: "5px 10px",
+          fontSize: 12,
+          fontFamily: theme.font.mono,
+          width: 220,
+        },
+      })
+    ),
+    errorCount > 0 && React.createElement("span", {
+      style: { fontSize: 11, color: "#ff6b6b", display: "flex", alignItems: "center", gap: 4 },
+    }, "\u26A0 " + errorCount + " errors")
+  );
+}
+
 export default function FaxObserveShell({ faxEntry, onBack }) {
-  var _view = useState(faxEntry.hasEvents ? "replay" : "qa");
+  var _view = usePersistentState("fax-viz:view", faxEntry.hasEvents ? "replay" : "qa");
   var activeView = _view[0];
   var setActiveView = _view[1];
+
+  var _trackFilters = usePersistentState("fax-viz:track-filters", {});
+  var trackFilters = _trackFilters[0];
 
   var _session = useState(null);
   var session = _session[0];
   var setSession = _session[1];
+
+  var _rawText = useState("");
+  var rawText = _rawText[0];
+  var setRawText = _rawText[1];
 
   var _loading = useState(false);
   var loading = _loading[0];
@@ -152,15 +197,18 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
         return res.text();
       })
       .then(function (text) {
+        setRawText(text);
         var parsed = parseSession(text);
         if (!parsed || !parsed.events || parsed.events.length === 0) {
           throw new Error("Could not parse session events");
         }
+        var sessionTotal = getSessionTotal(parsed.events);
         setSession({
           events: parsed.events,
           turns: parsed.turns || [],
           metadata: parsed.metadata || {},
-          total: parsed.metadata && parsed.metadata.duration ? parsed.metadata.duration : 0,
+          total: sessionTotal,
+          file: faxEntry.folderName + "/events.jsonl",
         });
         setError(null);
       })
@@ -186,24 +234,62 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
   var metadata = session ? session.metadata : {};
   var total = session ? session.total : 0;
 
-  var playback = usePlayback(events, total);
-  var search = useSearch(events);
+  // FIX: correct arg order is (total, isLive)
+  var playback = usePlayback(total, false);
 
+  // FIX: seek to end of session once loaded so all events are visible
+  var hasInitialized = useRef(false);
+  useEffect(function () {
+    if (session && session.total > 0 && !hasInitialized.current) {
+      hasInitialized.current = true;
+      playback.seek(session.total);
+    }
+  }, [session]);
+
+  // FIX: useSearch expects eventEntries (not raw events)
   var filteredEventEntries = useMemo(function () {
-    return buildFilteredEventEntries(events, {});
-  }, [events]);
+    return buildFilteredEventEntries(events, trackFilters);
+  }, [events, trackFilters]);
+
+  var search = useSearch(filteredEventEntries);
+  var searchInputRef = useRef(null);
 
   var turnStartMap = useMemo(function () {
-    return buildTurnStartMap(turns, events);
-  }, [turns, events]);
+    return buildTurnStartMap(turns);
+  }, [turns]);
 
   var timeMap = useMemo(function () {
     return buildTimeMap(events);
   }, [events]);
 
+  // Q&A: compute sessionKey and switch session
+  var sessionKey = useMemo(function () {
+    if (!faxEntry) return null;
+    return "fax:" + faxEntry.id;
+  }, [faxEntry]);
+
   var qa = useSessionQA();
 
+  useEffect(function () {
+    if (sessionKey && qa.switchSession) {
+      qa.switchSession(sessionKey, []);
+    }
+  }, [sessionKey]);
+
   var containerRef = useRef(null);
+
+  // Keyboard shortcuts
+  var shortcutHandlers = useMemo(function () {
+    return {
+      "/": function (e) {
+        if (searchInputRef.current) {
+          e.preventDefault();
+          searchInputRef.current.focus();
+        }
+      },
+    };
+  }, []);
+  useKeyboardShortcuts(shortcutHandlers, containerRef);
 
   // Render active view
   function renderView() {
@@ -285,8 +371,13 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
         turns: turns,
         metadata: metadata,
         sessionFilePath: null,
-        rawText: "",
-        onSeekTurn: playback.seek,
+        rawText: rawText,
+        onSeekTurn: function (turnTime) {
+          if (session) {
+            playback.seek(turnTime);
+            setActiveView("replay");
+          }
+        },
         onSetView: setActiveView,
       });
     }
@@ -317,6 +408,11 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
       views: FAX_VIEWS,
       onSetView: setActiveView,
       hasEvents: faxEntry.hasEvents,
+    }),
+    session && SESSION_VIEWS.indexOf(activeView) !== -1 && React.createElement(SearchToolbar, {
+      search: search,
+      searchInputRef: searchInputRef,
+      metadata: metadata,
     }),
     session && SESSION_VIEWS.indexOf(activeView) !== -1 && React.createElement(Timeline, {
       currentTime: playback.time,

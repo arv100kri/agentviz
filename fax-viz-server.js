@@ -397,19 +397,21 @@ export function createFaxVizServer({ faxDir, distDir }) {
           for await (var chunk of stream) {
             if (chunk && chunk.content) {
               fullAnswer += chunk.content;
-              sseSend({ type: "chunk", content: chunk.content });
+              // FIX: useSessionQA expects { delta } not { type, content }
+              sseSend({ delta: chunk.content });
             }
           }
 
+          // FIX: useSessionQA expects { done: true, answer, references, model }
           sseSend({
-            type: "done",
+            done: true,
             answer: fullAnswer,
             model: "copilot",
             references: [],
           });
         } catch (modelError) {
+          // FIX: useSessionQA expects { error } field
           sseSend({
-            type: "error",
             error: modelError.message || "Model call failed",
           });
         }
