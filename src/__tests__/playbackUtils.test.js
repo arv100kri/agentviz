@@ -3,6 +3,10 @@ import {
   eventMatchesQuery,
   filterEventEntries,
   clampTime,
+  findJumpTarget,
+  nextSpeed,
+  toggleFilter,
+  focusSearchInput,
 } from "../lib/playbackUtils.js";
 
 // ── Helpers ──
@@ -140,5 +144,105 @@ describe("filterEventEntries", function () {
   it("preserves original entry references", function () {
     var results = filterEventEntries(entries, "bash");
     expect(results[0]).toBe(entries[1]);
+  });
+});
+
+// ── findJumpTarget ──
+
+describe("findJumpTarget", function () {
+  var entries = [
+    { event: { t: 1 } },
+    { event: { t: 5 } },
+    { event: { t: 10 } },
+    { event: { t: 15 } },
+  ];
+
+  it("returns null for empty entries", function () {
+    expect(findJumpTarget([], 5, "next")).toBe(null);
+    expect(findJumpTarget(null, 5, "next")).toBe(null);
+  });
+
+  it("finds next entry after current time", function () {
+    expect(findJumpTarget(entries, 3, "next")).toBe(5);
+    expect(findJumpTarget(entries, 0, "next")).toBe(1);
+  });
+
+  it("wraps to first entry when at the end", function () {
+    expect(findJumpTarget(entries, 15, "next")).toBe(1);
+  });
+
+  it("finds previous entry before current time", function () {
+    expect(findJumpTarget(entries, 10, "prev")).toBe(5);
+    expect(findJumpTarget(entries, 15, "prev")).toBe(10);
+  });
+
+  it("wraps to last entry when at the start", function () {
+    expect(findJumpTarget(entries, 1, "prev")).toBe(15);
+  });
+
+  it("skips entries within 0.1s threshold", function () {
+    expect(findJumpTarget(entries, 4.95, "next")).toBe(10);
+    expect(findJumpTarget(entries, 5.05, "prev")).toBe(1);
+  });
+});
+
+// ── nextSpeed ──
+
+describe("nextSpeed", function () {
+  var speeds = [0.5, 1, 2, 4, 8];
+
+  it("returns next speed in list", function () {
+    expect(nextSpeed(speeds, 1)).toBe(2);
+    expect(nextSpeed(speeds, 4)).toBe(8);
+  });
+
+  it("wraps to first speed at end", function () {
+    expect(nextSpeed(speeds, 8)).toBe(0.5);
+  });
+
+  it("returns first speed for unknown value", function () {
+    expect(nextSpeed(speeds, 99)).toBe(0.5);
+  });
+});
+
+// ── toggleFilter ──
+
+describe("toggleFilter", function () {
+  it("adds a key when not present", function () {
+    expect(toggleFilter({}, "tool_call")).toEqual({ tool_call: true });
+  });
+
+  it("removes a key when present", function () {
+    expect(toggleFilter({ tool_call: true }, "tool_call")).toEqual({});
+  });
+
+  it("does not mutate the original object", function () {
+    var original = { reasoning: true };
+    var result = toggleFilter(original, "output");
+    expect(original).toEqual({ reasoning: true });
+    expect(result).toEqual({ reasoning: true, output: true });
+  });
+});
+
+// ── focusSearchInput ──
+
+describe("focusSearchInput", function () {
+  it("returns false for null ref", function () {
+    expect(focusSearchInput(null)).toBe(false);
+  });
+
+  it("returns false when ref.current is null", function () {
+    expect(focusSearchInput({ current: null })).toBe(false);
+  });
+
+  it("returns false when element is not visible (offsetParent null)", function () {
+    expect(focusSearchInput({ current: { offsetParent: null, focus: function () {} } })).toBe(false);
+  });
+
+  it("focuses and returns true when element is visible", function () {
+    var focused = false;
+    var ref = { current: { offsetParent: {}, focus: function () { focused = true; } } };
+    expect(focusSearchInput(ref)).toBe(true);
+    expect(focused).toBe(true);
   });
 });

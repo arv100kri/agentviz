@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { theme, TRACK_TYPES, alpha } from "../../lib/theme.js";
 import { parseSession } from "../../lib/parseSession.ts";
 import { getSessionTotal, buildFilteredEventEntries, buildTurnStartMap, buildTimeMap } from "../../lib/session";
+import { findJumpTarget, nextSpeed, toggleFilter, focusSearchInput } from "../../lib/playbackUtils.js";
 import usePlayback from "../../hooks/usePlayback.js";
 import useSearch from "../../hooks/useSearch.js";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts.js";
@@ -626,48 +627,20 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
 
   // Track filter toggle
   var toggleTrackFilter = useCallback(function (trackKey) {
-    setTrackFilters(function (prev) {
-      var next = Object.assign({}, prev);
-      if (next[trackKey]) {
-        delete next[trackKey];
-      } else {
-        next[trackKey] = true;
-      }
-      return next;
-    });
+    setTrackFilters(function (prev) { return toggleFilter(prev, trackKey); });
   }, [setTrackFilters]);
 
   var activeFilterCount = Object.keys(trackFilters).length;
 
   // Speed cycling
   var cycleSpeed = useCallback(function () {
-    var idx = PLAYBACK_SPEEDS.indexOf(playback.speed);
-    var next = PLAYBACK_SPEEDS[(idx + 1) % PLAYBACK_SPEEDS.length];
-    playback.setSpeed(next);
+    playback.setSpeed(nextSpeed(PLAYBACK_SPEEDS, playback.speed));
   }, [playback.speed, playback.setSpeed]);
 
   // Error navigation
   var jumpToEntries = useCallback(function (entries, direction) {
-    if (!entries || entries.length === 0) return;
-
-    if (direction === "next") {
-      for (var i = 0; i < entries.length; i++) {
-        if (entries[i].event.t > playback.time + 0.1) {
-          playback.seek(entries[i].event.t);
-          return;
-        }
-      }
-      playback.seek(entries[0].event.t);
-      return;
-    }
-
-    for (var j = entries.length - 1; j >= 0; j--) {
-      if (entries[j].event.t < playback.time - 0.1) {
-        playback.seek(entries[j].event.t);
-        return;
-      }
-    }
-    playback.seek(entries[entries.length - 1].event.t);
+    var target = findJumpTarget(entries, playback.time, direction);
+    if (target !== null) playback.seek(target);
   }, [playback.seek, playback.time]);
 
   var errorEntries = useMemo(function () {
@@ -679,12 +652,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
   }, [errorEntries, jumpToEntries]);
 
   var focusSearch = useCallback(function () {
-    var el = searchInputRef.current;
-    if (el && el.offsetParent !== null) {
-      el.focus();
-      return true;
-    }
-    return false;
+    return focusSearchInput(searchInputRef);
   }, []);
 
   // Keyboard shortcuts (full AGENTVIZ set)

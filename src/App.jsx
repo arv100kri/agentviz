@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo, useCallback, useEffect } from "react"
 import { theme } from "./lib/theme.js";
 import { exportSingleSession, exportComparison } from "./lib/exportHtml.js";
 import { buildFilteredEventEntries, buildTurnStartMap, buildTimeMap } from "./lib/session";
+import { findJumpTarget, nextSpeed, toggleFilter, focusSearchInput } from "./lib/playbackUtils.js";
 import usePersistentState from "./hooks/usePersistentState.js";
 import useSessionLoader from "./hooks/useSessionLoader.js";
 import usePlayback from "./hooks/usePlayback.js";
@@ -404,45 +405,17 @@ export default function App() {
   var compareReady = compareLanding && Boolean(session.events) && Boolean(sessionB.events);
 
   var toggleTrackFilter = useCallback(function (track) {
-    setTrackFilters(function (prev) {
-      var next = Object.assign({}, prev);
-      if (next[track]) {
-        delete next[track];
-      } else {
-        next[track] = true;
-      }
-      return next;
-    });
+    setTrackFilters(function (prev) { return toggleFilter(prev, track); });
   }, [setTrackFilters]);
 
   var activeFilterCount = Object.keys(trackFilters).length;
   var cycleSpeed = useCallback(function () {
-    var idx = PLAYBACK_SPEEDS.indexOf(playback.speed);
-    var next = PLAYBACK_SPEEDS[(idx + 1) % PLAYBACK_SPEEDS.length];
-    playback.setSpeed(next);
+    playback.setSpeed(nextSpeed(PLAYBACK_SPEEDS, playback.speed));
   }, [playback.speed, playback.setSpeed]);
 
   var jumpToEntries = useCallback(function (entries, direction) {
-    if (!entries || entries.length === 0) return;
-
-    if (direction === "next") {
-      for (var i = 0; i < entries.length; i++) {
-        if (entries[i].event.t > playback.time + 0.1) {
-          playback.seek(entries[i].event.t);
-          return;
-        }
-      }
-      playback.seek(entries[0].event.t);
-      return;
-    }
-
-    for (var j = entries.length - 1; j >= 0; j--) {
-      if (entries[j].event.t < playback.time - 0.1) {
-        playback.seek(entries[j].event.t);
-        return;
-      }
-    }
-    playback.seek(entries[entries.length - 1].event.t);
+    var target = findJumpTarget(entries, playback.time, direction);
+    if (target !== null) playback.seek(target);
   }, [playback.seek, playback.time]);
 
   var errorEntries = useMemo(function () {
@@ -458,12 +431,7 @@ export default function App() {
   }, [jumpToEntries, search.matchedEntries]);
 
   var focusSearch = useCallback(function () {
-    var el = searchInputRef.current;
-    if (el && el.offsetParent !== null) {
-      el.focus();
-      return true;
-    }
-    return false;
+    return focusSearchInput(searchInputRef);
   }, []);
 
   useKeyboardShortcuts({
