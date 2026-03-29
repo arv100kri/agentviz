@@ -4,14 +4,17 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "agentviz": "./bin/agentviz.js"
+    "agentviz": "./bin/agentviz.js",
+    "fax-viz": "./bin/fax-viz.js"
   },
   "files": [
     "bin",
     "mcp",
     "dist",
     "dist-cli",
-    "server.js"
+    "dist-fax-viz",
+    "server.js",
+    "fax-viz-server.js"
   ],
   "scripts": {
     "dev": "vite",
@@ -19,8 +22,11 @@
     "build:web:debug": "vite build --mode debug",
     "build:cli": "vite build --config vite.cli.config.js",
     "build:cli:debug": "vite build --config vite.cli.config.js --mode debug",
+    "build:fax-viz": "vite build --config vite.fax-viz.config.js",
+    "build:fax-viz:debug": "vite build --config vite.fax-viz.config.js --mode debug",
     "build": "npm run build:web && npm run build:cli",
     "build:debug": "npm run build:web:debug && npm run build:cli:debug",
+    "dev:fax-viz": "vite --config vite.fax-viz.config.js",
     "preview": "vite preview",
     "app": "npm run build && node ./bin/agentviz.js",
     "app:debug": "npm run build:debug && node ./bin/agentviz.js",
