@@ -8,7 +8,6 @@ import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts.js";
 import usePersistentState from "../../hooks/usePersistentState.js";
 import ReplayView from "../../components/ReplayView.jsx";
 import TracksView from "../../components/TracksView.jsx";
-import WaterfallView from "../../components/WaterfallView.jsx";
 import StatsView from "../../components/StatsView.jsx";
 import QAView from "../../components/QAView.jsx";
 import Timeline from "../../components/Timeline.jsx";
@@ -16,19 +15,15 @@ import useSessionQA from "../../hooks/useSessionQA.js";
 import { IMPORTANCE_COLORS } from "../lib/faxConstants.js";
 import Icon from "../../components/Icon.jsx";
 
-var GraphView = React.lazy(function () { return import("../../components/GraphView.jsx"); });
-
 var FAX_VIEWS = [
-  { id: "replay", label: "Replay" },
-  { id: "tracks", label: "Tracks" },
-  { id: "waterfall", label: "Waterfall" },
-  { id: "graph", label: "Graph" },
-  { id: "stats", label: "Stats" },
-  { id: "qa", label: "Q&A" },
+  { id: "replay", label: "Replay", icon: "play" },
+  { id: "tracks", label: "Tracks", icon: "tracks" },
+  { id: "stats", label: "Stats", icon: "stats" },
+  { id: "qa", label: "Q&A", icon: "message-square-text" },
 ];
 
 // Views that require events.jsonl
-var SESSION_VIEWS = ["replay", "tracks", "waterfall", "graph", "stats"];
+var SESSION_VIEWS = ["replay", "tracks", "stats"];
 
 function FaxMetadataHeader({ faxEntry, onBack }) {
   var importanceColor = IMPORTANCE_COLORS[faxEntry.importance] || IMPORTANCE_COLORS.normal;
@@ -86,10 +81,15 @@ function ViewTabs({ activeView, views, onSetView, hasEvents }) {
   return React.createElement("div", {
     style: {
       display: "flex",
-      gap: 0,
-      borderBottom: "1px solid " + theme.border.default,
+      gap: 2,
+      padding: 2,
+      borderRadius: theme.radius.lg,
+      background: theme.bg.surface,
       flexShrink: 0,
-      paddingLeft: 16,
+      marginLeft: 16,
+      marginTop: 4,
+      marginBottom: 4,
+      width: "fit-content",
     },
   },
     views.map(function (v) {
@@ -104,17 +104,24 @@ function ViewTabs({ activeView, views, onSetView, hasEvents }) {
         "aria-selected": isActive,
         role: "tab",
         style: {
-          background: "transparent",
+          background: isActive ? theme.bg.raised : "transparent",
           border: "none",
-          borderBottom: isActive ? "2px solid " + theme.accent.blue : "2px solid transparent",
-          color: disabled ? theme.text.dim : isActive ? theme.text.primary : theme.text.secondary,
-          padding: "8px 14px",
-          fontSize: 12,
-          fontFamily: theme.font.mono,
+          borderRadius: theme.radius.md,
+          color: disabled ? theme.text.dim : isActive ? theme.accent.primary : theme.text.muted,
+          padding: "4px 8px",
+          fontSize: theme.fontSize.sm,
+          fontFamily: theme.font.ui,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          whiteSpace: "nowrap",
           cursor: disabled ? "not-allowed" : "pointer",
           opacity: disabled ? 0.4 : 1,
         },
-      }, v.label);
+      },
+        v.icon && React.createElement(Icon, { name: v.icon, size: 13, style: { opacity: isActive ? 1 : 0.6 } }),
+        v.label
+      );
     })
   );
 }
@@ -325,32 +332,6 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
         timeMap: timeMap,
         turns: turns,
       });
-    }
-
-    if (activeView === "waterfall" && session) {
-      return React.createElement(WaterfallView, {
-        currentTime: playback.time,
-        eventEntries: filteredEventEntries,
-        totalTime: total,
-        timeMap: timeMap,
-        turns: turns,
-      });
-    }
-
-    if (activeView === "graph" && session) {
-      return React.createElement(React.Suspense, {
-        fallback: React.createElement("div", {
-          style: { padding: 40, color: theme.text.dim, textAlign: "center" },
-        }, "Loading graph..."),
-      },
-        React.createElement(GraphView, {
-          currentTime: playback.time,
-          eventEntries: filteredEventEntries,
-          totalTime: total,
-          timeMap: timeMap,
-          turns: turns,
-        })
-      );
     }
 
     if (activeView === "stats" && session) {
