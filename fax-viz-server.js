@@ -16,7 +16,13 @@ import os from "os";
 import path from "path";
 import url from "url";
 import { handleSessionQA } from "./src/lib/sessionQAPipeline.js";
-import { ensureSessionQAPrecomputed } from "./server.js";
+import {
+  ensureSessionQAPrecomputed,
+  createSessionQACacheStore,
+  saveSessionQACacheEntry,
+  getSessionQACacheEntry,
+  removeSessionQACacheEntry,
+} from "./server.js";
 
 var MIME = {
   ".html": "text/html; charset=utf-8",
@@ -161,7 +167,7 @@ function readBundleMarkdownFiles(bundlePath) {
 
 export function createFaxVizServer({ faxDir, distDir }) {
   // In-memory session Q&A cache (mirrors the main server's cache pattern)
-  var sessionQACache = {};
+  var sessionQACache = createSessionQACacheStore();
 
   function handleRequest(req, res) {
     var parsed = url.parse(req.url, true);
@@ -184,13 +190,13 @@ export function createFaxVizServer({ faxDir, distDir }) {
       if (req.method === "GET") {
         var cacheKey = parsed.query.sessionKey || "";
         res.writeHead(200);
-        res.end(JSON.stringify({ session: sessionQACache[cacheKey] || null }));
+        res.end(JSON.stringify({ session: getSessionQACacheEntry(sessionQACache, cacheKey) }));
         return;
       }
 
       if (req.method === "DELETE") {
         var delKey = parsed.query.sessionKey || "";
-        delete sessionQACache[delKey];
+        removeSessionQACacheEntry(sessionQACache, delKey);
         res.writeHead(200);
         res.end(JSON.stringify({ success: true }));
         return;
@@ -205,22 +211,21 @@ export function createFaxVizServer({ faxDir, distDir }) {
               res.end(JSON.stringify({ error: "sessionKey is required" }));
               return;
             }
-            sessionQACache[payload.sessionKey] = {
-              events: payload.events || [],
-              turns: payload.turns || [],
-              metadata: payload.metadata || {},
-              sessionFilePath: payload.sessionFilePath || null,
-              rawText: payload.rawText || null,
-              updatedAt: new Date().toISOString(),
-            };
-            try {
-              ensureSessionQAPrecomputed(sessionQACache[payload.sessionKey]);
-            } catch (preErr) {}
+            var savedSession = saveSessionQACacheEntry(
+              sessionQACache,
+              payload.sessionKey,
+              payload
+            );
+            var precomputed = ensureSessionQAPrecomputed(savedSession);
             res.writeHead(200);
             res.end(JSON.stringify({
               success: true,
               sessionKey: payload.sessionKey,
-              updatedAt: sessionQACache[payload.sessionKey].updatedAt,
+              updatedAt: savedSession ? savedSession.updatedAt : null,
+              precomputed: precomputed ? {
+                fingerprint: precomputed.fingerprint,
+                reused: precomputed.reused,
+              } : null,
             }));
           } catch (e) {
             res.writeHead(500);
@@ -427,14 +432,11 @@ export function createFaxVizServer({ faxDir, distDir }) {
 
         // Resolve session from cache (lean payload) or from the request body
         var resolvedSession = null;
-        if (sessionKey && sessionQACache[sessionKey]) {
-          resolvedSession = sessionQACache[sessionKey];
-        } else if (Array.isArray(payload.events) && payload.events.length > 0) {
-          resolvedSession = {
-            events: payload.events,
-            turns: payload.turns || [],
-            metadata: payload.metadata || {},
-          };
+        if (sessionKey) {
+          resolvedSession = getSessionQACacheEntry(sessionQACache, sessionKey);
+        }
+        if (!resolvedSession && Array.isArray(payload.events) && payload.events.length > 0) {
+          resolvedSession = saveSessionQACacheEntry(sessionQACache, sessionKey || "inline", payload);
         }
 
         if (!resolvedSession) {
