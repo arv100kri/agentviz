@@ -850,6 +850,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
       faxId: faxEntry.id,
       faxLabel: faxEntry.label,
       senderAlias: faxEntry.sender && faxEntry.sender.alias ? faxEntry.sender.alias : "Unknown",
+      sourceRoot: faxEntry.sourceRoot || null,
     })
   );
 }

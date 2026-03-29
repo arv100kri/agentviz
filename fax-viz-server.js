@@ -115,6 +115,7 @@ function discoverFaxBundles(faxDir) {
       git: manifest.git || null,
       progress: manifest.progress || null,
       bundlePath: bundlePath,
+      sourceRoot: manifest.sourceRoot || null,
     });
   }
 
@@ -717,10 +718,17 @@ export function createFaxVizServer({ faxDir, distDir }) {
           var mode = payload.mode;
           var sessionId = payload.sessionId || null;
           var prompt = payload.prompt || "";
+          var launchCwd = payload.cwd || null;
 
           if (!tool || !mode) {
             res.writeHead(400);
             res.end(JSON.stringify({ error: "tool and mode are required" }));
+            return;
+          }
+
+          if (launchCwd && !fs.existsSync(launchCwd)) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "Working directory does not exist: " + launchCwd }));
             return;
           }
 
@@ -779,24 +787,31 @@ export function createFaxVizServer({ faxDir, distDir }) {
             } catch (e) {}
 
             if (wtAvailable) {
-              child = spawn("wt.exe", ["new-tab", "cmd", "/k", shellScript], {
+              var wtArgs = ["new-tab"];
+              if (launchCwd) { wtArgs.push("--startingDirectory", launchCwd); }
+              wtArgs.push("cmd", "/k", shellScript);
+              child = spawn("wt.exe", wtArgs, {
                 detached: true,
                 stdio: "ignore",
                 shell: false,
               });
             } else {
-              child = spawn("cmd", ["/c", "start", "cmd", "/k", shellScript], {
+              var cmdOpts = {
                 detached: true,
                 stdio: "ignore",
                 shell: false,
-              });
+              };
+              if (launchCwd) cmdOpts.cwd = launchCwd;
+              child = spawn("cmd", ["/c", "start", "cmd", "/k", shellScript], cmdOpts);
             }
           } else {
-            child = spawn(cmd, cmdArgs, {
+            var unixOpts = {
               detached: true,
               stdio: "ignore",
               shell: true,
-            });
+            };
+            if (launchCwd) unixOpts.cwd = launchCwd;
+            child = spawn(cmd, cmdArgs, unixOpts);
           }
           child.unref();
 

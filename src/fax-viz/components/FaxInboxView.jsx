@@ -333,6 +333,7 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
       faxId: pickupFax.id,
       faxLabel: pickupFax.label,
       senderAlias: pickupFax.sender && pickupFax.sender.alias ? pickupFax.sender.alias : "Unknown",
+      sourceRoot: pickupFax.sourceRoot || null,
     })
   );
 }

@@ -17,7 +17,7 @@ var TOOLS = [
   { id: "claude-code", label: "Claude Code" },
 ];
 
-function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
+function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias, sourceRoot }) {
   var _tool = useState("copilot-cli");
   var tool = _tool[0];
   var setTool = _tool[1];
@@ -49,6 +49,10 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
   var _submitting = useState(false);
   var submitting = _submitting[0];
   var setSubmitting = _submitting[1];
+
+  var _cwd = useState("");
+  var cwd = _cwd[0];
+  var setCwd = _cwd[1];
 
   var abortRef = useRef(null);
 
@@ -85,6 +89,17 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
       });
   }, [isOpen]);
 
+  // Smart default for cwd when sessions load or mode/tool changes
+  useEffect(function () {
+    if (!isOpen) return;
+    if (sourceRoot) {
+      setCwd(sourceRoot);
+      return;
+    }
+    var match = sessions.find(function (s) { return s.tool === tool; });
+    setCwd(match && match.cwd ? match.cwd : "");
+  }, [isOpen, sessions, tool, sourceRoot]);
+
   var filteredSessions = sessions.filter(function (s) {
     return s.tool === tool;
   });
@@ -118,6 +133,7 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
           tool: tool,
           mode: mode,
           prompt: bootstrap,
+          cwd: cwd || null,
         };
         if (mode === "resume" && selectedSessionId) {
           body.sessionId = selectedSessionId;
@@ -143,7 +159,7 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
         setError(err.message);
         setSubmitting(false);
       });
-  }, [canPickUp, submitting, faxId, tool, mode, selectedSessionId, onClose]);
+  }, [canPickUp, submitting, faxId, tool, mode, selectedSessionId, cwd, onClose]);
 
   // Keyboard handling
   var handleKeyDown = useCallback(function (e) {
@@ -360,6 +376,44 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
     },
   }, sessionListContent);
 
+  // Working directory row
+  var resumeSessionCwd = null;
+  if (mode === "resume" && selectedSessionId) {
+    var selectedSession = filteredSessions.find(function (s) { return s.id === selectedSessionId; });
+    if (selectedSession && selectedSession.cwd) {
+      resumeSessionCwd = selectedSession.cwd;
+    }
+  }
+  var cwdReadOnly = mode === "resume" && selectedSessionId;
+  var cwdEl = React.createElement("div", {
+    style: { display: "flex", flexDirection: "column", gap: theme.space.sm },
+  },
+    React.createElement("label", {
+      style: {
+        color: theme.text.secondary,
+        fontSize: theme.fontSize.sm,
+      },
+    }, "Working directory (optional):"),
+    React.createElement("input", {
+      type: "text",
+      value: cwdReadOnly ? (resumeSessionCwd || "") : cwd,
+      readOnly: cwdReadOnly,
+      onChange: cwdReadOnly ? undefined : function (e) { setCwd(e.target.value); },
+      placeholder: "/path/to/project",
+      style: {
+        background: theme.bg.raised,
+        border: "1px solid " + theme.border.default,
+        borderRadius: theme.radius.md,
+        color: cwdReadOnly ? theme.text.muted : theme.text.primary,
+        fontSize: theme.fontSize.base,
+        fontFamily: theme.font.mono,
+        padding: "6px " + theme.space.md + "px",
+        outline: "none",
+        opacity: cwdReadOnly ? 0.6 : 1,
+      },
+    })
+  );
+
   // Error display
   var errorEl = error ? React.createElement("div", {
     role: "alert",
@@ -480,6 +534,9 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
         radioResume,
         sessionList
       ),
+
+      // Working directory
+      cwdEl,
 
       // Error
       errorEl,
