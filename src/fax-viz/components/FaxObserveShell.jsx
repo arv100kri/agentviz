@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { theme } from "../../lib/theme.js";
+import { theme, TRACK_TYPES, alpha } from "../../lib/theme.js";
 import { parseSession } from "../../lib/parseSession.ts";
 import { getSessionTotal, buildFilteredEventEntries, buildTurnStartMap, buildTimeMap } from "../../lib/session";
 import usePlayback from "../../hooks/usePlayback.js";
@@ -15,6 +15,8 @@ import useSessionQA from "../../hooks/useSessionQA.js";
 import { IMPORTANCE_COLORS } from "../lib/faxConstants.js";
 import Icon from "../../components/Icon.jsx";
 import PickUpModal from "./PickUpModal.jsx";
+
+var PLAYBACK_SPEEDS = [0.5, 1, 2, 4, 8];
 
 var FAX_VIEWS = [
   { id: "replay", label: "Replay", icon: "play" },
@@ -142,8 +144,33 @@ function ViewTabs({ activeView, views, onSetView, hasEvents }) {
   );
 }
 
-function SearchToolbar({ search, searchInputRef, metadata }) {
-  var errorCount = metadata && metadata.errorCount ? metadata.errorCount : 0;
+function SearchToolbar({
+  search, searchInputRef, metadata,
+  errorEntries, onJumpToError,
+  trackFilters, onToggleTrackFilter, activeFilterCount,
+  speed, onCycleSpeed, activeView,
+}) {
+  var showFiltersBtn = activeView === "replay" || activeView === "tracks";
+  var showSpeed = activeView === "replay" || activeView === "tracks";
+  var showErrorNav = activeView === "replay";
+
+  var _showFilters = useState(false);
+  var showFilters = _showFilters[0];
+  var setShowFilters = _showFilters[1];
+  var filtersRef = useRef(null);
+
+  // Close filter dropdown on outside click
+  useEffect(function () {
+    if (!showFilters) return;
+    function handleClick(e) {
+      if (filtersRef.current && !filtersRef.current.contains(e.target)) {
+        setShowFilters(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return function () { document.removeEventListener("mousedown", handleClick); };
+  }, [showFilters]);
+
   return React.createElement("div", {
     style: {
       display: "flex",
@@ -154,6 +181,7 @@ function SearchToolbar({ search, searchInputRef, metadata }) {
       flexShrink: 0,
     },
   },
+    // Search input
     React.createElement("div", {
       style: { display: "flex", alignItems: "center", gap: 4, flex: 1 },
     },
@@ -165,7 +193,7 @@ function SearchToolbar({ search, searchInputRef, metadata }) {
         value: search.searchQuery,
         onChange: function (e) { search.setSearchQuery(e.target.value); },
         style: {
-          background: theme.bg.secondary,
+          background: theme.bg.raised,
           border: "1px solid " + theme.border.default,
           borderRadius: 6,
           color: theme.text.primary,
@@ -176,9 +204,162 @@ function SearchToolbar({ search, searchInputRef, metadata }) {
         },
       })
     ),
-    errorCount > 0 && React.createElement("span", {
-      style: { fontSize: 11, color: "#ff6b6b", display: "flex", alignItems: "center", gap: 4 },
-    }, "\u26A0 " + errorCount + " errors")
+
+    // Error navigation
+    showErrorNav && errorEntries.length > 0 && React.createElement("div", {
+      style: { display: "flex", alignItems: "center", gap: 2 },
+    },
+      React.createElement("button", {
+        className: "av-btn",
+        onClick: function () { onJumpToError("prev"); },
+        title: "Previous error (Shift+E)",
+        "aria-label": "Previous error",
+        style: {
+          background: "transparent",
+          border: "1px solid " + theme.semantic.errorBorder,
+          borderRadius: theme.radius.sm,
+          color: theme.semantic.error,
+          padding: "2px 4px",
+          fontSize: theme.fontSize.sm,
+          fontFamily: theme.font.ui,
+          display: "flex",
+          alignItems: "center",
+          cursor: "pointer",
+        },
+      }, React.createElement(Icon, { name: "chevron-left", size: 12 })),
+      React.createElement("span", {
+        style: {
+          fontSize: theme.fontSize.sm,
+          color: theme.semantic.error,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+        },
+      },
+        React.createElement(Icon, { name: "alert-circle", size: 12 }),
+        " " + errorEntries.length
+      ),
+      React.createElement("button", {
+        className: "av-btn",
+        onClick: function () { onJumpToError("next"); },
+        title: "Next error (E)",
+        "aria-label": "Next error",
+        style: {
+          background: "transparent",
+          border: "1px solid " + theme.semantic.errorBorder,
+          borderRadius: theme.radius.sm,
+          color: theme.semantic.error,
+          padding: "2px 4px",
+          fontSize: theme.fontSize.sm,
+          fontFamily: theme.font.ui,
+          display: "flex",
+          alignItems: "center",
+          cursor: "pointer",
+        },
+      }, React.createElement(Icon, { name: "chevron-right", size: 12 }))
+    ),
+
+    // Track filters
+    showFiltersBtn && React.createElement("div", {
+      ref: filtersRef,
+      style: { position: "relative" },
+    },
+      React.createElement("button", {
+        className: "av-btn",
+        onClick: function () { setShowFilters(function (v) { return !v; }); },
+        title: "Filter tracks",
+        "aria-label": "Filter tracks",
+        style: {
+          background: activeFilterCount > 0 ? alpha(theme.accent.primary, 0.08) : "transparent",
+          border: "1px solid " + (activeFilterCount > 0 ? theme.accent.primary : theme.border.default),
+          borderRadius: theme.radius.md,
+          color: activeFilterCount > 0 ? theme.accent.primary : theme.text.muted,
+          padding: "2px 8px",
+          fontSize: theme.fontSize.sm,
+          fontFamily: theme.font.ui,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          cursor: "pointer",
+        },
+      },
+        React.createElement(Icon, { name: "filter", size: 12 }),
+        activeFilterCount > 0 && React.createElement("span", {
+          style: { fontSize: theme.fontSize.xs },
+        }, activeFilterCount)
+      ),
+      showFilters && React.createElement("div", {
+        style: {
+          position: "absolute",
+          top: "calc(100% + 6px)",
+          right: 0,
+          background: theme.bg.surface,
+          border: "1px solid " + theme.border.strong,
+          borderRadius: theme.radius.lg,
+          padding: 6,
+          zIndex: theme.z.tooltip,
+          boxShadow: theme.shadow.md,
+          minWidth: 160,
+        },
+      },
+        Object.entries(TRACK_TYPES).map(function (entry) {
+          var key = entry[0];
+          var info = entry[1];
+          var isHidden = trackFilters[key];
+          return React.createElement("button", {
+            key: key,
+            className: "av-interactive",
+            onClick: function () { onToggleTrackFilter(key); },
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "4px 10px",
+              borderRadius: theme.radius.md,
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+            },
+          },
+            React.createElement(Icon, { name: key, size: 12, style: { color: isHidden ? theme.text.ghost : info.color } }),
+            React.createElement("span", {
+              style: {
+                fontSize: theme.fontSize.xs,
+                fontFamily: theme.font.mono,
+                color: isHidden ? theme.text.ghost : theme.text.secondary,
+                textDecoration: isHidden ? "line-through" : "none",
+                flex: 1,
+              },
+            }, info.label),
+            isHidden && React.createElement("span", {
+              style: { fontSize: theme.fontSize.xs, color: theme.text.ghost, fontFamily: theme.font.mono },
+            }, "hidden")
+          );
+        })
+      )
+    ),
+
+    // Speed control
+    showSpeed && React.createElement("button", {
+      className: "av-btn",
+      onClick: onCycleSpeed,
+      title: "Playback speed (click to cycle)",
+      style: {
+        background: speed !== 1 ? alpha(theme.accent.primary, 0.08) : "transparent",
+        border: "1px solid " + (speed !== 1 ? theme.accent.primary : theme.border.default),
+        borderRadius: theme.radius.md,
+        color: speed !== 1 ? theme.accent.primary : theme.text.muted,
+        padding: "2px 8px",
+        fontSize: theme.fontSize.sm,
+        fontFamily: theme.font.ui,
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        cursor: "pointer",
+      },
+    }, speed + "x")
   );
 }
 
@@ -193,6 +374,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
 
   var _trackFilters = usePersistentState("fax-viz:track-filters", {});
   var trackFilters = _trackFilters[0];
+  var setTrackFilters = _trackFilters[1];
 
   var _session = useState(null);
   var session = _session[0];
@@ -305,18 +487,102 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
 
   var containerRef = useRef(null);
 
-  // Keyboard shortcuts
-  var shortcutHandlers = useMemo(function () {
-    return {
-      "/": function (e) {
-        if (searchInputRef.current) {
-          e.preventDefault();
-          searchInputRef.current.focus();
+  // Track filter toggle
+  var toggleTrackFilter = useCallback(function (trackKey) {
+    setTrackFilters(function (prev) {
+      var next = Object.assign({}, prev);
+      if (next[trackKey]) {
+        delete next[trackKey];
+      } else {
+        next[trackKey] = true;
+      }
+      return next;
+    });
+  }, [setTrackFilters]);
+
+  var activeFilterCount = Object.keys(trackFilters).length;
+
+  // Speed cycling
+  var cycleSpeed = useCallback(function () {
+    var idx = PLAYBACK_SPEEDS.indexOf(playback.speed);
+    var next = PLAYBACK_SPEEDS[(idx + 1) % PLAYBACK_SPEEDS.length];
+    playback.setSpeed(next);
+  }, [playback.speed, playback.setSpeed]);
+
+  // Error navigation
+  var jumpToEntries = useCallback(function (entries, direction) {
+    if (!entries || entries.length === 0) return;
+
+    if (direction === "next") {
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].event.t > playback.time + 0.1) {
+          playback.seek(entries[i].event.t);
+          return;
         }
-      },
-    };
+      }
+      playback.seek(entries[0].event.t);
+      return;
+    }
+
+    for (var j = entries.length - 1; j >= 0; j--) {
+      if (entries[j].event.t < playback.time - 0.1) {
+        playback.seek(entries[j].event.t);
+        return;
+      }
+    }
+    playback.seek(entries[entries.length - 1].event.t);
+  }, [playback.seek, playback.time]);
+
+  var errorEntries = useMemo(function () {
+    return filteredEventEntries.filter(function (entry) { return entry.event.isError; });
+  }, [filteredEventEntries]);
+
+  var jumpToError = useCallback(function (direction) {
+    jumpToEntries(errorEntries, direction);
+  }, [errorEntries, jumpToEntries]);
+
+  var focusSearch = useCallback(function () {
+    var el = searchInputRef.current;
+    if (el && el.offsetParent !== null) {
+      el.focus();
+      return true;
+    }
+    return false;
   }, []);
-  useKeyboardShortcuts(shortcutHandlers, containerRef);
+
+  // Keyboard shortcuts (full AGENTVIZ set)
+  useKeyboardShortcuts({
+    hasSession: Boolean(session),
+    showHero: false,
+    showPalette: false,
+    time: playback.time,
+    onTogglePalette: function () {},
+    onDismissHero: function () {},
+    onPlayPause: playback.playPause,
+    onSeek: playback.seek,
+    onSetView: function (viewId) {
+      // Map AGENTVIZ number-key view names to fax-viz equivalents
+      // 1=replay, 2=tracks, 3=waterfall->stats, 4=graph->qa
+      var viewMap = {
+        replay: "replay",
+        tracks: "tracks",
+        waterfall: "stats",
+        graph: "qa",
+        stats: "stats",
+        qa: "qa",
+      };
+      var target = viewMap[viewId];
+      if (target) {
+        var isSession = SESSION_VIEWS.indexOf(target) !== -1;
+        if (!isSession || session) {
+          setActiveView(target);
+        }
+      }
+    },
+    onJumpToError: jumpToError,
+    onFocusSearch: focusSearch,
+    onToggleShortcuts: function () {},
+  });
 
   // Render active view
   function renderView() {
@@ -328,7 +594,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
 
     if (loadError && SESSION_VIEWS.indexOf(activeView) !== -1) {
       return React.createElement("div", {
-        style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#ff6b6b" },
+        style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: theme.semantic.errorText },
       }, "Error: " + loadError);
     }
 
@@ -372,7 +638,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
       return React.createElement(QAView, {
         qa: qa,
         events: [],
-        turns: [],
+        turns: session ? session.turns : [],
         metadata: metadata,
         sessionFilePath: null,
         rawText: "",
@@ -417,6 +683,14 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
       search: search,
       searchInputRef: searchInputRef,
       metadata: metadata,
+      errorEntries: errorEntries,
+      onJumpToError: jumpToError,
+      trackFilters: trackFilters,
+      onToggleTrackFilter: toggleTrackFilter,
+      activeFilterCount: activeFilterCount,
+      speed: playback.speed,
+      onCycleSpeed: cycleSpeed,
+      activeView: activeView,
     }),
     session && SESSION_VIEWS.indexOf(activeView) !== -1 && React.createElement(Timeline, {
       currentTime: playback.time,

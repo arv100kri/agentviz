@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { theme } from "../../lib/theme.js";
 
 function formatRelativeTime(isoString) {
@@ -50,6 +50,15 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
   var submitting = _submitting[0];
   var setSubmitting = _submitting[1];
 
+  var abortRef = useRef(null);
+
+  // Abort pending requests on unmount
+  useEffect(function () {
+    return function () {
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, []);
+
   // Fetch sessions when modal opens
   useEffect(function () {
     if (!isOpen) return;
@@ -86,16 +95,29 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
     if (!canPickUp || submitting) return;
     setSubmitting(true);
     setError(null);
-    fetch("/api/fax/" + encodeURIComponent(faxId) + "/pickup", { method: "POST" })
+
+    var controller = new AbortController();
+    abortRef.current = controller;
+
+    fetch("/api/fax/" + encodeURIComponent(faxId) + "/pickup", {
+      method: "POST",
+      signal: controller.signal,
+    })
       .then(function (res) {
         if (!res.ok) throw new Error("Failed to get bootstrap prompt");
         return res.json();
       })
       .then(function (data) {
+        var bootstrap = data.bootstrap || data.prompt || "";
+        if (!bootstrap) {
+          setError("No bootstrap prompt found in the fax bundle");
+          setSubmitting(false);
+          return;
+        }
         var body = {
           tool: tool,
           mode: mode,
-          prompt: data.bootstrap || data.prompt || "",
+          prompt: bootstrap,
         };
         if (mode === "resume" && selectedSessionId) {
           body.sessionId = selectedSessionId;
@@ -104,16 +126,20 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
+          signal: controller.signal,
         });
       })
       .then(function (res) {
+        if (!res) return; // early return from bootstrap validation
         if (!res.ok) throw new Error("Failed to launch session");
         setLaunched(true);
+        setSubmitting(false);
         setTimeout(function () {
           onClose();
         }, 1200);
       })
       .catch(function (err) {
+        if (err.name === "AbortError") return;
         setError(err.message);
         setSubmitting(false);
       });
