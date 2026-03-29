@@ -769,11 +769,28 @@ export function createFaxVizServer({ faxDir, distDir }) {
             } else {
               shellScript = 'claude --resume ' + sessionId + ' --input-file "' + promptFile.replace(/\\/g, "\\\\") + '"';
             }
-            child = spawn("cmd", ["/c", "start", "cmd", "/k", shellScript], {
-              detached: true,
-              stdio: "ignore",
-              shell: false,
-            });
+            // Prefer Windows Terminal (wt.exe) for a modern look.
+            // Fall back to cmd.exe if wt is not available.
+            var wtPath = "wt.exe";
+            var wtAvailable = false;
+            try {
+              require("child_process").execSync("where wt.exe", { stdio: "ignore" });
+              wtAvailable = true;
+            } catch (e) {}
+
+            if (wtAvailable) {
+              child = spawn("wt.exe", ["new-tab", "cmd", "/k", shellScript], {
+                detached: true,
+                stdio: "ignore",
+                shell: false,
+              });
+            } else {
+              child = spawn("cmd", ["/c", "start", "cmd", "/k", shellScript], {
+                detached: true,
+                stdio: "ignore",
+                shell: false,
+              });
+            }
           } else {
             child = spawn(cmd, cmdArgs, {
               detached: true,
