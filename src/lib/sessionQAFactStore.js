@@ -589,7 +589,7 @@ function buildErrorSummaryContext(db, program) {
   };
 }
 
-function buildChunkSummaryContext(db, heading, whereClause, params) {
+function buildChunkSummaryContext(db, heading) {
   var totalChunks = db.prepare("SELECT COUNT(*) AS cnt FROM summary_chunks").get();
   var chunkCount = totalChunks ? Number(totalChunks.cnt) : 0;
   
@@ -597,11 +597,9 @@ function buildChunkSummaryContext(db, heading, whereClause, params) {
   var rows = [];
   if (chunkCount <= 4) {
     var allStmt = db.prepare(
-      "SELECT start_turn, end_turn, summary FROM summary_chunks " +
-      (whereClause ? ("WHERE " + whereClause + " ") : "") +
-      "ORDER BY chunk_index"
+      "SELECT start_turn, end_turn, summary FROM summary_chunks ORDER BY chunk_index"
     );
-    rows = allStmt.all.apply(allStmt, params || []);
+    rows = allStmt.all();
   } else {
     // Pick first, 1/3, 2/3, and last chunks for diversity
     var indices = [0, Math.floor(chunkCount / 3), Math.floor(2 * chunkCount / 3), chunkCount - 1];
@@ -802,11 +800,11 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
     }
 
     if (queryProgram.family === "session-summary") {
-      return buildChunkSummaryContext(db, "=== FACT STORE SESSION SUMMARY ===", "", []);
+      return buildChunkSummaryContext(db, "=== FACT STORE SESSION SUMMARY ===");
     }
 
     if (queryProgram.family === "broad-synthesis") {
-      return buildChunkSummaryContext(db, "=== FACT STORE SYNTHESIS SUMMARY ===", "", []);
+      return buildChunkSummaryContext(db, "=== FACT STORE SYNTHESIS SUMMARY ===");
     }
 
     return null;

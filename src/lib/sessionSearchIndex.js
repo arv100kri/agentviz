@@ -139,10 +139,14 @@ function createSearchProvider(lunrIndex, docMap, documentCount) {
       try {
         results = lunrIndex.search(query);
       } catch (e) {
-        // lunr throws on invalid query syntax; fall back to term-by-term OR
+        // lunr throws on invalid query syntax; fall back to safe Query API
         try {
           var terms = query.split(/\s+/).filter(function (t) { return t.length > 1; });
-          results = lunrIndex.search(terms.join(" "));
+          results = lunrIndex.query(function (q) {
+            for (var ti = 0; ti < terms.length; ti++) {
+              q.term(terms[ti], { usePipeline: true, wildcard: lunr.Query.wildcard.NONE });
+            }
+          });
         } catch (e2) {
           return [];
         }

@@ -499,7 +499,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
       </div>
 
       <div style={limitationStyle}>
-        {qa.responseModel
+        {qa.responseModel && qa.responseModel !== "default"
           ? "Powered by " + (AVAILABLE_MODELS.find(function (m) { return m.id === qa.responseModel; }) || { label: qa.responseModel }).label
           : "Powered by Copilot SDK"}
       </div>

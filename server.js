@@ -733,6 +733,15 @@ export function createServer({ sessionFile, distDir }) {
   var pollInterval = null;
   var sessionQACache = createSessionQACacheStore();
 
+  // Periodically clear stale session QA cache entries to prevent unbounded
+  // memory growth in long-running server processes.
+  var SESSION_QA_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+  setInterval(function () {
+    if (sessionQACache && typeof sessionQACache.clear === "function") {
+      sessionQACache.clear();
+    }
+  }, SESSION_QA_CACHE_TTL_MS);
+
   // Context-based model answer cache: stores model answers keyed by a hash of
   // the context + question family, so different phrasings that produce the same
   // retrieval context can share cached answers. Max 50 entries, LRU eviction.
@@ -1126,7 +1135,15 @@ export function createServer({ sessionFile, distDir }) {
       }
 
       var qaCacheBody = "";
-      req.on("data", function (chunk) { qaCacheBody += chunk; });
+      var MAX_CACHE_BODY_BYTES = 10 * 1024 * 1024; // 10MB
+      req.on("data", function (chunk) {
+        qaCacheBody += chunk;
+        if (qaCacheBody.length > MAX_CACHE_BODY_BYTES) {
+          req.destroy();
+          res.writeHead(413);
+          res.end(JSON.stringify({ error: "Request body too large" }));
+        }
+      });
       req.on("end", async function () {
         try {
           var cachePayload = JSON.parse(qaCacheBody || "{}");
@@ -1174,7 +1191,15 @@ export function createServer({ sessionFile, distDir }) {
       }
       var qaRequestStartedAt = Date.now();
       var qaBody = "";
-      req.on("data", function (chunk) { qaBody += chunk; });
+      var MAX_QA_BODY_BYTES = 10 * 1024 * 1024; // 10MB
+      req.on("data", function (chunk) {
+        qaBody += chunk;
+        if (qaBody.length > MAX_QA_BODY_BYTES) {
+          req.destroy();
+          res.writeHead(413);
+          res.end(JSON.stringify({ error: "Request body too large" }));
+        }
+      });
       req.on("end", async function () {
         var payload;
         try {
