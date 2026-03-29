@@ -165,17 +165,104 @@ function readBundleMarkdownFiles(bundlePath) {
 }
 
 export function createFaxVizServer({ faxDir, distDir }) {
+  // In-memory session Q&A cache (mirrors the main server's cache pattern)
+  var sessionQACache = {};
+
   function handleRequest(req, res) {
     var parsed = url.parse(req.url, true);
     var pathname = parsed.pathname;
 
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
     if (req.method === "OPTIONS") {
       res.writeHead(204);
       res.end();
+      return;
+    }
+
+    // Session Q&A cache: stores session data so Q&A can use lean payloads
+    if (pathname === "/api/session-qa-cache") {
+      res.setHeader("Content-Type", "application/json");
+
+      if (req.method === "GET") {
+        var cacheKey = parsed.query.sessionKey || "";
+        res.writeHead(200);
+        res.end(JSON.stringify({ session: sessionQACache[cacheKey] || null }));
+        return;
+      }
+
+      if (req.method === "DELETE") {
+        var delKey = parsed.query.sessionKey || "";
+        delete sessionQACache[delKey];
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true }));
+        return;
+      }
+
+      if (req.method === "POST") {
+        readBody(req).then(function (body) {
+          try {
+            var payload = JSON.parse(body);
+            if (!payload.sessionKey) {
+              res.writeHead(400);
+              res.end(JSON.stringify({ error: "sessionKey is required" }));
+              return;
+            }
+            sessionQACache[payload.sessionKey] = {
+              events: payload.events || [],
+              turns: payload.turns || [],
+              metadata: payload.metadata || {},
+              sessionFilePath: payload.sessionFilePath || null,
+              rawText: payload.rawText || null,
+              updatedAt: new Date().toISOString(),
+            };
+            res.writeHead(200);
+            res.end(JSON.stringify({
+              success: true,
+              sessionKey: payload.sessionKey,
+              updatedAt: sessionQACache[payload.sessionKey].updatedAt,
+            }));
+          } catch (e) {
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: e.message }));
+          }
+        }).catch(function (e) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: e.message }));
+        });
+        return;
+      }
+
+      res.writeHead(405);
+      res.end(JSON.stringify({ error: "Method not allowed" }));
+      return;
+    }
+
+    // Session Q&A history: persists conversation history (stub)
+    if (pathname === "/api/session-qa-history") {
+      res.setHeader("Content-Type", "application/json");
+
+      if (req.method === "GET") {
+        res.writeHead(200);
+        res.end(JSON.stringify({ history: null }));
+        return;
+      }
+
+      if (req.method === "POST" || req.method === "DELETE") {
+        readBody(req).then(function () {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true }));
+        }).catch(function () {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true }));
+        });
+        return;
+      }
+
+      res.writeHead(405);
+      res.end(JSON.stringify({ error: "Method not allowed" }));
       return;
     }
 
@@ -328,13 +415,31 @@ export function createFaxVizServer({ faxDir, distDir }) {
         }
 
         var question = payload.question;
-        var faxId = payload.faxId;
+        var sessionKey = payload.sessionKey || null;
 
         if (!question) {
           res.setHeader("Content-Type", "application/json");
           res.writeHead(400);
           res.end(JSON.stringify({ error: "Missing 'question' field" }));
           return;
+        }
+
+        // Resolve session from cache (lean payload) or from the request body
+        var resolvedSession = null;
+        if (sessionKey && sessionQACache[sessionKey]) {
+          resolvedSession = sessionQACache[sessionKey];
+        } else if (Array.isArray(payload.events) && payload.events.length > 0) {
+          resolvedSession = {
+            events: payload.events,
+            turns: payload.turns || [],
+            metadata: payload.metadata || {},
+          };
+        }
+
+        // Extract faxId from sessionKey (format: "fax:<faxId>")
+        var faxId = null;
+        if (sessionKey && sessionKey.startsWith("fax:")) {
+          faxId = sessionKey.substring(4);
         }
 
         // Build fax context from bundle markdown files
@@ -354,9 +459,9 @@ export function createFaxVizServer({ faxDir, distDir }) {
         }
 
         // Build Q&A context from session events if available
-        var events = Array.isArray(payload.events) ? payload.events : [];
-        var turns = Array.isArray(payload.turns) ? payload.turns : [];
-        var metadata = payload.metadata || {};
+        var events = resolvedSession ? resolvedSession.events : [];
+        var turns = resolvedSession ? resolvedSession.turns : [];
+        var metadata = resolvedSession ? resolvedSession.metadata : {};
 
         var sessionContext = "";
         if (events.length > 0) {
@@ -381,36 +486,72 @@ export function createFaxVizServer({ faxDir, distDir }) {
         }
 
         try {
-          // Use copilot-sdk for model call
           var sdk = await import("@github/copilot-sdk");
-          var session = new sdk.Session({
+          var CopilotClient = sdk.CopilotClient;
+          var approveAll = sdk.approveAll;
+          var client = new CopilotClient();
+          var answer = "";
+
+          await client.start();
+
+          var qaSessionConfig = {
+            onPermissionRequest: approveAll,
             streaming: true,
             systemMessage: {
               mode: "replace",
               content: prompt.system || "You are a helpful assistant that answers questions about fax context bundles and coding sessions.",
             },
+          };
+
+          var qaSession = await client.createSession(qaSessionConfig);
+
+          // Abort on client disconnect
+          res.on("close", function () {
+            qaSession && qaSession.abort && qaSession.abort().catch(function () {});
           });
 
-          var stream = session.sendMessage(prompt.user || question);
-          var fullAnswer = "";
+          await new Promise(function (resolve, reject) {
+            var done = false;
+            var unsubscribe = qaSession.on(function (event) {
+              if (done) return;
+              if (event.type === "session.idle") {
+                done = true;
+                unsubscribe();
+                resolve();
+              } else if (event.type === "session.error") {
+                done = true;
+                unsubscribe();
+                reject(new Error(event.data && event.data.message ? event.data.message : "Session error"));
+              } else if (event.type === "assistant.message_delta" || event.type === "assistant.message.delta") {
+                var delta = event.data && (event.data.text || event.data.content || "");
+                if (delta) {
+                  answer += delta;
+                  sseSend({ delta: delta });
+                }
+              } else if (event.type === "assistant.message") {
+                var text = event.data && (event.data.text || event.data.content || "");
+                if (text && !answer) {
+                  answer = text;
+                  sseSend({ delta: text });
+                }
+              }
+            });
 
-          for await (var chunk of stream) {
-            if (chunk && chunk.content) {
-              fullAnswer += chunk.content;
-              // FIX: useSessionQA expects { delta } not { type, content }
-              sseSend({ delta: chunk.content });
-            }
-          }
+            qaSession.send({ prompt: prompt.user || question }).catch(function (err) {
+              if (!done) { done = true; unsubscribe(); reject(err); }
+            });
+          });
 
-          // FIX: useSessionQA expects { done: true, answer, references, model }
+          await qaSession.disconnect();
+          await client.stop().catch(function () {});
+
           sseSend({
             done: true,
-            answer: fullAnswer,
+            answer: answer,
             model: "copilot",
             references: [],
           });
         } catch (modelError) {
-          // FIX: useSessionQA expects { error } field
           sseSend({
             error: modelError.message || "Model call failed",
           });

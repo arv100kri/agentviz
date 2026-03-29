@@ -346,13 +346,16 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
     }
 
     if (activeView === "qa") {
+      // Pass empty events to QAView to avoid freezing the browser when
+      // serializing 10k+ events for cache registration. The fax-viz server
+      // injects fax bundle markdown context server-side via sessionKey.
       return React.createElement(QAView, {
         qa: qa,
-        events: events,
-        turns: turns,
+        events: [],
+        turns: [],
         metadata: metadata,
         sessionFilePath: null,
-        rawText: rawText,
+        rawText: "",
         onSeekTurn: function (turnTime) {
           if (session) {
             playback.seek(turnTime);
