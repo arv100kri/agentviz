@@ -11,7 +11,6 @@ import PickUpModal from "./PickUpModal.jsx";
 function ImportanceBadge({ importance }) {
   var color = IMPORTANCE_COLORS[importance] || IMPORTANCE_COLORS.normal;
   var label = IMPORTANCE_LABELS[importance] || "NORMAL";
-  if (importance === "normal") return null;
   return React.createElement("span", {
     style: {
       fontSize: 10,
