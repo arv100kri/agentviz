@@ -2,6 +2,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it, expect, vi } from "vitest";
+
+// Check if node:sqlite is available (experimental, may not be in CI)
+var hasSqlite = false;
+try { await import("node:sqlite"); hasSqlite = true; } catch (e) {}
 import {
   buildQAProgressPayload,
   createSessionQACacheStore,
@@ -341,6 +345,7 @@ describe("Q&A fact store", function () {
   });
 
   it("answers deterministic turn lookups from the SQLite fact store", async function () {
+    if (!hasSqlite) return;
     var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "agentviz-qa-fact-store-"));
     var cache = createSessionQACacheStore();
     var rawText = [
@@ -397,6 +402,7 @@ describe("Q&A fact store", function () {
   });
 
   it("builds compact summary context for model-backed questions", async function () {
+    if (!hasSqlite) return;
     var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "agentviz-qa-fact-store-summary-"));
     var cache = createSessionQACacheStore();
     var saved = saveSessionQACacheEntry(cache, "session-key", {
@@ -447,6 +453,7 @@ describe("Q&A fact store", function () {
   });
 
   it("returns a deterministic out-of-range answer for invalid turn indices", async function () {
+    if (!hasSqlite) return;
     var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "agentviz-qa-oor-"));
     var cache = createSessionQACacheStore();
     var saved = saveSessionQACacheEntry(cache, "session-key", {
