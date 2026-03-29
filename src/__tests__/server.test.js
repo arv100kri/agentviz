@@ -8,6 +8,7 @@ var hasSqlite = false;
 try { await import("node:sqlite"); hasSqlite = true; } catch (e) {}
 import {
   buildQAProgressPayload,
+  createServer,
   createSessionQACacheStore,
   buildQADonePayload,
   buildQASessionConfig,
@@ -479,5 +480,59 @@ describe("Q&A fact store", function () {
     expect(result.model).toBe("AGENTVIZ turn-range guard");
 
     fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+});
+
+describe("Q&A body overflow handling", function () {
+  it("returns 413 with Connection: keep-alive for oversized /api/session-qa-cache POST", async function () {
+    var http = await import("node:http");
+    var server = createServer({ distDir: "./dist" });
+    await new Promise(function (resolve) { server.listen(0, resolve); });
+    var port = server.address().port;
+
+    try {
+      var response = await new Promise(function (resolve, reject) {
+        var body = JSON.stringify({ sessionKey: "test", rawText: "x".repeat(110 * 1024 * 1024) });
+        var req = http.request({
+          hostname: "127.0.0.1",
+          port: port,
+          path: "/api/session-qa-cache",
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+        }, function (res) {
+          var data = "";
+          res.on("data", function (c) { data += c; });
+          res.on("end", function () { resolve({ status: res.statusCode, headers: res.headers, body: data }); });
+        });
+        req.on("error", reject);
+        req.write(body);
+        req.end();
+      });
+
+      expect(response.status).toBe(413);
+      expect(response.headers["content-type"]).toContain("application/json");
+      expect(response.headers["connection"]).toBe("keep-alive");
+      expect(JSON.parse(response.body).error).toContain("too large");
+
+      // Verify the server still accepts subsequent requests
+      var healthCheck = await new Promise(function (resolve, reject) {
+        var req = http.request({
+          hostname: "127.0.0.1",
+          port: port,
+          path: "/api/meta",
+          method: "GET",
+        }, function (res) {
+          var data = "";
+          res.on("data", function (c) { data += c; });
+          res.on("end", function () { resolve({ status: res.statusCode, body: data }); });
+        });
+        req.on("error", reject);
+        req.end();
+      });
+
+      expect(healthCheck.status).toBe(200);
+    } finally {
+      server.close();
+    }
   });
 });

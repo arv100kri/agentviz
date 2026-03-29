@@ -1134,24 +1134,35 @@ export function createServer({ sessionFile, distDir }) {
         return;
       }
 
-      var qaCacheBody = "";
+      var qaCacheChunks = [];
+      var qaCacheBytes = 0;
       var qaCacheOverflow = false;
       var MAX_CACHE_BODY_BYTES = 100 * 1024 * 1024; // 100MB (local server, no DoS risk)
       req.on("data", function (chunk) {
         if (qaCacheOverflow) return;
-        qaCacheBody += chunk;
-        if (qaCacheBody.length > MAX_CACHE_BODY_BYTES) {
+        var chunkBytes = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
+        qaCacheBytes += chunkBytes;
+        if (qaCacheBytes > MAX_CACHE_BODY_BYTES) {
           qaCacheOverflow = true;
-          qaCacheBody = "";
+          qaCacheChunks = [];
           req.resume();
+          return;
         }
+        qaCacheChunks.push(chunk);
       });
       req.on("end", async function () {
         if (qaCacheOverflow) {
-          res.writeHead(413);
+          res.writeHead(413, {
+            "Content-Type": "application/json",
+            "Connection": "keep-alive",
+          });
           res.end(JSON.stringify({ error: "Request body too large" }));
           return;
         }
+        var qaCacheBody = qaCacheChunks.length > 0
+          ? (Buffer.isBuffer(qaCacheChunks[0]) ? Buffer.concat(qaCacheChunks).toString("utf8") : qaCacheChunks.join(""))
+          : "{}";
+        qaCacheChunks = [];
         try {
           var cachePayload = JSON.parse(qaCacheBody || "{}");
           if (!cachePayload.sessionKey) {
@@ -1197,25 +1208,35 @@ export function createServer({ sessionFile, distDir }) {
         res.writeHead(405); res.end(JSON.stringify({ error: "Method not allowed" })); return;
       }
       var qaRequestStartedAt = Date.now();
-      var qaBody = "";
+      var qaChunks = [];
+      var qaBytes = 0;
       var qaOverflow = false;
       var MAX_QA_BODY_BYTES = 100 * 1024 * 1024; // 100MB (local server, no DoS risk)
       req.on("data", function (chunk) {
         if (qaOverflow) return;
-        qaBody += chunk;
-        if (qaBody.length > MAX_QA_BODY_BYTES) {
+        var chunkBytes = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
+        qaBytes += chunkBytes;
+        if (qaBytes > MAX_QA_BODY_BYTES) {
           qaOverflow = true;
-          qaBody = "";
+          qaChunks = [];
           req.resume();
+          return;
         }
+        qaChunks.push(chunk);
       });
       req.on("end", async function () {
         if (qaOverflow) {
-          res.setHeader("Content-Type", "application/json");
-          res.writeHead(413);
+          res.writeHead(413, {
+            "Content-Type": "application/json",
+            "Connection": "keep-alive",
+          });
           res.end(JSON.stringify({ error: "Request body too large" }));
           return;
         }
+        var qaBody = qaChunks.length > 0
+          ? (Buffer.isBuffer(qaChunks[0]) ? Buffer.concat(qaChunks).toString("utf8") : qaChunks.join(""))
+          : "{}";
+        qaChunks = [];
         var payload;
         try {
           payload = JSON.parse(qaBody || "{}");

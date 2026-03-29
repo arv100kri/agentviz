@@ -356,7 +356,11 @@ function buildQARequestBody(question, model, qaSessionId, key, fallbackPayload, 
     body.events = fallbackPayload.events;
     body.turns = fallbackPayload.turns;
     body.metadata = fallbackPayload.metadata;
-    if (fallbackPayload.sessionFilePath) body.sessionFilePath = fallbackPayload.sessionFilePath;
+    if (fallbackPayload.sessionFilePath) {
+      body.sessionFilePath = fallbackPayload.sessionFilePath;
+    } else if (typeof fallbackPayload.rawText === "string") {
+      body.rawText = fallbackPayload.rawText;
+    }
   }
   return body;
 }
@@ -484,16 +488,22 @@ export default function useSessionQA() {
       return cacheState.pendingPromise;
     }
 
+    var cacheBody = {
+      sessionKey: key,
+      events: payload.events,
+      turns: payload.turns,
+      metadata: payload.metadata,
+    };
+    if (payload.sessionFilePath) {
+      cacheBody.sessionFilePath = payload.sessionFilePath;
+    } else if (typeof payload.rawText === "string") {
+      cacheBody.rawText = payload.rawText;
+    }
+
     var request = fetch(CACHE_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionKey: key,
-        events: payload.events,
-        turns: payload.turns,
-        metadata: payload.metadata,
-        sessionFilePath: payload.sessionFilePath,
-      }),
+      body: JSON.stringify(cacheBody),
     })
       .then(function (res) {
         if (!res.ok) throw new Error("Server error: " + res.status);
