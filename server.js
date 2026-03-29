@@ -28,6 +28,13 @@ import {
   ensureSessionQAFactStore,
   querySessionQAFactStore,
 } from "./src/lib/sessionQAFactStore.js";
+import {
+  readBody,
+  handleQAHistoryEndpoint,
+  handleQACacheEndpoint,
+  createModelAnswerCache,
+  setupSSE,
+} from "./src/lib/sessionQAEndpoints.js";
 var MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
@@ -742,41 +749,15 @@ export function createServer({ sessionFile, distDir, maxBodyBytes }) {
     }
   }, SESSION_QA_CACHE_TTL_MS);
 
-  // Context-based model answer cache: stores model answers keyed by a hash of
-  // the context + question family, so different phrasings that produce the same
-  // retrieval context can share cached answers. Max 50 entries, LRU eviction.
-  var modelAnswerCache = {};
-  var modelAnswerCacheOrder = [];
-  var MODEL_ANSWER_CACHE_MAX = 50;
-
-  function hashContextKey(fingerprint, family, contextSubstr, model) {
-    var input = (fingerprint || "") + "|" + (family || "") + "|" + (model || "") + "|" + (contextSubstr || "");
-    var hash = 0;
-    for (var i = 0; i < input.length; i++) {
-      hash = ((hash << 5) - hash + input.charCodeAt(i)) | 0;
-    }
-    return String(Math.abs(hash));
-  }
+  // Context-based model answer cache (shared implementation)
+  var modelAnswerCacheStore = createModelAnswerCache(50);
 
   function getCachedModelAnswer(fingerprint, family, context, model) {
-    var key = hashContextKey(fingerprint, family, context, model);
-    var entry = modelAnswerCache[key];
-    if (!entry) return null;
-    var idx = modelAnswerCacheOrder.indexOf(key);
-    if (idx > 0) { modelAnswerCacheOrder.splice(idx, 1); modelAnswerCacheOrder.unshift(key); }
-    return entry;
+    return modelAnswerCacheStore.get(fingerprint, family, context, model);
   }
 
   function setCachedModelAnswer(fingerprint, family, context, answer, references, model) {
-    var key = hashContextKey(fingerprint, family, context, model);
-    modelAnswerCache[key] = { answer: answer, references: references, model: model, cachedAt: Date.now() };
-    var idx = modelAnswerCacheOrder.indexOf(key);
-    if (idx !== -1) modelAnswerCacheOrder.splice(idx, 1);
-    modelAnswerCacheOrder.unshift(key);
-    while (modelAnswerCacheOrder.length > MODEL_ANSWER_CACHE_MAX) {
-      var evicted = modelAnswerCacheOrder.pop();
-      delete modelAnswerCache[evicted];
-    }
+    modelAnswerCacheStore.set(fingerprint, family, context, answer, references, model);
   }
 
   function broadcastNewLines() {
@@ -1041,163 +1022,17 @@ export function createServer({ sessionFile, distDir, maxBodyBytes }) {
     }
 
     if (pathname === "/api/session-qa-history") {
-      res.setHeader("Content-Type", "application/json");
-      var qaHistoryFile = getSessionQAHistoryFilePath();
-
-      if (req.method === "GET") {
-        var historySessionKey = parsed.query.sessionKey || "";
-        if (!historySessionKey) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: "sessionKey is required" }));
-          return;
-        }
-        res.writeHead(200);
-        res.end(JSON.stringify({ history: getSessionQAHistoryEntry(qaHistoryFile, historySessionKey) }));
-        return;
-      }
-
-      if (req.method === "DELETE") {
-        var deleteSessionKey = parsed.query.sessionKey || "";
-        if (!deleteSessionKey) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: "sessionKey is required" }));
-          return;
-        }
-        removeSessionQAHistoryEntry(qaHistoryFile, deleteSessionKey);
-        res.writeHead(200);
-        res.end(JSON.stringify({ success: true }));
-        return;
-      }
-
-      if (req.method !== "POST") {
-        res.writeHead(405);
-        res.end(JSON.stringify({ error: "Method not allowed" }));
-        return;
-      }
-
-      var qaHistoryBody = "";
-      req.on("data", function (chunk) { qaHistoryBody += chunk; });
-      req.on("end", function () {
-        try {
-          var historyPayload = JSON.parse(qaHistoryBody || "{}");
-          if (!historyPayload.sessionKey) {
-            res.writeHead(400);
-            res.end(JSON.stringify({ error: "sessionKey is required" }));
-            return;
-          }
-          var savedHistory = saveSessionQAHistoryEntry(
-            qaHistoryFile,
-            historyPayload.sessionKey,
-            historyPayload.history || historyPayload
-          );
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true, history: savedHistory }));
-        } catch (error) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: error.message || "Could not persist session Q&A history" }));
-        }
-      });
+      handleQAHistoryEndpoint(req, res, parsed);
       return;
     }
 
     if (pathname === "/api/session-qa-cache") {
-      res.setHeader("Content-Type", "application/json");
-
-      if (req.method === "GET") {
-        var cacheSessionKey = parsed.query.sessionKey || "";
-        if (!cacheSessionKey) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: "sessionKey is required" }));
-          return;
-        }
-        res.writeHead(200);
-        res.end(JSON.stringify({ session: getSessionQACacheEntry(sessionQACache, cacheSessionKey) }));
-        return;
-      }
-
-      if (req.method === "DELETE") {
-        var deleteCacheSessionKey = parsed.query.sessionKey || "";
-        if (!deleteCacheSessionKey) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: "sessionKey is required" }));
-          return;
-        }
-        removeSessionQACacheEntry(sessionQACache, deleteCacheSessionKey);
-        res.writeHead(200);
-        res.end(JSON.stringify({ success: true }));
-        return;
-      }
-
-      if (req.method !== "POST") {
-        res.writeHead(405);
-        res.end(JSON.stringify({ error: "Method not allowed" }));
-        return;
-      }
-
-      var qaCacheChunks = [];
-      var qaCacheBytes = 0;
-      var qaCacheOverflow = false;
-      var MAX_CACHE_BODY_BYTES = maxBodyBytes || 100 * 1024 * 1024; // 100MB default
-      req.on("data", function (chunk) {
-        if (qaCacheOverflow) return;
-        var chunkBytes = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
-        qaCacheBytes += chunkBytes;
-        if (qaCacheBytes > MAX_CACHE_BODY_BYTES) {
-          qaCacheOverflow = true;
-          qaCacheChunks = [];
-          req.resume();
-          return;
-        }
-        qaCacheChunks.push(chunk);
-      });
-      req.on("end", async function () {
-        if (qaCacheOverflow) {
-          res.writeHead(413, {
-            "Content-Type": "application/json",
-            "Connection": "keep-alive",
-          });
-          res.end(JSON.stringify({ error: "Request body too large" }));
-          return;
-        }
-        var qaCacheBody = qaCacheChunks.length > 0
-          ? (Buffer.isBuffer(qaCacheChunks[0]) ? Buffer.concat(qaCacheChunks).toString("utf8") : qaCacheChunks.join(""))
-          : "{}";
-        qaCacheChunks = [];
-        try {
-          var cachePayload = JSON.parse(qaCacheBody || "{}");
-          if (!cachePayload.sessionKey) {
-            res.writeHead(400);
-            res.end(JSON.stringify({ error: "sessionKey is required" }));
-            return;
-          }
-          var savedSession = saveSessionQACacheEntry(
-            sessionQACache,
-            cachePayload.sessionKey,
-            cachePayload
-          );
-          var precomputed = ensureSessionQAPrecomputed(savedSession);
-          var factStore = await ensureSessionQAFactStore(savedSession, precomputed, { homeDir: os.homedir() });
-          res.writeHead(200);
-          res.end(JSON.stringify({
-            success: true,
-            sessionKey: cachePayload.sessionKey,
-            updatedAt: savedSession ? savedSession.updatedAt : null,
-            precomputed: precomputed ? {
-              fingerprint: precomputed.fingerprint,
-              storage: precomputed.storage,
-              builtAt: precomputed.builtAt,
-              reused: precomputed.reused,
-            } : null,
-            factStore: factStore ? {
-              storage: factStore.storage,
-              builtAt: factStore.builtAt,
-              reused: factStore.reused,
-            } : null,
-          }));
-        } catch (error) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: error.message || "Could not cache session Q&A data" }));
-        }
+      handleQACacheEndpoint(req, res, parsed, {
+        sessionQACache: sessionQACache,
+        maxBodyBytes: maxBodyBytes,
+        ensureFactStore: async function (savedSession, precomputed) {
+          return ensureSessionQAFactStore(savedSession, precomputed, { homeDir: os.homedir() });
+        },
       });
       return;
     }
@@ -1208,35 +1043,7 @@ export function createServer({ sessionFile, distDir, maxBodyBytes }) {
         res.writeHead(405); res.end(JSON.stringify({ error: "Method not allowed" })); return;
       }
       var qaRequestStartedAt = Date.now();
-      var qaChunks = [];
-      var qaBytes = 0;
-      var qaOverflow = false;
-      var MAX_QA_BODY_BYTES = maxBodyBytes || 100 * 1024 * 1024; // 100MB default
-      req.on("data", function (chunk) {
-        if (qaOverflow) return;
-        var chunkBytes = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
-        qaBytes += chunkBytes;
-        if (qaBytes > MAX_QA_BODY_BYTES) {
-          qaOverflow = true;
-          qaChunks = [];
-          req.resume();
-          return;
-        }
-        qaChunks.push(chunk);
-      });
-      req.on("end", async function () {
-        if (qaOverflow) {
-          res.writeHead(413, {
-            "Content-Type": "application/json",
-            "Connection": "keep-alive",
-          });
-          res.end(JSON.stringify({ error: "Request body too large" }));
-          return;
-        }
-        var qaBody = qaChunks.length > 0
-          ? (Buffer.isBuffer(qaChunks[0]) ? Buffer.concat(qaChunks).toString("utf8") : qaChunks.join(""))
-          : "{}";
-        qaChunks = [];
+      readBody(req, res, maxBodyBytes).then(async function (qaBody) {
         var payload;
         try {
           payload = JSON.parse(qaBody || "{}");
@@ -1270,14 +1077,7 @@ export function createServer({ sessionFile, distDir, maxBodyBytes }) {
         }
 
         // SSE streaming response
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
-        res.writeHead(200);
-
-        function sseSend(data) {
-          if (!res.writableEnded) res.write("data: " + JSON.stringify(data) + "\n\n");
-        }
+        var sseSend = setupSSE(res);
         var stopProgressHeartbeat = function () {};
         try {
           var events = resolvedSession.events;
@@ -1778,6 +1578,12 @@ export function createServer({ sessionFile, distDir, maxBodyBytes }) {
           stopProgressHeartbeat();
           sseSend({ error: e.message || "Q&A failed" });
           if (!res.writableEnded) res.end();
+        }
+      }).catch(function (e) {
+        if (!res.headersSent) {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: e.message }));
         }
       });
       return;

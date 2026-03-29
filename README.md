@@ -201,6 +201,85 @@ Export is available in two places:
 
 ---
 
+## FAX-VIZ
+
+FAX-VIZ is a companion app for browsing **fax context bundles** -- structured handoff packages that agents exchange to transfer work between sessions or team members. It provides an inbox for incoming faxes, a full session visualizer, and a **Pick Up** flow that launches a new Copilot CLI or Claude Code session pre-loaded with the fax context.
+
+### Quick Start
+
+```bash
+node bin/fax-viz.js --fax-dir /path/to/fax/bundles
+```
+
+Opens at [localhost:4243](http://localhost:4243). Use `--open <name>` to jump directly to a specific fax, or `--no-open` to suppress the browser.
+
+### Inbox View
+
+Browse all fax bundles with search, filtering by importance (Urgent / High / Normal), and sorting by date, importance, or sender. Unread badges, thread counts, and session indicators help you triage quickly.
+
+<img src="docs/screenshots/fax-inbox.svg" alt="FAX-VIZ inbox view" width="800" />
+
+### Observe View
+
+Click any fax to open it in the observe view. The metadata header shows importance, progress, sender, artifacts, and thread info. Below it, the same tabbed views from AGENTVIZ are available: Replay, Tracks, Stats, and Q&A.
+
+Error navigation (E / Shift+E), track filters, playback speed control, and all AGENTVIZ keyboard shortcuts work identically.
+
+<img src="docs/screenshots/fax-observe.svg" alt="FAX-VIZ observe view" width="800" />
+
+### Pick Up Flow
+
+Click **Pick Up** to launch a new session that continues the fax's work. The modal lets you choose between Copilot CLI and Claude Code, start a new session or resume an existing one, and specify a working directory with a native folder browser.
+
+The bootstrap prompt from the fax bundle is automatically injected into the new session, giving the agent full context about the prior work, decisions, and next steps.
+
+<img src="docs/screenshots/fax-pickup.svg" alt="FAX-VIZ Pick Up modal" width="800" />
+
+### Session Q&A
+
+The Q&A tab works identically to AGENTVIZ Q&A, with one enhancement: fax bundle markdown files (handoff.md, analysis.md, decisions.md, collab.md) are automatically injected as additional context, so the model can answer questions about both the session trace and the fax content.
+
+<img src="docs/screenshots/fax-qa.svg" alt="FAX-VIZ Q&A view" width="800" />
+
+### Fax Bundle Structure
+
+Each fax bundle is a directory containing:
+
+| File | Purpose |
+|------|---------|
+| `events.jsonl` | Session trace (Claude Code or Copilot CLI format) |
+| `handoff.md` | Summary of work done and context for the recipient |
+| `analysis.md` | Technical analysis and decisions |
+| `decisions.md` | Key decisions and rationale |
+| `collab.md` | Collaboration notes and next steps |
+| `bootstrap-prompt.txt` | Pre-built prompt for the Pick Up flow |
+| `.fax-reply-intent.json` | Thread metadata for reply tracking |
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/faxes` | GET | List all fax bundles |
+| `/api/fax/:id/events` | GET | Session events for a bundle |
+| `/api/fax/:id/manifest` | GET | Bundle metadata (sender, importance, progress) |
+| `/api/fax/:id/pickup` | POST | Extract bootstrap prompt for session launch |
+| `/api/launch-session` | POST | Launch Copilot CLI or Claude Code with fax context |
+| `/api/copilot-sessions` | GET | List available sessions for resume |
+| `/api/browse-folder` | POST | Native OS folder picker dialog |
+| `/api/fax-read-status` | GET/POST | Read/unread tracking |
+
+### Shared Infrastructure
+
+FAX-VIZ shares the following with AGENTVIZ to avoid code duplication:
+
+- **Q&A pipeline** (`src/lib/sessionQAPipeline.js`) -- full question routing, fact store, model calling
+- **Q&A endpoint handlers** (`src/lib/sessionQAEndpoints.js`) -- readBody, cache, history, SSE setup
+- **Model answer cache** (`createModelAnswerCache`) -- LRU cache for cross-rephrasing reuse
+- **Session resolution** (`resolveSessionQAArtifacts`) -- cache lookup, inline payload, rawText handling
+- **Components** -- QAView, DiffViewer, DataInspector, Timeline, and all view components
+
+---
+
 ## Features
 
 ### Landing View

@@ -20,15 +20,15 @@ import { handleSessionQA } from "./src/lib/sessionQAPipeline.js";
 import {
   ensureSessionQAPrecomputed,
   createSessionQACacheStore,
-  saveSessionQACacheEntry,
-  getSessionQACacheEntry,
-  removeSessionQACacheEntry,
-  getSessionQAHistoryFilePath,
-  getSessionQAHistoryEntry,
-  saveSessionQAHistoryEntry,
-  removeSessionQAHistoryEntry,
   resolveSessionQAArtifacts,
 } from "./server.js";
+import {
+  readBody,
+  handleQAHistoryEndpoint,
+  handleQACacheEndpoint,
+  createModelAnswerCache,
+  setupSSE,
+} from "./src/lib/sessionQAEndpoints.js";
 import { buildReplyIntent, writeReplyIntent } from "./src/fax-viz/lib/faxReplyIntent.js";
 
 var MIME = {
@@ -141,46 +141,6 @@ function serveStatic(res, filePath) {
   }
 }
 
-var MAX_BODY_BYTES = 100 * 1024 * 1024; // 100MB -- localhost only, no DoS surface
-
-function readBody(req, res) {
-  return new Promise(function (resolve, reject) {
-    var chunks = [];
-    var bytes = 0;
-    var overflow = false;
-    req.on("data", function (chunk) {
-      if (overflow) return;
-      var chunkBytes = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
-      bytes += chunkBytes;
-      if (bytes > MAX_BODY_BYTES) {
-        overflow = true;
-        chunks = [];
-        req.resume(); // graceful drain to avoid ECONNRESET
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", function () {
-      if (overflow) {
-        if (res && !res.headersSent) {
-          res.writeHead(413, {
-            "Content-Type": "application/json",
-            "Connection": "keep-alive",
-          });
-          res.end(JSON.stringify({ error: "Request body too large" }));
-        }
-        reject(new Error("Request body too large"));
-        return;
-      }
-      var body = chunks.length > 0
-        ? (Buffer.isBuffer(chunks[0]) ? Buffer.concat(chunks).toString("utf8") : chunks.join(""))
-        : "";
-      resolve(body);
-    });
-    req.on("error", reject);
-  });
-}
-
 function readBundleMarkdownFiles(bundlePath) {
   var markdownFiles = ["handoff.md", "analysis.md", "decisions.md", "collab.md"];
   var textFiles = ["bootstrap-prompt.txt"];
@@ -200,6 +160,7 @@ function readBundleMarkdownFiles(bundlePath) {
 export function createFaxVizServer({ faxDir, distDir }) {
   // In-memory session Q&A cache (mirrors the main server's cache pattern)
   var sessionQACache = createSessionQACacheStore();
+  var modelAnswerCache = createModelAnswerCache(50);
 
   function handleRequest(req, res) {
     var parsed = url.parse(req.url, true);
@@ -215,125 +176,15 @@ export function createFaxVizServer({ faxDir, distDir }) {
       return;
     }
 
-    // Session Q&A cache: stores session data so Q&A can use lean payloads
+    // Session Q&A cache: shared handler
     if (pathname === "/api/session-qa-cache") {
-      res.setHeader("Content-Type", "application/json");
-
-      if (req.method === "GET") {
-        var cacheKey = parsed.query.sessionKey || "";
-        res.writeHead(200);
-        res.end(JSON.stringify({ session: getSessionQACacheEntry(sessionQACache, cacheKey) }));
-        return;
-      }
-
-      if (req.method === "DELETE") {
-        var delKey = parsed.query.sessionKey || "";
-        removeSessionQACacheEntry(sessionQACache, delKey);
-        res.writeHead(200);
-        res.end(JSON.stringify({ success: true }));
-        return;
-      }
-
-      if (req.method === "POST") {
-        readBody(req, res).then(function (body) {
-          try {
-            var payload = JSON.parse(body);
-            if (!payload.sessionKey) {
-              res.writeHead(400);
-              res.end(JSON.stringify({ error: "sessionKey is required" }));
-              return;
-            }
-            var savedSession = saveSessionQACacheEntry(
-              sessionQACache,
-              payload.sessionKey,
-              payload
-            );
-            var precomputed = ensureSessionQAPrecomputed(savedSession);
-            res.writeHead(200);
-            res.end(JSON.stringify({
-              success: true,
-              sessionKey: payload.sessionKey,
-              updatedAt: savedSession ? savedSession.updatedAt : null,
-              precomputed: precomputed ? {
-                fingerprint: precomputed.fingerprint,
-                reused: precomputed.reused,
-              } : null,
-            }));
-          } catch (e) {
-            res.writeHead(500);
-            res.end(JSON.stringify({ error: e.message }));
-          }
-        }).catch(function (e) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: e.message }));
-        });
-        return;
-      }
-
-      res.writeHead(405);
-      res.end(JSON.stringify({ error: "Method not allowed" }));
+      handleQACacheEndpoint(req, res, parsed, { sessionQACache: sessionQACache });
       return;
     }
 
-    // Session Q&A history: persists conversation history to disk
+    // Session Q&A history: shared handler
     if (pathname === "/api/session-qa-history") {
-      res.setHeader("Content-Type", "application/json");
-      var qaHistoryFile = getSessionQAHistoryFilePath();
-
-      if (req.method === "GET") {
-        var historySessionKey = parsed.query.sessionKey || "";
-        if (!historySessionKey) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: "sessionKey is required" }));
-          return;
-        }
-        res.writeHead(200);
-        res.end(JSON.stringify({ history: getSessionQAHistoryEntry(qaHistoryFile, historySessionKey) }));
-        return;
-      }
-
-      if (req.method === "DELETE") {
-        var deleteHistoryKey = parsed.query.sessionKey || "";
-        if (!deleteHistoryKey) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: "sessionKey is required" }));
-          return;
-        }
-        removeSessionQAHistoryEntry(qaHistoryFile, deleteHistoryKey);
-        res.writeHead(200);
-        res.end(JSON.stringify({ success: true }));
-        return;
-      }
-
-      if (req.method !== "POST") {
-        res.writeHead(405);
-        res.end(JSON.stringify({ error: "Method not allowed" }));
-        return;
-      }
-
-      readBody(req, res).then(function (body) {
-        try {
-          var historyPayload = JSON.parse(body || "{}");
-          if (!historyPayload.sessionKey) {
-            res.writeHead(400);
-            res.end(JSON.stringify({ error: "sessionKey is required" }));
-            return;
-          }
-          var savedHistory = saveSessionQAHistoryEntry(
-            qaHistoryFile,
-            historyPayload.sessionKey,
-            historyPayload.history || historyPayload
-          );
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true, history: savedHistory }));
-        } catch (error) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: error.message || "Could not persist session Q&A history" }));
-        }
-      }).catch(function (e) {
-        res.writeHead(500);
-        res.end(JSON.stringify({ error: e.message }));
-      });
+      handleQAHistoryEndpoint(req, res, parsed);
       return;
     }
 
@@ -542,14 +393,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
         }
 
         // SSE streaming response
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
-        res.writeHead(200);
-
-        function sseSend(data) {
-          if (!res.writableEnded) res.write("data: " + JSON.stringify(data) + "\n\n");
-        }
+        var sseSend = setupSSE(res);
 
         try {
           await handleSessionQA({
@@ -560,6 +404,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
             contextExtender: contextExtender,
             sseSend: sseSend,
             homeDir: os.homedir(),
+            modelAnswerCache: modelAnswerCache,
             requestKind: payload.requestKind || null,
             qaRequestStartedAt: qaRequestStartedAt,
             onAbort: function (abortFn) {
