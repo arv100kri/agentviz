@@ -701,6 +701,60 @@ export function createFaxVizServer({ faxDir, distDir }) {
       }
       return;
     }
+
+    // POST /api/browse-folder -- opens a native folder picker dialog
+    if (pathname === "/api/browse-folder") {
+      res.setHeader("Content-Type", "application/json");
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end(JSON.stringify({ error: "Method not allowed" }));
+        return;
+      }
+      readBody(req).then(function (body) {
+        try {
+          var payload = JSON.parse(body || "{}");
+          var startDir = payload.startDir || os.homedir();
+          var isWindows = process.platform === "win32";
+          var script;
+
+          if (isWindows) {
+            // Use PowerShell to show a folder browser dialog
+            script = 'powershell -NoProfile -Command "' +
+              "Add-Type -AssemblyName System.Windows.Forms; " +
+              "$d = New-Object System.Windows.Forms.FolderBrowserDialog; " +
+              "$d.SelectedPath = '" + startDir.replace(/'/g, "''") + "'; " +
+              "$d.Description = 'Select working directory'; " +
+              "if ($d.ShowDialog() -eq 'OK') { $d.SelectedPath } else { '' }" +
+              '"';
+          } else {
+            // On macOS/Linux, use osascript or zenity
+            if (process.platform === "darwin") {
+              script = 'osascript -e \'choose folder with prompt "Select working directory" default location "' + startDir + '"\' 2>/dev/null | sed "s/alias Macintosh HD//" | tr ":" "/"';
+            } else {
+              script = 'zenity --file-selection --directory --title="Select working directory" 2>/dev/null || echo ""';
+            }
+          }
+
+          execSync("echo test", { stdio: "ignore" }); // warm up
+          var result = execSync(script, { encoding: "utf8", timeout: 60000 }).trim();
+
+          if (result) {
+            res.writeHead(200);
+            res.end(JSON.stringify({ folder: result }));
+          } else {
+            res.writeHead(200);
+            res.end(JSON.stringify({ folder: null, cancelled: true }));
+          }
+        } catch (browseErr) {
+          res.writeHead(200);
+          res.end(JSON.stringify({ folder: null, cancelled: true }));
+        }
+      }).catch(function () {
+        res.writeHead(200);
+        res.end(JSON.stringify({ folder: null, cancelled: true }));
+      });
+      return;
+    }
 
     // POST /api/launch-session
     if (pathname === "/api/launch-session") {

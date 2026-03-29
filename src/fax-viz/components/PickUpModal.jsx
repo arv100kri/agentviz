@@ -394,24 +394,56 @@ function PickUpModal({ isOpen, onClose, faxId, faxLabel, senderAlias, sourceRoot
         fontSize: theme.fontSize.sm,
       },
     }, "Working directory (optional):"),
-    React.createElement("input", {
-      type: "text",
-      value: cwdReadOnly ? (resumeSessionCwd || "") : cwd,
-      readOnly: cwdReadOnly,
-      onChange: cwdReadOnly ? undefined : function (e) { setCwd(e.target.value); },
-      placeholder: "/path/to/project",
-      style: {
-        background: theme.bg.raised,
-        border: "1px solid " + theme.border.default,
-        borderRadius: theme.radius.md,
-        color: cwdReadOnly ? theme.text.muted : theme.text.primary,
-        fontSize: theme.fontSize.base,
-        fontFamily: theme.font.mono,
-        padding: "6px " + theme.space.md + "px",
-        outline: "none",
-        opacity: cwdReadOnly ? 0.6 : 1,
-      },
-    })
+    React.createElement("div", {
+      style: { display: "flex", gap: theme.space.sm, alignItems: "center" },
+    },
+      React.createElement("input", {
+        type: "text",
+        value: cwdReadOnly ? (resumeSessionCwd || "") : cwd,
+        readOnly: cwdReadOnly,
+        onChange: cwdReadOnly ? undefined : function (e) { setCwd(e.target.value); },
+        placeholder: "/path/to/project",
+        style: {
+          flex: 1,
+          background: theme.bg.raised,
+          border: "1px solid " + theme.border.default,
+          borderRadius: theme.radius.md,
+          color: cwdReadOnly ? theme.text.muted : theme.text.primary,
+          fontSize: theme.fontSize.base,
+          fontFamily: theme.font.mono,
+          padding: "6px " + theme.space.md + "px",
+          outline: "none",
+          opacity: cwdReadOnly ? 0.6 : 1,
+        },
+      }),
+      !cwdReadOnly && React.createElement("button", {
+        type: "button",
+        onClick: function () {
+          fetch("/api/browse-folder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ startDir: cwd || undefined }),
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data.folder) setCwd(data.folder);
+            })
+            .catch(function () {});
+        },
+        style: {
+          background: theme.bg.raised,
+          border: "1px solid " + theme.border.default,
+          borderRadius: theme.radius.md,
+          color: theme.text.secondary,
+          fontSize: theme.fontSize.sm,
+          fontFamily: theme.font.mono,
+          padding: "6px " + theme.space.lg + "px",
+          cursor: "pointer",
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+        },
+      }, "Browse...")
+    )
   );
 
   // Error display
