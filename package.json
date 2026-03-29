@@ -13,8 +13,10 @@
     "dist",
     "dist-cli",
     "dist-fax-viz",
+    "src",
     "server.js",
-    "fax-viz-server.js"
+    "fax-viz-server.js",
+    "config.js"
   ],
   "scripts": {
     "dev": "vite",
