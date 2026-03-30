@@ -68,7 +68,7 @@ describe("classify: tools", function () {
 
   it("handles session with no tool calls", function () {
     var empty = makeSession({ events: [], metadata: { totalToolCalls: 0 } });
-    var r = classify("what tools", empty);
+    var r = classify("what tools were used", empty);
     expect(r.tier).toBe("instant");
     expect(r.answer).toContain("No tool calls");
   });
@@ -96,7 +96,7 @@ describe("classify: errors", function () {
   });
 
   it("includes turn references in error answers", function () {
-    var r = classify("errors?", SESSION);
+    var r = classify("what errors occurred?", SESSION);
     expect(r.answer).toContain("Turn 1");
   });
 });
@@ -119,7 +119,7 @@ describe("classify: model", function () {
 
   it("lists multiple models when present", function () {
     var multi = makeSession({ metadata: { primaryModel: "claude-sonnet-4", models: { "claude-sonnet-4": 3, "gpt-4o": 2 } } });
-    var r = classify("what models?", multi);
+    var r = classify("what model was used?", multi);
     expect(r.answer).toContain("gpt-4o");
     expect(r.answer).toContain("claude-sonnet-4");
   });
@@ -136,7 +136,7 @@ describe("classify: duration", function () {
 
   it("handles missing duration", function () {
     var noDur = makeSession({ metadata: { duration: 0 } });
-    var r = classify("how long?", noDur);
+    var r = classify("how long did it take?", noDur);
     expect(r.tier).toBe("instant");
     expect(r.answer).toContain("not available");
   });
@@ -160,7 +160,7 @@ describe("classify: cost", function () {
 
   it("handles missing token data", function () {
     var noTokens = makeSession({ metadata: { tokenUsage: null } });
-    var r = classify("cost?", noTokens);
+    var r = classify("how much did it cost?", noTokens);
     expect(r.tier).toBe("instant");
     expect(r.answer).toContain("No token usage");
   });
@@ -216,7 +216,7 @@ describe("classify: autonomy", function () {
     expect(r.answer).toContain("72%");
   });
 
-  it("matches 'babysitting' keyword", function () {
+  it("matches 'babysitting time' keyword", function () {
     var r = classify("How much babysitting time?", SESSION);
     expect(r.tier).toBe("instant");
     expect(r.answer).toContain("Human wait time");
@@ -225,7 +225,7 @@ describe("classify: autonomy", function () {
   it("handles missing autonomy metrics", function () {
     var noAuto = makeSession({});
     noAuto.autonomyMetrics = null;
-    var r = classify("autonomy?", noAuto);
+    var r = classify("autonomy score?", noAuto);
     expect(r.tier).toBe("instant");
     expect(r.answer).toContain("not available");
   });
@@ -242,14 +242,14 @@ describe("classify: summary", function () {
     expect(r.answer).toContain("bash");
   });
 
-  it("matches 'what happened'", function () {
-    var r = classify("What happened in this session?", SESSION);
+  it("matches 'session overview'", function () {
+    var r = classify("session overview", SESSION);
     expect(r.tier).toBe("instant");
     expect(r.answer).toContain("Session summary");
   });
 
   it("includes cost when token data available", function () {
-    var r = classify("overview", SESSION);
+    var r = classify("session summary", SESSION);
     expect(r.answer).toContain("$");
   });
 });
@@ -287,6 +287,40 @@ describe("classify: definitional questions bypass instant", function () {
     expect(classify("how many errors?", SESSION).tier).toBe("instant");
     expect(classify("what model was used?", SESSION).tier).toBe("instant");
     expect(classify("how long did it take?", SESSION).tier).toBe("instant");
+  });
+});
+
+// ── Follow-up question bypass ───────────────────────────────────────────────
+
+describe("classify: follow-up questions bypass instant", function () {
+  it("sends 'how many seconds is that?' to model", function () {
+    var r = classify("how many seconds is that?", SESSION);
+    expect(r.tier).toBe("model");
+  });
+
+  it("sends 'convert that to seconds' to model", function () {
+    var r = classify("convert that to seconds", SESSION);
+    expect(r.tier).toBe("model");
+  });
+
+  it("sends 'what is that in minutes?' to model", function () {
+    var r = classify("what's that in minutes?", SESSION);
+    expect(r.tier).toBe("model");
+  });
+
+  it("sends 'break that down' to model", function () {
+    var r = classify("break that down", SESSION);
+    expect(r.tier).toBe("model");
+  });
+
+  it("sends 'can you explain that?' to model", function () {
+    var r = classify("can you explain that?", SESSION);
+    expect(r.tier).toBe("model");
+  });
+
+  it("sends 'in seconds?' to model", function () {
+    var r = classify("in seconds?", SESSION);
+    expect(r.tier).toBe("model");
   });
 });
 

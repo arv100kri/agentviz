@@ -16,22 +16,18 @@ import { estimateCost, formatCost } from "./pricing.js";
 // ── Keyword patterns ────────────────────────────────────────────────────────
 
 var PATTERNS = [
-  { id: "tools",     re: /\b(tools\s+used|tool\s+calls?|which\s+tools?|what\s+tools?|most.?used\s+tool|top\s+tools?|tool\s+count|how\s+many\s+tools?|list\s+(all\s+)?tools)\b/i },
-  { id: "errors",    re: /\b(error|errors|fail|failure|failures|crash|bug|broke|wrong)\b/i },
-  { id: "model",     re: /\b(model|models|which model|what model|llm)\b/i },
-  { id: "duration",  re: /\b(how long|duration|how.+time.+take|took|elapsed|minutes?|seconds?)\b/i },
-  { id: "cost",      re: /\b(cost|price|expensive|cheap|token|tokens|spend|spent|billing)\b/i },
+  { id: "tools",     re: /\b(tools?\s+used|tool\s+calls?|which\s+tools?|what\s+tools?\s+(were|was|did)|most.?used\s+tool|top\s+tools?|tool\s+count|how\s+many\s+tools?|list\s+(all\s+)?tools|tool\s+(ranking|breakdown|stats?))\b/i },
+  { id: "errors",    re: /\b(how\s+many\s+errors?|any\s+errors?|what\s+errors?|errors?\s+(occurred|found|count)|show\s+errors?|list\s+errors?|did\s+(anything|it|the)\s+fail|were\s+there\s+(errors?|failures?))\b/i },
+  { id: "model",     re: /\b(what\s+model|which\s+model|model\s+(used|was|name)|what\s+llm|which\s+llm)\b/i },
+  { id: "duration",  re: /\b(how\s+long\s+(did|was|does)|session\s+duration|total\s+(time|duration)|how\s+long\s+.*\s+(take|last|run))\b/i },
+  { id: "cost",      re: /\b(how\s+much\s+(did\s+(it|this)|does\s+it)\s+cost|total\s+cost|estimated?\s+cost|token\s+(usage|count|stats?)|how\s+many\s+tokens?)\b/i },
   { id: "turnN",     re: /\bturn\s*#?\s*(\d+)\b/i },
-  { id: "turns",     re: /\b(how many turns|turn count|number of turns|total turns)\b/i },
-  { id: "autonomy",  re: /\b(autonom|efficiency|babysit|idle\b|intervention|human.?wait)/i },
-  { id: "summary",   re: /\b(summar|overview|recap|what happened|describe|explain this)/i },
+  { id: "turns",     re: /\b(how\s+many\s+turns|turn\s+count|number\s+of\s+turns|total\s+turns)\b/i },
+  { id: "autonomy",  re: /\b(autonom\w*\s*(score|efficiency|rating|metric)?|how\s+autonom|babysit\w*\s*time|idle\s+time|human.?wait|intervention\s+(count|rate))\b/i },
+  { id: "summary",   re: /\b(summarize?\s+(this|the)\s+session|session\s+(summary|overview|recap))\b/i },
 ];
 
 // ── Classifier ──────────────────────────────────────────────────────────────
-
-// Definitional questions ask "what is X" / "what does X do" / "explain X".
-// These need the model even when X contains a keyword like "tool" or "error".
-var DEFINITIONAL_RE = /\b(what\s+(is|are|does|do|was|were)\s+(a|an|the)\s+\w|explain\s+(the|a|an)\s+\w|define\s+\w|describe\s+(the|a|an)\s+\w|tell\s+me\s+about\s+(the|a|an)\s+\w|how\s+does\s+(the|a|an)\s+\w.+work)/i;
 
 /**
  * Classify a question and optionally produce an instant answer.
@@ -45,13 +41,6 @@ export function classify(question, data) {
   if (!data || !data.metadata) return { tier: "model" };
 
   var q = question.trim();
-
-  // Definitional/explanatory questions always go to the model, even if they
-  // contain keywords like "tool", "error", or "model".
-  if (DEFINITIONAL_RE.test(q)) {
-    return { tier: "model", context: buildModelContext(q, data) };
-  }
-
   var matched = matchPattern(q);
 
   if (matched === "turnN") {
