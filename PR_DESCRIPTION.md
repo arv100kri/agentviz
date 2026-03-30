@@ -7,13 +7,13 @@ Enhances the Session Q&A drawer with better performance, richer instant answers,
 ## Screenshots
 
 ### Instant answer with timing and markdown list rendering
-![Q&A instant answer](docs/screenshots/qa-instant-answer.png)
+![Q&A instant answer](https://raw.githubusercontent.com/arv100kri/agentviz/feature/qa-improvements/docs/screenshots/qa-instant-answer.png)
 
 ### Empty drawer with suggested chips
-![Q&A drawer](docs/screenshots/qa-drawer-empty.png)
+![Q&A drawer](https://raw.githubusercontent.com/arv100kri/agentviz/feature/qa-improvements/docs/screenshots/qa-drawer-empty.png)
 
 ### User messages with clickable turn references
-![User messages](docs/screenshots/qa-user-messages.png)
+![User messages](https://raw.githubusercontent.com/arv100kri/agentviz/feature/qa-improvements/docs/screenshots/qa-user-messages.png)
 
 ## Key Changes
 
