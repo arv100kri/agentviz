@@ -10,6 +10,23 @@ import { classify, buildModelContext, fingerprintQuestion } from "../lib/qaClass
 
 var STORAGE_PREFIX = "agentviz:qa:";
 var MAX_PERSISTED_MESSAGES = 50;
+var ROTATION_THRESHOLD = 6; // rotate SDK session after this many model questions
+
+function buildRecap(messages) {
+  var pairs = [];
+  for (var i = 0; i < messages.length; i++) {
+    var m = messages[i];
+    if (m.role === "user") {
+      var next = messages[i + 1];
+      var answer = next && next.role === "assistant" ? next.content : "";
+      pairs.push("Q: " + m.content.slice(0, 150) + "\nA: " + answer.slice(0, 200));
+    }
+  }
+  if (pairs.length === 0) return "";
+  // Keep only last few pairs to stay lean
+  var recent = pairs.slice(-4);
+  return "Prior conversation recap:\n" + recent.join("\n---\n");
+}
 
 function loadMessages(key) {
   if (!key) return [];
@@ -46,12 +63,14 @@ export default function useQA(sessionData, sessionKey) {
   var abortRef = useRef(null);
   var keyRef = useRef(sessionKey);
   var answerCacheRef = useRef({});
+  var modelQuestionCountRef = useRef(0);
 
   // Restore messages when sessionKey changes; clear cache for new session
   useEffect(function () {
     if (sessionKey !== keyRef.current) {
       keyRef.current = sessionKey;
       answerCacheRef.current = {};
+      modelQuestionCountRef.current = 0;
       setMessages(loadMessages(sessionKey));
       setError(null);
     }
@@ -102,8 +121,17 @@ export default function useQA(sessionData, sessionKey) {
     setIsStreaming(true);
     var controller = new AbortController();
     abortRef.current = controller;
+    modelQuestionCountRef.current++;
 
     var context = buildModelContext(q, sessionData);
+
+    // Inject conversation recap when rotating past threshold
+    if (modelQuestionCountRef.current > ROTATION_THRESHOLD) {
+      var recap = buildRecap(messages);
+      if (recap) {
+        context.conversationRecap = recap;
+      }
+    }
 
     // Add empty assistant message that we'll stream into
     setMessages(function (prev) {
@@ -165,6 +193,7 @@ export default function useQA(sessionData, sessionKey) {
     setMessages([]);
     setError(null);
     answerCacheRef.current = {};
+    modelQuestionCountRef.current = 0;
     removeMessages(keyRef.current);
   }, [abort]);
 

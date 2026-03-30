@@ -189,5 +189,10 @@ function formatContext(ctx) {
     parts.push(typeof ctx.userMessages === "string" ? ctx.userMessages : ctx.userMessages.join("\n"));
   }
 
+  if (ctx.conversationRecap) {
+    parts.push("\n## Prior Q&A conversation");
+    parts.push(ctx.conversationRecap);
+  }
+
   return parts.join("\n");
 }
