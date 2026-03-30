@@ -51,6 +51,39 @@ function removeMessages(key) {
   try { localStorage.removeItem(STORAGE_PREFIX + key); } catch (_) {}
 }
 
+var CACHE_PREFIX = "agentviz:qa-cache:";
+var MAX_CACHE_ENTRIES = 30;
+
+function loadCache(key) {
+  if (!key) return {};
+  try {
+    var raw = localStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return {};
+    var cache = JSON.parse(raw);
+    return cache && typeof cache === "object" ? cache : {};
+  } catch (_) { return {}; }
+}
+
+function saveCache(key, cache) {
+  if (!key) return;
+  try {
+    // Trim to max entries (keep most recent)
+    var entries = Object.keys(cache);
+    if (entries.length > MAX_CACHE_ENTRIES) {
+      var sorted = entries.sort(function (a, b) { return (cache[b].cachedAt || 0) - (cache[a].cachedAt || 0); });
+      var trimmed = {};
+      for (var i = 0; i < MAX_CACHE_ENTRIES; i++) trimmed[sorted[i]] = cache[sorted[i]];
+      cache = trimmed;
+    }
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(cache));
+  } catch (_) {}
+}
+
+function removeCache(key) {
+  if (!key) return;
+  try { localStorage.removeItem(CACHE_PREFIX + key); } catch (_) {}
+}
+
 /**
  * @param {object} sessionData - { events, turns, metadata, autonomyMetrics }
  * @param {string|null} sessionKey - unique key for persisting Q&A history
@@ -63,14 +96,14 @@ export default function useQA(sessionData, sessionKey) {
   var [error, setError] = useState(null);
   var abortRef = useRef(null);
   var keyRef = useRef(sessionKey);
-  var answerCacheRef = useRef({});
+  var answerCacheRef = useRef(loadCache(sessionKey));
   var modelQuestionCountRef = useRef(0);
 
-  // Restore messages when sessionKey changes; clear cache for new session
+  // Restore messages and cache when sessionKey changes
   useEffect(function () {
     if (sessionKey !== keyRef.current) {
       keyRef.current = sessionKey;
-      answerCacheRef.current = {};
+      answerCacheRef.current = loadCache(sessionKey);
       modelQuestionCountRef.current = 0;
       setMessages(loadMessages(sessionKey));
       setError(null);
@@ -161,6 +194,7 @@ export default function useQA(sessionData, sessionKey) {
             // Cache the model answer for paraphrase reuse
             if (fp && finished.content) {
               answerCacheRef.current[fp] = { answer: finished.content, cachedAt: Date.now() };
+              saveCache(keyRef.current, answerCacheRef.current);
             }
             return prev.slice(0, -1).concat(finished);
           }
@@ -200,6 +234,7 @@ export default function useQA(sessionData, sessionKey) {
     answerCacheRef.current = {};
     modelQuestionCountRef.current = 0;
     removeMessages(keyRef.current);
+    removeCache(keyRef.current);
   }, [abort]);
 
   return { messages: messages, isStreaming: isStreaming, streamPhase: streamPhase, error: error, ask: ask, abort: abort, clear: clear };

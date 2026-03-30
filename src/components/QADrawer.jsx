@@ -472,11 +472,14 @@ export default function QADrawer({ open, onClose, onDisable, sessionKey, session
     }
   }, [qa.messages]);
 
-  // Focus input when drawer opens
+  // Focus input when drawer opens + scroll to bottom
   useEffect(function () {
     if (!open) return;
     var id = setTimeout(function () {
       if (inputRef.current) inputRef.current.focus();
+      if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
+        messagesEndRef.current.scrollIntoView({ behavior: "instant" });
+      }
     }, 50);
     return function () { clearTimeout(id); };
   }, [open]);
