@@ -5,18 +5,62 @@
  * Uses qaClassifier for instant answers; falls back to /api/qa/ask SSE for model answers.
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { classify, buildModelContext } from "../lib/qaClassifier.js";
+
+var STORAGE_PREFIX = "agentviz:qa:";
+var MAX_PERSISTED_MESSAGES = 50;
+
+function loadMessages(key) {
+  if (!key) return [];
+  try {
+    var raw = localStorage.getItem(STORAGE_PREFIX + key);
+    if (!raw) return [];
+    var msgs = JSON.parse(raw);
+    return Array.isArray(msgs) ? msgs : [];
+  } catch (_) { return []; }
+}
+
+function saveMessages(key, messages) {
+  if (!key) return;
+  try {
+    var toSave = messages.slice(-MAX_PERSISTED_MESSAGES).filter(function (m) { return !m.streaming; });
+    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(toSave));
+  } catch (_) {}
+}
+
+function removeMessages(key) {
+  if (!key) return;
+  try { localStorage.removeItem(STORAGE_PREFIX + key); } catch (_) {}
+}
 
 /**
  * @param {object} sessionData - { events, turns, metadata, autonomyMetrics }
+ * @param {string|null} sessionKey - unique key for persisting Q&A history
  * @returns {{ messages, isStreaming, error, ask, abort, clear }}
  */
-export default function useQA(sessionData) {
-  var [messages, setMessages] = useState([]);
+export default function useQA(sessionData, sessionKey) {
+  var [messages, setMessages] = useState(function () { return loadMessages(sessionKey); });
   var [isStreaming, setIsStreaming] = useState(false);
   var [error, setError] = useState(null);
   var abortRef = useRef(null);
+  var keyRef = useRef(sessionKey);
+
+  // Restore messages when sessionKey changes
+  useEffect(function () {
+    if (sessionKey !== keyRef.current) {
+      keyRef.current = sessionKey;
+      setMessages(loadMessages(sessionKey));
+      setError(null);
+    }
+  }, [sessionKey]);
+
+  // Persist messages on change (skip while streaming)
+  useEffect(function () {
+    if (!isStreaming) {
+      saveMessages(keyRef.current, messages);
+    }
+  }, [messages, isStreaming]);
 
   var ask = useCallback(function (question) {
     if (!question || !question.trim()) return;
@@ -98,6 +142,7 @@ export default function useQA(sessionData) {
     abort();
     setMessages([]);
     setError(null);
+    removeMessages(keyRef.current);
   }, [abort]);
 
   return { messages: messages, isStreaming: isStreaming, error: error, ask: ask, abort: abort, clear: clear };

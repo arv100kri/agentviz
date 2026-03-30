@@ -174,11 +174,11 @@ function MessageBubble({ message, onSeekTurn }) {
   );
 }
 
-export default function QADrawer({ open, onClose, onDisable, sessionData, onSeek, turns }) {
+export default function QADrawer({ open, onClose, onDisable, sessionKey, sessionData, onSeek, turns }) {
   var [input, setInput] = useState("");
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
-  var qa = useQA(sessionData);
+  var qa = useQA(sessionData, sessionKey);
 
   // Auto-scroll to bottom on new messages
   useEffect(function () {

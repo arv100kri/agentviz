@@ -540,6 +540,7 @@ function AppSessionView({
         open={showQA}
         onClose={function () { setShowQA(false); }}
         onDisable={function () { setShowQA(false); qaFlag.setEnabled(false); }}
+        sessionKey={session.file || null}
         sessionData={{
           events: session.events,
           turns: session.turns,
