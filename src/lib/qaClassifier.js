@@ -22,9 +22,18 @@ var PATTERNS = [
   { id: "duration",  re: /\b(how\s+long\s+(did|was|does)|session\s+duration|total\s+(time|duration)|how\s+long\s+.*\s+(take|last|run))\b/i },
   { id: "cost",      re: /\b(how\s+much\s+(did\s+(it|this)|does\s+it)\s+cost|total\s+cost|estimated?\s+cost|token\s+(usage|count|stats?)|how\s+many\s+tokens?)\b/i },
   { id: "turnN",     re: /\bturn\s*#?\s*(\d+)\b/i },
+  { id: "turnRange", re: /\bturns?\s*#?\s*(\d+)\s*[-\u2013]\s*(\d+)\b/i },
   { id: "turns",     re: /\b(how\s+many\s+turns|turn\s+count|number\s+of\s+turns|total\s+turns)\b/i },
   { id: "autonomy",  re: /\b(autonom\w*\s*(score|efficiency|rating|metric)?|how\s+autonom|babysit\w*\s*time|idle\s+time|human.?wait|intervention\s+(count|rate))\b/i },
   { id: "summary",   re: /\b(summarize?\s+(this|the)\s+session|session\s+(summary|overview|recap))\b/i },
+  { id: "files",     re: /\b(what\s+files?|which\s+files?|files?\s+(edited|read|created|modified|changed|touched|written|viewed)|list\s+(all\s+)?files?|how\s+many\s+files?)\b/i },
+  { id: "commands",  re: /\b(what\s+(commands?|bash|shell)|which\s+commands?|commands?\s+(run|ran|executed)|list\s+(all\s+)?commands?|bash\s+(commands?|history)|shell\s+commands?|terminal\s+commands?)\b/i },
+  { id: "firstTurn", re: /\b(first\s+turn|first\s+thing\s+(done|asked|said)|what\s+(started|began|happened\s+first)|opening\s+turn|initial\s+turn|turn\s+0)\b/i },
+  { id: "lastTurn",  re: /\b(last\s+turn|final\s+turn|most\s+recent\s+turn|what\s+(ended|finished|happened\s+last)|closing\s+turn)\b/i },
+  { id: "format",    re: /\b(what\s+format|which\s+format|session\s+format|what\s+type\s+of\s+session|is\s+this\s+(claude|copilot))\b/i },
+  { id: "userMsgs",  re: /\b(what\s+did\s+the\s+user\s+(ask|say|type|write|request)|user\s+(messages?|prompts?|questions?)|list\s+(all\s+)?(user\s+)?(messages?|prompts?))\b/i },
+  { id: "events",    re: /\b(how\s+many\s+events?|event\s+count|total\s+events?|number\s+of\s+events?)\b/i },
+  { id: "toolDetail",re: /\b(how\s+many\s+times?\s+(was|did|were)\s+(\w+)\s+(used|called|invoked)|(\w+)\s+tool\s+(count|usage|calls?))\b/i },
 ];
 
 // ── Classifier ──────────────────────────────────────────────────────────────
@@ -51,14 +60,29 @@ export function classify(question, data) {
     }
   }
 
-  if (matched === "tools")    return answerTools(data);
-  if (matched === "errors")   return answerErrors(data);
-  if (matched === "model")    return answerModel(data);
-  if (matched === "duration") return answerDuration(data);
-  if (matched === "cost")     return answerCost(data);
-  if (matched === "turns")    return answerTurnCount(data);
-  if (matched === "autonomy") return answerAutonomy(data);
-  if (matched === "summary")  return answerSummary(data);
+  if (matched === "turnRange") {
+    var rangeMatch = q.match(/\bturns?\s*#?\s*(\d+)\s*[-\u2013]\s*(\d+)\b/i);
+    if (rangeMatch) {
+      return answerTurnRange(parseInt(rangeMatch[1], 10), parseInt(rangeMatch[2], 10), data);
+    }
+  }
+
+  if (matched === "tools")     return answerTools(data);
+  if (matched === "errors")    return answerErrors(data);
+  if (matched === "model")     return answerModel(data);
+  if (matched === "duration")  return answerDuration(data);
+  if (matched === "cost")      return answerCost(data);
+  if (matched === "turns")     return answerTurnCount(data);
+  if (matched === "autonomy")  return answerAutonomy(data);
+  if (matched === "summary")   return answerSummary(data);
+  if (matched === "files")     return answerFiles(data);
+  if (matched === "commands")  return answerCommands(data);
+  if (matched === "firstTurn") return answerTurnDetail(0, data);
+  if (matched === "lastTurn")  return answerTurnDetail(data.turns ? data.turns.length - 1 : 0, data);
+  if (matched === "format")    return answerFormat(data);
+  if (matched === "userMsgs")  return answerUserMessages(data);
+  if (matched === "events")    return answerEventCount(data);
+  if (matched === "toolDetail") return answerToolDetail(q, data);
 
   return { tier: "model", context: buildModelContext(q, data) };
 }
@@ -91,12 +115,15 @@ export function buildModelContext(question, data) {
 // ── Pattern matching ────────────────────────────────────────────────────────
 
 function matchPattern(q) {
-  // TurnN is checked first because "what happened in turn 5" could also match summary
+  // Check turnRange before turnN so "turns 5-10" doesn't match as turnN
+  var turnRangeMatch = PATTERNS.find(function (p) { return p.id === "turnRange"; });
+  if (turnRangeMatch && turnRangeMatch.re.test(q)) return "turnRange";
+
   var turnNMatch = PATTERNS.find(function (p) { return p.id === "turnN"; });
   if (turnNMatch && turnNMatch.re.test(q)) return "turnN";
 
   for (var i = 0; i < PATTERNS.length; i++) {
-    if (PATTERNS[i].id === "turnN") continue;
+    if (PATTERNS[i].id === "turnN" || PATTERNS[i].id === "turnRange") continue;
     if (PATTERNS[i].re.test(q)) return PATTERNS[i].id;
   }
   return null;
@@ -261,6 +288,129 @@ function answerTurnDetail(idx, data) {
   }
 
   return instant(lines.join("\n"));
+}
+
+function answerTurnRange(lo, hi, data) {
+  if (!data.turns || lo < 0) return instant("Invalid turn range.");
+  var actualHi = Math.min(hi, data.turns.length - 1);
+  if (lo > actualHi) return instant("Turn range " + lo + "-" + hi + " is out of bounds. This session has " + data.turns.length + " turns (0-indexed).");
+
+  var lines = ["**Turns " + lo + "-" + actualHi + "**\n"];
+  for (var i = lo; i <= actualHi; i++) {
+    var turn = data.turns[i];
+    var events = getTurnEvents(i, data);
+    var tools = events.filter(function (e) { return e.track === "tool_call"; });
+    var errors = events.filter(function (e) { return e.isError; });
+    var label = "[Turn " + i + "]";
+    var msg = turn.userMessage ? ': "' + truncate(turn.userMessage, 80) + '"' : "";
+    var detail = tools.length + " tool call" + (tools.length !== 1 ? "s" : "");
+    if (errors.length) detail += ", " + errors.length + " error" + (errors.length !== 1 ? "s" : "");
+    lines.push("- " + label + msg + " -- " + detail);
+  }
+  return instant(lines.join("\n"));
+}
+
+function answerFiles(data) {
+  if (!data.events) return instant("No events available.");
+  var fileMap = {};
+  for (var i = 0; i < data.events.length; i++) {
+    var e = data.events[i];
+    if (e.track !== "tool_call" || !e.toolName) continue;
+    var name = e.toolName.toLowerCase();
+    var input = e.toolInput || "";
+    var inputStr = typeof input === "string" ? input : JSON.stringify(input);
+    // Extract file paths from common tool patterns
+    var pathMatch = inputStr.match(/(?:file_path|path|file|filename)["\s:=]+["']?([^\s"',}\]]+)/i);
+    if (pathMatch) {
+      var fp = pathMatch[1];
+      if (!fileMap[fp]) fileMap[fp] = [];
+      if (fileMap[fp].indexOf(name) === -1) fileMap[fp].push(name);
+    }
+  }
+  var files = Object.keys(fileMap);
+  if (files.length === 0) return instant("No file operations detected in this session.");
+  var lines = ["**" + files.length + " file" + (files.length !== 1 ? "s" : "") + "** touched:\n"];
+  files.slice(0, 30).forEach(function (f) {
+    lines.push("- `" + f + "` (" + fileMap[f].join(", ") + ")");
+  });
+  if (files.length > 30) lines.push("\n(" + (files.length - 30) + " more not shown)");
+  return instant(lines.join("\n"));
+}
+
+function answerCommands(data) {
+  if (!data.events) return instant("No events available.");
+  var cmds = [];
+  for (var i = 0; i < data.events.length; i++) {
+    var e = data.events[i];
+    if (e.track !== "tool_call") continue;
+    var name = (e.toolName || "").toLowerCase();
+    if (name !== "bash" && name !== "shell" && name !== "powershell" && name !== "terminal" && name !== "execute_command" && name !== "run_command") continue;
+    var input = e.toolInput || "";
+    var inputStr = typeof input === "string" ? input : JSON.stringify(input);
+    var cmdMatch = inputStr.match(/(?:command|cmd|script)["\s:=]+["']?([^\n"']{1,200})/i);
+    if (cmdMatch) {
+      cmds.push({ cmd: cmdMatch[1].trim(), turn: e.turnIndex });
+    } else if (typeof input === "string" && input.length < 200) {
+      cmds.push({ cmd: input.trim(), turn: e.turnIndex });
+    }
+  }
+  if (cmds.length === 0) return instant("No shell commands found in this session.");
+  var lines = ["**" + cmds.length + " command" + (cmds.length !== 1 ? "s" : "") + "** executed:\n"];
+  cmds.slice(0, 20).forEach(function (c) {
+    var turnLabel = c.turn != null ? " [Turn " + c.turn + "]" : "";
+    lines.push("- `" + truncate(c.cmd, 120) + "`" + turnLabel);
+  });
+  if (cmds.length > 20) lines.push("\n(" + (cmds.length - 20) + " more not shown)");
+  return instant(lines.join("\n"));
+}
+
+function answerFormat(data) {
+  var fmt = data.metadata.format || "unknown";
+  return instant("Session format: **" + fmt + "**");
+}
+
+function answerUserMessages(data) {
+  if (!data.turns) return instant("No turns available.");
+  var msgs = [];
+  for (var i = 0; i < data.turns.length; i++) {
+    if (data.turns[i].userMessage) {
+      msgs.push({ turn: i, msg: data.turns[i].userMessage });
+    }
+  }
+  if (msgs.length === 0) return instant("No user messages found.");
+  var lines = ["**" + msgs.length + " user message" + (msgs.length !== 1 ? "s" : "") + "**:\n"];
+  msgs.slice(0, 15).forEach(function (m) {
+    lines.push("- [Turn " + m.turn + '] "' + truncate(m.msg, 120) + '"');
+  });
+  if (msgs.length > 15) lines.push("\n(" + (msgs.length - 15) + " more not shown)");
+  return instant(lines.join("\n"));
+}
+
+function answerEventCount(data) {
+  var count = data.metadata.totalEvents || (data.events ? data.events.length : 0);
+  return instant("This session has **" + count + " event" + (count !== 1 ? "s" : "") + "**.");
+}
+
+function answerToolDetail(question, data) {
+  var match = question.match(/\b(?:how\s+many\s+times?\s+(?:was|did|were)\s+)(\w+)/i);
+  if (!match) match = question.match(/\b(\w+)\s+tool\s+(?:count|usage|calls?)/i);
+  if (!match) return { tier: "model", context: buildModelContext(question, data) };
+
+  var toolName = match[1].toLowerCase();
+  if (!data.events) return instant("No events available.");
+
+  var count = 0;
+  var matchedName = null;
+  for (var i = 0; i < data.events.length; i++) {
+    if (data.events[i].track === "tool_call" && data.events[i].toolName) {
+      if (data.events[i].toolName.toLowerCase() === toolName) {
+        count++;
+        if (!matchedName) matchedName = data.events[i].toolName;
+      }
+    }
+  }
+  if (count === 0) return instant("Tool **" + toolName + "** was not used in this session.");
+  return instant("**" + matchedName + "** was called **" + count + "** time" + (count !== 1 ? "s" : "") + ".");
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
