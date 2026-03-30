@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { classify, buildModelContext, fingerprintQuestion } from "../lib/qaClassifier.js";
+import { classify, buildModelContext, fingerprintQuestion, getSessionIndex, searchToolIndex } from "../lib/qaClassifier.js";
 
 var STORAGE_PREFIX = "agentviz:qa:";
 var MAX_PERSISTED_MESSAGES = 50;
@@ -98,6 +98,14 @@ export default function useQA(sessionData, sessionKey) {
   var keyRef = useRef(sessionKey);
   var answerCacheRef = useRef(loadCache(sessionKey));
   var modelQuestionCountRef = useRef(0);
+  var sessionIndexRef = useRef(null);
+
+  // Build session index eagerly on session load
+  useEffect(function () {
+    if (sessionKey && sessionData && sessionData.events && sessionData.events.length > 0) {
+      sessionIndexRef.current = getSessionIndex(sessionKey, sessionData);
+    }
+  }, [sessionKey, sessionData]);
 
   // Restore messages and cache when sessionKey changes
   useEffect(function () {
@@ -105,6 +113,7 @@ export default function useQA(sessionData, sessionKey) {
       keyRef.current = sessionKey;
       answerCacheRef.current = loadCache(sessionKey);
       modelQuestionCountRef.current = 0;
+      sessionIndexRef.current = sessionData ? getSessionIndex(sessionKey, sessionData) : null;
       setMessages(loadMessages(sessionKey));
       setError(null);
     }
@@ -157,7 +166,7 @@ export default function useQA(sessionData, sessionKey) {
     abortRef.current = controller;
     modelQuestionCountRef.current++;
 
-    var context = buildModelContext(q, sessionData);
+    var context = buildModelContext(q, sessionData, sessionIndexRef.current);
 
     // Inject conversation recap when rotating past threshold
     if (modelQuestionCountRef.current > ROTATION_THRESHOLD) {

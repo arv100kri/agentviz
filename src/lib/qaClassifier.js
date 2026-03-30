@@ -13,6 +13,142 @@
 import { formatDuration, formatDurationLong } from "./formatTime.js";
 import { estimateCost, formatCost } from "./pricing.js";
 
+// ── Session index: precomputed at drawer open, cached in localStorage ───────
+
+var INDEX_PREFIX = "agentviz:qa-index:";
+var CHUNK_SIZE = 250; // turns per chunk
+
+/**
+ * Build or load a session index with tool index + chunk summaries.
+ * Returns { toolIndex, chunks, builtAt }
+ */
+export function getSessionIndex(sessionKey, sessionData) {
+  if (!sessionKey || !sessionData) return null;
+
+  // Try localStorage first
+  try {
+    var raw = localStorage.getItem(INDEX_PREFIX + sessionKey);
+    if (raw) {
+      var cached = JSON.parse(raw);
+      // Validate it matches the session size
+      if (cached && cached.eventCount === (sessionData.events || []).length) {
+        return cached;
+      }
+    }
+  } catch (_) {}
+
+  // Build fresh
+  var index = buildSessionIndex(sessionData);
+  index.eventCount = (sessionData.events || []).length;
+  index.builtAt = Date.now();
+
+  // Persist
+  try {
+    localStorage.setItem(INDEX_PREFIX + sessionKey, JSON.stringify(index));
+  } catch (_) {}
+
+  return index;
+}
+
+function buildSessionIndex(data) {
+  var events = data.events || [];
+  var turns = data.turns || [];
+
+  // Tool index: toolName -> [{turn, snippet, isError}]
+  var toolIndex = {};
+  for (var i = 0; i < events.length; i++) {
+    var e = events[i];
+    if (e.track !== "tool_call" || !e.toolName) continue;
+    var name = e.toolName.toLowerCase();
+    if (!toolIndex[name]) toolIndex[name] = [];
+    var inputStr = e.toolInput ? (typeof e.toolInput === "string" ? e.toolInput : JSON.stringify(e.toolInput)) : "";
+    toolIndex[name].push({
+      turn: e.turnIndex,
+      snippet: (e.text || inputStr || "").slice(0, 80),
+      isError: e.isError || false,
+    });
+  }
+
+  // Chunk summaries: split turns into groups of CHUNK_SIZE
+  var chunks = [];
+  var totalTurns = turns.length || 1;
+  var chunkCount = Math.max(1, Math.ceil(totalTurns / CHUNK_SIZE));
+  // Aim for 10-15 chunks on large sessions
+  var actualChunkSize = Math.ceil(totalTurns / Math.min(chunkCount, 15));
+
+  for (var c = 0; c < totalTurns; c += actualChunkSize) {
+    var lo = c;
+    var hi = Math.min(c + actualChunkSize - 1, totalTurns - 1);
+    var chunkEvents = events.filter(function (ev) { return ev.turnIndex >= lo && ev.turnIndex <= hi; });
+
+    // User messages in this chunk
+    var userMsgs = [];
+    for (var t = lo; t <= hi && t < turns.length; t++) {
+      if (turns[t] && turns[t].userMessage) userMsgs.push(turns[t].userMessage.slice(0, 80));
+    }
+
+    // Tool counts in this chunk
+    var toolCounts = {};
+    var fileSet = {};
+    var errorCount = 0;
+    for (var ce = 0; ce < chunkEvents.length; ce++) {
+      var ev = chunkEvents[ce];
+      if (ev.track === "tool_call" && ev.toolName) {
+        toolCounts[ev.toolName] = (toolCounts[ev.toolName] || 0) + 1;
+        // Extract file paths from tool input
+        var inp = ev.toolInput ? (typeof ev.toolInput === "string" ? ev.toolInput : JSON.stringify(ev.toolInput)) : "";
+        var fileMatch = inp.match(/(?:file_path|path|file)["\s:=]+["']?([^\s"',}\]]+)/i);
+        if (fileMatch) fileSet[fileMatch[1].split(/[/\\]/).pop()] = true;
+      }
+      if (ev.isError) errorCount++;
+    }
+
+    var topTools = Object.keys(toolCounts).sort(function (a, b) { return toolCounts[b] - toolCounts[a]; }).slice(0, 5);
+    var files = Object.keys(fileSet).slice(0, 8);
+
+    chunks.push({
+      turns: lo + "-" + hi,
+      userMessages: userMsgs.slice(0, 3),
+      tools: topTools.map(function (t) { return t + " (" + toolCounts[t] + ")"; }),
+      files: files,
+      errors: errorCount,
+      eventCount: chunkEvents.length,
+    });
+  }
+
+  return { toolIndex: toolIndex, chunks: chunks };
+}
+
+/**
+ * Search the tool index for entries matching a keyword.
+ */
+export function searchToolIndex(index, keyword) {
+  if (!index || !index.toolIndex || !keyword) return [];
+  var kw = keyword.toLowerCase();
+  var results = [];
+
+  // Search tool names
+  for (var toolName in index.toolIndex) {
+    if (toolName.indexOf(kw) !== -1) {
+      results = results.concat(index.toolIndex[toolName]);
+    }
+  }
+
+  // Also search snippets across all tools
+  if (results.length === 0) {
+    for (var tn in index.toolIndex) {
+      var entries = index.toolIndex[tn];
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].snippet.toLowerCase().indexOf(kw) !== -1) {
+          results.push(Object.assign({ tool: tn }, entries[i]));
+        }
+      }
+    }
+  }
+
+  return results.sort(function (a, b) { return a.turn - b.turn; });
+}
+
 // ── Keyword patterns ────────────────────────────────────────────────────────
 
 var PATTERNS = [
@@ -93,7 +229,7 @@ export function classify(question, data) {
  * Build a lean, question-tailored context payload for the model fallback tier.
  * Sends only the data relevant to the question topic to minimize tokens.
  */
-export function buildModelContext(question, data) {
+export function buildModelContext(question, data, sessionIndex) {
   var ctx = {
     metadata: summarizeMetadata(data.metadata),
   };
@@ -103,6 +239,11 @@ export function buildModelContext(question, data) {
   var wantsFiles = /file|path|edit|read|write|modif|creat|chang|touch/i.test(q);
   var wantsCommands = /command|bash|shell|terminal|run|ran|exec|npm|git|pip/i.test(q);
   var wantsTools = /tool|call|usage|invoke/i.test(q);
+
+  // Always include chunk summaries for broad context across the session
+  if (sessionIndex && sessionIndex.chunks) {
+    ctx.sessionTimeline = sessionIndex.chunks;
+  }
 
   // Turn references: include full events for referenced turns
   var turnRef = q.match(/\bturn\s*#?\s*(\d+)\b/i);
@@ -114,7 +255,6 @@ export function buildModelContext(question, data) {
     for (var t = lo; t <= Math.min(hi, (data.turns || []).length - 1); t++) {
       ctx.relevantTurns = ctx.relevantTurns.concat(getTurnEvents(t, data));
     }
-    // Cap turn events to avoid huge contexts
     if (ctx.relevantTurns.length > 50) {
       ctx.relevantTurns = ctx.relevantTurns.slice(0, 50);
       ctx.relevantTurnsTruncated = true;
@@ -139,14 +279,29 @@ export function buildModelContext(question, data) {
     ctx.topTools = getTopTools(data.events, 10);
   }
 
-  // For domain-specific questions, search event text for key terms from the question
-  // to provide focused context instead of generic top-tools
+  // For domain-specific questions, use the tool index for targeted search
   if (!wantsErrors && !wantsFiles && !wantsCommands && !turnRef && !turnRangeRef) {
     var keyTerms = extractKeyTerms(q);
-    if (keyTerms.length > 0 && data.events) {
+
+    // Search tool index first (fast, covers tool names + snippets)
+    if (sessionIndex && keyTerms.length > 0) {
+      var indexResults = [];
+      for (var ki = 0; ki < keyTerms.length && indexResults.length < 20; ki++) {
+        var hits = searchToolIndex(sessionIndex, keyTerms[ki]);
+        for (var hi2 = 0; hi2 < hits.length && indexResults.length < 20; hi2++) {
+          indexResults.push(hits[hi2]);
+        }
+      }
+      if (indexResults.length > 0) {
+        ctx.relevantEvents = indexResults.slice(0, 20);
+      }
+    }
+
+    // Fall back to scanning event text if index didn't find anything
+    if (!ctx.relevantEvents && keyTerms.length > 0 && data.events) {
       var matchingEvents = [];
       for (var ei = 0; ei < data.events.length && matchingEvents.length < 20; ei++) {
-        var evText = ((data.events[ei].text || "") + " " + (data.events[ei].toolName || "")).toLowerCase();
+        var evText = ((data.events[ei].text || "") + " " + (data.events[ei].toolName || "") + " " + (typeof data.events[ei].toolInput === "string" ? data.events[ei].toolInput : "")).toLowerCase();
         var matched = keyTerms.some(function (term) { return evText.indexOf(term) !== -1; });
         if (matched) {
           matchingEvents.push({

@@ -165,6 +165,19 @@ function formatContext(ctx) {
     parts.push(typeof ctx.metadata === "string" ? ctx.metadata : JSON.stringify(ctx.metadata, null, 2));
   }
 
+  if (ctx.sessionTimeline && ctx.sessionTimeline.length) {
+    parts.push("\n## Session timeline (chunk summaries across entire session)");
+    for (var ci = 0; ci < ctx.sessionTimeline.length; ci++) {
+      var chunk = ctx.sessionTimeline[ci];
+      var cLines = ["Turns " + chunk.turns + " (" + chunk.eventCount + " events)"];
+      if (chunk.userMessages.length) cLines.push("  User: " + chunk.userMessages.join(" | "));
+      if (chunk.tools.length) cLines.push("  Tools: " + chunk.tools.join(", "));
+      if (chunk.files.length) cLines.push("  Files: " + chunk.files.join(", "));
+      if (chunk.errors) cLines.push("  Errors: " + chunk.errors);
+      parts.push(cLines.join("\n"));
+    }
+  }
+
   if (ctx.topTools && ctx.topTools.length) {
     parts.push("\n## Top tools used");
     parts.push(typeof ctx.topTools === "string" ? ctx.topTools : JSON.stringify(ctx.topTools));
