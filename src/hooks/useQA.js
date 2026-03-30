@@ -21,6 +21,7 @@ export default function useQA(sessionData) {
   var ask = useCallback(function (question) {
     if (!question || !question.trim()) return;
     var q = question.trim();
+    var startedAt = Date.now();
 
     // Add user message immediately
     setMessages(function (prev) { return prev.concat({ role: "user", content: q }); });
@@ -31,7 +32,7 @@ export default function useQA(sessionData) {
 
     if (result.tier === "instant") {
       setMessages(function (prev) {
-        return prev.concat({ role: "assistant", content: result.answer, instant: true });
+        return prev.concat({ role: "assistant", content: result.answer, instant: true, elapsedMs: Date.now() - startedAt });
       });
       return;
     }
@@ -45,7 +46,7 @@ export default function useQA(sessionData) {
 
     // Add empty assistant message that we'll stream into
     setMessages(function (prev) {
-      return prev.concat({ role: "assistant", content: "", instant: false, streaming: true });
+      return prev.concat({ role: "assistant", content: "", instant: false, streaming: true, startedAt: startedAt });
     });
 
     fetchSSE(q, context, controller.signal, {
@@ -63,7 +64,7 @@ export default function useQA(sessionData) {
         setMessages(function (prev) {
           var last = prev[prev.length - 1];
           if (last && last.streaming) {
-            return prev.slice(0, -1).concat(Object.assign({}, last, { streaming: false }));
+            return prev.slice(0, -1).concat(Object.assign({}, last, { streaming: false, elapsedMs: Date.now() - startedAt }));
           }
           return prev;
         });
@@ -104,7 +105,7 @@ export default function useQA(sessionData) {
 
 // ── SSE fetch helper ─────────────────────────────────────────────
 
-var QA_TIMEOUT_MS = 30000; // 30s frontend safety net
+var QA_TIMEOUT_MS = 60000; // 60s frontend safety net
 
 function fetchSSE(question, context, signal, handlers) {
   var reader = null;

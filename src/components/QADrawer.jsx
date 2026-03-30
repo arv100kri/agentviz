@@ -154,7 +154,20 @@ function MessageBubble({ message, onSeekTurn }) {
           fontSize: theme.fontSize.xs,
           color: theme.text.ghost,
         }}>
-          instant answer
+          {"\u26A1"} instant
+          {message.elapsedMs != null && " \u00B7 " + message.elapsedMs + "ms"}
+        </span>
+      )}
+      {!message.instant && !message.streaming && message.elapsedMs != null && (
+        <span style={{
+          display: "block",
+          marginTop: 6,
+          fontSize: theme.fontSize.xs,
+          color: theme.text.ghost,
+        }}>
+          answered in {message.elapsedMs < 1000
+            ? message.elapsedMs + "ms"
+            : (message.elapsedMs / 1000).toFixed(1) + "s"}
         </span>
       )}
     </div>
