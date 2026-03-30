@@ -54,10 +54,11 @@ function removeMessages(key) {
 /**
  * @param {object} sessionData - { events, turns, metadata, autonomyMetrics }
  * @param {string|null} sessionKey - unique key for persisting Q&A history
- * @returns {{ messages, isStreaming, error, ask, abort, clear }}
+ * @returns {{ messages, isStreaming, streamPhase, error, ask, abort, clear }}
  */
 export default function useQA(sessionData, sessionKey) {
   var [messages, setMessages] = useState(function () { return loadMessages(sessionKey); });
+  var [streamPhase, setStreamPhase] = useState(null);
   var [isStreaming, setIsStreaming] = useState(false);
   var [error, setError] = useState(null);
   var abortRef = useRef(null);
@@ -139,6 +140,7 @@ export default function useQA(sessionData, sessionKey) {
     });
 
     fetchSSE(q, context, controller.signal, {
+      onPhase: function (phase) { setStreamPhase(phase); },
       onToken: function (token) {
         setMessages(function (prev) {
           var last = prev[prev.length - 1];
@@ -150,6 +152,7 @@ export default function useQA(sessionData, sessionKey) {
         });
       },
       onDone: function () {
+        setStreamPhase(null);
         setMessages(function (prev) {
           var last = prev[prev.length - 1];
           if (last && last.streaming) {
@@ -166,6 +169,7 @@ export default function useQA(sessionData, sessionKey) {
         abortRef.current = null;
       },
       onError: function (msg) {
+        setStreamPhase(null);
         setMessages(function (prev) {
           // Remove the empty streaming message
           if (prev.length && prev[prev.length - 1].streaming) {
@@ -197,7 +201,7 @@ export default function useQA(sessionData, sessionKey) {
     removeMessages(keyRef.current);
   }, [abort]);
 
-  return { messages: messages, isStreaming: isStreaming, error: error, ask: ask, abort: abort, clear: clear };
+  return { messages: messages, isStreaming: isStreaming, streamPhase: streamPhase, error: error, ask: ask, abort: abort, clear: clear };
 }
 
 // ── SSE fetch helper ─────────────────────────────────────────────
@@ -207,10 +211,18 @@ var QA_TIMEOUT_MS = 60000; // 60s frontend safety net
 function fetchSSE(question, context, signal, handlers) {
   var reader = null;
   var timedOut = false;
+  var gotFirstToken = false;
   var timer = setTimeout(function () {
     timedOut = true;
-    handlers.onError("Request timed out. The Copilot SDK may not be running.");
+    if (!gotFirstToken) {
+      handlers.onError("Request timed out after 60s. Try a more specific question, or check that the Copilot SDK is running.");
+    } else {
+      handlers.onDone();
+    }
   }, QA_TIMEOUT_MS);
+
+  // Notify that we're connecting
+  if (handlers.onPhase) handlers.onPhase("connecting");
 
   fetch("/api/qa/ask", {
     method: "POST",
@@ -219,8 +231,14 @@ function fetchSSE(question, context, signal, handlers) {
     signal: signal,
   })
     .then(function (res) {
-      if (!res.ok) throw new Error("Server returned " + res.status);
+      if (!res.ok) {
+        if (res.status === 502 || res.status === 503) {
+          throw new Error("AI answers unavailable. Instant answers still work. Check that the Copilot SDK is running.");
+        }
+        throw new Error("Server returned " + res.status);
+      }
       if (!res.body) throw new Error("Response body is empty");
+      if (handlers.onPhase) handlers.onPhase("streaming");
       reader = res.body.getReader();
       var decoder = new TextDecoder();
       var buffer = "";
@@ -241,7 +259,7 @@ function fetchSSE(question, context, signal, handlers) {
             if (line.startsWith("data: ")) {
               try {
                 var data = JSON.parse(line.slice(6));
-                if (data.token) { clearTimeout(timer); handlers.onToken(data.token); }
+                if (data.token) { gotFirstToken = true; clearTimeout(timer); handlers.onToken(data.token); }
                 else if (data.done) { clearTimeout(timer); handlers.onDone(); return; }
                 else if (data.error) { clearTimeout(timer); handlers.onError(data.error); return; }
               } catch (_) { /* skip malformed SSE line */ }
@@ -260,6 +278,8 @@ function fetchSSE(question, context, signal, handlers) {
       if (reader) reader.cancel().catch(function () {});
       if (err.name === "AbortError") {
         handlers.onDone();
+      } else if (/fetch|network|ECONNREFUSED/i.test(err.message)) {
+        handlers.onError("AI answers unavailable. Instant answers still work. Check that the Copilot SDK is running.");
       } else {
         handlers.onError(err.message || "Network error");
       }

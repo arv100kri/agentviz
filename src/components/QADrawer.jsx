@@ -145,7 +145,7 @@ function SuggestedChips({ sessionData, onAsk }) {
   );
 }
 
-function MessageBubble({ message, onSeekTurn }) {
+function MessageBubble({ message, onSeekTurn, phase }) {
   var isUser = message.role === "user";
   var bg = isUser ? alpha(theme.agent.user, 0.08) : alpha(theme.agent.assistant, 0.06);
   var borderColor = isUser ? alpha(theme.agent.user, 0.15) : alpha(theme.agent.assistant, 0.12);
@@ -168,8 +168,11 @@ function MessageBubble({ message, onSeekTurn }) {
       maxWidth: "92%",
     }}>
       {message.streaming && !message.content && (
-        <span style={{ display: "inline-block", animation: "spin 1.2s linear infinite", color: theme.accent.primary }}>
-          {"\u2726"}
+        <span style={{ color: theme.accent.primary, fontSize: theme.fontSize.sm }}>
+          <span style={{ display: "inline-block", animation: "spin 1.2s linear infinite" }}>{"\u2726"}</span>
+          {phase === "connecting" && " Connecting to AI..."}
+          {phase === "streaming" && " Receiving answer..."}
+          {!phase && " Thinking..."}
         </span>
       )}
       {parts.map(function (part, i) {
@@ -423,7 +426,8 @@ export default function QADrawer({ open, onClose, onDisable, sessionKey, session
           )}
 
           {qa.messages.map(function (msg, i) {
-            return <MessageBubble key={i} message={msg} onSeekTurn={handleSeekTurn} />;
+            var isLastStreaming = msg.streaming && i === qa.messages.length - 1;
+            return <MessageBubble key={i} message={msg} onSeekTurn={handleSeekTurn} phase={isLastStreaming ? qa.streamPhase : null} />;
           })}
 
           {qa.error && (
