@@ -695,7 +695,7 @@ export default function QADrawer({ open, onClose, onDisable, sessionKey, session
               onKeyDown={handleInputKeyDown}
               placeholder="Ask about this session..."
               aria-label="Ask about this session"
-              disabled={qa.isStreaming}
+              disabled={false}
               style={{
                 flex: 1,
                 background: "transparent",
@@ -707,25 +707,51 @@ export default function QADrawer({ open, onClose, onDisable, sessionKey, session
                 outline: "none",
               }}
             />
-            <button
-              type="submit"
-              disabled={!input.trim() || qa.isStreaming}
-              aria-label="Send question"
-              style={{
-                background: input.trim() ? theme.accent.primary : "transparent",
-                border: "none",
-                borderRadius: theme.radius.sm,
-                color: input.trim() ? theme.text.primary : theme.text.ghost,
-                cursor: input.trim() ? "pointer" : "default",
-                padding: "4px 6px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Icon name="send" size={12} />
-            </button>
+            {qa.isStreaming ? (
+              <button
+                type="button"
+                onClick={qa.abort}
+                aria-label="Stop generating"
+                style={{
+                  background: theme.semantic.errorBg,
+                  border: "1px solid " + theme.semantic.errorBorder,
+                  borderRadius: theme.radius.sm,
+                  color: theme.semantic.errorText,
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  gap: 4,
+                  fontFamily: theme.font.mono,
+                  fontSize: theme.fontSize.xs,
+                }}
+              >
+                <Icon name="square" size={10} />
+                Stop
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                aria-label="Send question"
+                style={{
+                  background: input.trim() ? theme.accent.primary : "transparent",
+                  border: "none",
+                  borderRadius: theme.radius.sm,
+                  color: input.trim() ? theme.text.primary : theme.text.ghost,
+                  cursor: input.trim() ? "pointer" : "default",
+                  padding: "4px 6px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="send" size={12} />
+              </button>
+            )}
           </form>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
             <span style={{ fontSize: theme.fontSize.xs, color: theme.text.ghost }}>
