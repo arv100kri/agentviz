@@ -401,18 +401,27 @@ server.js                # HTTP server: serves dist/ SPA + SSE /api/stream file 
 { totalEvents, totalTurns, totalToolCalls, errorCount, duration, models, primaryModel, tokenUsage }
 ```
 
+## Usage
+
+```bash
+npm start                # Build and launch AGENTVIZ in browser
+node bin/agentviz.js     # Launch (skip build if dist/ exists)
+node bin/agentviz.js session.jsonl  # Open a specific session file
+```
+
+AGENTVIZ can also be launched from Claude Code or Copilot CLI via the MCP `launch_agentviz` tool.
+
 ## Development
 
 ```bash
-npm run dev             # Vite dev server on port 3000
-node bin/agentviz.js    # API backend on port 4242
+npm run dev             # Vite dev server + API backend (auto-started)
 npm run build           # Production build to dist/
 npm test                # Run all tests via Vitest
 npm run test:watch      # Watch mode
 npm run typecheck       # Type-check with tsc --noEmit
 ```
 
-> **Full dev setup requires both servers.** `npm run dev` starts the Vite frontend; `node bin/agentviz.js` starts the API backend (Coach, session discovery, config, apply, live streaming). Vite proxies `/api/*` to the backend automatically.
+> `npm run dev` starts both the Vite frontend (port 3000) and the API backend (port 4242) automatically. Vite proxies `/api/*` to the backend.
 
 ### Design System
 

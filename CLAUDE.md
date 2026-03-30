@@ -104,14 +104,15 @@ Parser returns: `{ events, turns, metadata }` or null
 Track types: reasoning, tool_call, context, output
 Agent types: user, assistant, system
 
-## Dev commands
-- `npm run dev` - Start Vite dev server on port 3000
-- `node bin/agentviz.js` - Start API backend on port 4242 (Coach, sessions, config, apply, streaming)
+## Commands
+- `npm start` - Build and launch AGENTVIZ in browser (production)
+- `npm run dev` - Vite dev server + API backend (both auto-started)
 - `npm run build` - Production build to dist/
 - `npm test` - Run 300 tests via Vitest (parsers, layout, diff, graph, autonomy, QA, regressions, and more)
 - `npm run test:watch` - Watch mode for tests
+- `npm run typecheck` - Type-check with tsc --noEmit
 
-For full functionality in dev mode, run BOTH `node bin/agentviz.js` and `npm run dev`.
+`npm run dev` auto-starts the API backend on port 4242.
 Vite proxies `/api/*` to the backend automatically.
 
 ## Conventions
