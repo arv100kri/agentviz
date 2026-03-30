@@ -104,6 +104,11 @@ export async function runQAQuery(payload, opts) {
     }
 
     var contextBlock = formatContext(payload.context);
+    // Limit total prompt to ~8K tokens (~32K chars) for faster model response
+    var MAX_PROMPT_CHARS = 32000;
+    if (contextBlock.length > MAX_PROMPT_CHARS) {
+      contextBlock = contextBlock.slice(0, MAX_PROMPT_CHARS) + "\n\n[Context truncated for speed]";
+    }
     var prompt = contextBlock + "\n\nUser question: " + payload.question;
 
     // Stream tokens via session events, with overall timeout

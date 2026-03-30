@@ -114,6 +114,11 @@ export function buildModelContext(question, data) {
     for (var t = lo; t <= Math.min(hi, (data.turns || []).length - 1); t++) {
       ctx.relevantTurns = ctx.relevantTurns.concat(getTurnEvents(t, data));
     }
+    // Cap turn events to avoid huge contexts
+    if (ctx.relevantTurns.length > 50) {
+      ctx.relevantTurns = ctx.relevantTurns.slice(0, 50);
+      ctx.relevantTurnsTruncated = true;
+    }
     ctx.turnMessages = getTurnMessages(data.turns, lo, hi);
   } else if (turnRef) {
     var turnIdx = parseInt(turnRef[1], 10);
