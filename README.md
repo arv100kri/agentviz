@@ -380,7 +380,11 @@ bin/
   agentviz.js            # CLI entry point: finds free port, starts server, opens browser
 mcp/
   server.js              # MCP server: launch_agentviz and close_agentviz tools
-server.js                # HTTP server: serves dist/ SPA + SSE /api/stream file tail
+server.js                # HTTP server shell: static serving, file watcher, route dispatch
+routes/
+  sessions.js            # Session discovery, file serving, SSE streaming
+  ai.js                  # Coach analysis, Q&A, model info (SSE streaming)
+  config.js              # Project config surface detection, file preview, apply
 ```
 
 ### Parser API
