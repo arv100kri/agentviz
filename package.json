@@ -1,6 +1,6 @@
 {
   "name": "agentviz",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Session replay visualizer for AI agent workflows (Claude Code, Copilot CLI)",
   "license": "MIT",
   "type": "module",
@@ -8,7 +8,16 @@
     "type": "git",
     "url": "https://github.com/jayparikh/agentviz.git"
   },
-  "keywords": ["ai", "agent", "visualization", "claude", "copilot", "session", "replay", "devtools"],
+  "keywords": [
+    "ai",
+    "agent",
+    "visualization",
+    "claude",
+    "copilot",
+    "session",
+    "replay",
+    "devtools"
+  ],
   "bin": {
     "agentviz": "./bin/agentviz.js"
   },
