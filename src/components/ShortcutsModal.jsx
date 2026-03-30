@@ -12,10 +12,12 @@ var SHORTCUTS = [
   { key: "3", label: "Waterfall view" },
   { key: "4", label: "Graph view" },
   { key: "5", label: "Stats view" },
+  { key: "6", label: "Coach view" },
   { key: "e / E", label: "Jump to next / prev error" },
   { section: "Search" },
   { key: "/", label: "Focus search" },
   { key: "\u2318K", label: "Open command palette" },
+  { key: "\u2318\u21e7K", label: "Session Q&A (experimental)" },
   { section: "Help" },
   { key: "?", label: "Toggle this dialog" },
 ];
@@ -79,7 +81,7 @@ export default function ShortcutsModal({ onClose }) {
               padding: "0 2px",
             }}
           >
-            \u00d7
+            {"\u00d7"}
           </button>
         </div>
 

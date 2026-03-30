@@ -9,8 +9,30 @@
 import http from "http";
 import fs from "fs";
 import path from "path";
+import os from "os";
 import url from "url";
 import { runCoachAgent } from "./src/lib/aiCoachAgent.js";
+import { runQAQuery } from "./src/lib/qaAgent.js";
+
+// ── Model configuration ──────────────────────────────────────────
+function getConfigPath() {
+  var envPath = process.env.AGENTVIZ_CONFIG;
+  if (envPath) return envPath;
+  return path.join(os.homedir(), ".agentviz", "config.json");
+}
+
+export function getConfiguredModel() {
+  var envModel = process.env.AGENTVIZ_MODEL;
+  if (envModel) return envModel;
+  try {
+    var raw = fs.readFileSync(getConfigPath(), "utf8");
+    var cfg = JSON.parse(raw);
+    return cfg.model || null;
+  } catch (_) {
+    return null;
+  }
+}
+
 var MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
@@ -321,7 +343,7 @@ export function createServer({ sessionFile, distDir }) {
           }
           res.writeHead(200);
           // Return original content so the client can offer a revert
-          res.end(JSON.stringify({ success: true, path: resolvedPath, originalContent: originalContent }));
+          res.end(JSON.stringify({ success: true, path: path.relative(cwd, resolvedPath), originalContent: originalContent }));
         } catch (e) {
           res.writeHead(500);
           res.end(JSON.stringify({ error: e.message || "Internal server error" }));
@@ -376,6 +398,7 @@ export function createServer({ sessionFile, distDir }) {
 
           var result = await runCoachAgent(payload, {
             signal: abort.signal,
+            model: getConfiguredModel(),
             readConfigFile: readConfigFile,
             onStep: function (step) { sseEvent({ step: step }); },
           });
@@ -388,6 +411,61 @@ export function createServer({ sessionFile, distDir }) {
           if (!res.writableEnded) res.end();
         }
       });
+      return;
+    }
+
+    // ── Q&A ask endpoint (SSE streaming) ─────────────────────────────
+    if (pathname === "/api/qa/ask") {
+      if (req.method !== "POST") {
+        res.setHeader("Content-Type", "application/json");
+        res.writeHead(405); res.end(JSON.stringify({ error: "Method not allowed" })); return;
+      }
+      var qaBody = "";
+      req.on("data", function (chunk) { qaBody += chunk; });
+      req.on("end", async function () {
+        var abort = new AbortController();
+        res.on("close", function () { abort.abort(); });
+
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.writeHead(200);
+
+        function sse(data) {
+          if (!res.writableEnded) res.write("data: " + JSON.stringify(data) + "\n\n");
+        }
+
+        try {
+          var payload = JSON.parse(qaBody);
+          if (!payload.question || typeof payload.question !== "string") {
+            sse({ error: "question is required" }); if (!res.writableEnded) res.end(); return;
+          }
+
+          var model = getConfiguredModel();
+          await runQAQuery(payload, {
+            model: model,
+            signal: abort.signal,
+            onToken: function (token) { sse({ token: token }); },
+          });
+
+          sse({ done: true });
+          if (!res.writableEnded) res.end();
+        } catch (e) {
+          if (e.name === "AbortError") { if (!res.writableEnded) res.end(); return; }
+          sse({ error: e.message || "Q&A query failed" });
+          if (!res.writableEnded) res.end();
+        }
+      });
+      return;
+    }
+
+    // ── Models list endpoint ─────────────────────────────────────────
+    if (pathname === "/api/models") {
+      res.setHeader("Content-Type", "application/json");
+      if (req.method !== "GET") { res.writeHead(405); res.end(JSON.stringify({ error: "Method not allowed" })); return; }
+      var current = getConfiguredModel();
+      res.writeHead(200);
+      res.end(JSON.stringify({ current: current }));
       return;
     }
 

@@ -29,6 +29,8 @@ import {
   Workflow,
   Clock,
   ArrowRight,
+  Send,
+  Sparkles,
 } from "lucide-react";
 
 var ICON_MAP = {
@@ -62,6 +64,8 @@ var ICON_MAP = {
   graph: Workflow,
   clock: Clock,
   "arrow-right": ArrowRight,
+  send: Send,
+  sparkles: Sparkles,
 };
 
 export default function Icon({ name, size, strokeWidth, style, className }) {

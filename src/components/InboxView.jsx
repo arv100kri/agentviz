@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { theme, alpha } from "../lib/theme.js";
 import { formatDurationLong } from "../lib/formatTime.js";
 import { formatCost } from "../lib/pricing.js";
@@ -80,9 +80,109 @@ function filterByQuery(entries, q) {
   });
 }
 
-export default function InboxView({ entries, onOpenSession, maxEntries, onImport }) {
+function CustomSelect({ ariaLabel, value, onChange, options }) {
+  var [open, setOpen] = useState(false);
+  var ref = useRef(null);
+  var selected = options.find(function (o) { return o.id === value; });
+
+  useEffect(function () {
+    if (!open) return;
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return function () { document.removeEventListener("mousedown", handleClick); };
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+      <button
+        type="button"
+        className="av-btn"
+        aria-label={ariaLabel}
+        onClick={function () { setOpen(function (v) { return !v; }); }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          background: theme.bg.base,
+          color: theme.text.muted,
+          border: "1px solid " + theme.border.default,
+          borderRadius: theme.radius.md,
+          padding: "5px 10px",
+          fontSize: theme.fontSize.xs,
+          fontFamily: theme.font.mono,
+          cursor: "pointer",
+          minWidth: 120,
+        }}
+      >
+        <span style={{ flex: 1, textAlign: "left" }}>{selected ? selected.label : ""}</span>
+        <Icon name="chevron-down" size={10} style={{ opacity: 0.5 }} />
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute",
+          top: "calc(100% + 4px)",
+          right: 0,
+          background: theme.bg.surface,
+          border: "1px solid " + theme.border.strong,
+          borderRadius: theme.radius.lg,
+          padding: 4,
+          zIndex: theme.z.tooltip,
+          boxShadow: theme.shadow.md,
+          minWidth: 180,
+        }}>
+          {options.map(function (option) {
+            var isActive = option.id === value;
+            return (
+              <button
+                key={option.id}
+                className="av-interactive"
+                onClick={function () { onChange(option.id); setOpen(false); }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  width: "100%",
+                  padding: "5px 10px",
+                  borderRadius: theme.radius.md,
+                  background: isActive ? theme.bg.raised : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontSize: theme.fontSize.xs,
+                  fontFamily: theme.font.mono,
+                  color: isActive ? theme.accent.primary : theme.text.secondary,
+                }}
+              >
+                <span style={{ width: 12, textAlign: "center", fontSize: theme.fontSize.xs }}>
+                  {isActive ? "\u2713" : ""}
+                </span>
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function InboxView({ entries, onOpenSession, onImport, onLoadSample, onStartCompare }) {
   var [sortMode, setSortMode] = useState("most-recent");
   var [query, setQuery] = useState("");
+  var searchRef = useRef(null);
+
+  useEffect(function () {
+    function onKey(e) {
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        if (searchRef.current) searchRef.current.focus();
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return function () { document.removeEventListener("keydown", onKey); };
+  }, []);
 
   var parsedEntries = useMemo(function () {
     return (entries || []).filter(function (e) { return !e.isDiscovered; });
@@ -99,8 +199,8 @@ export default function InboxView({ entries, onOpenSession, maxEntries, onImport
     var q = query.trim().toLowerCase();
     var filtered = filterByQuery(parsedEntries, q);
     var sorted = sortEntries(filtered, sortMode);
-    return maxEntries ? sorted.slice(0, maxEntries) : sorted;
-  }, [parsedEntries, sortMode, query, maxEntries]);
+    return sorted;
+  }, [parsedEntries, sortMode, query]);
 
   var [showAllDiscovered, setShowAllDiscovered] = useState(false);
 
@@ -142,19 +242,21 @@ export default function InboxView({ entries, onOpenSession, maxEntries, onImport
             {discoveredCount > 0 && discoveredCount + " unanalyzed"}
           </span>
         )}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, background: theme.bg.base, border: "1px solid " + theme.border.default, borderRadius: theme.radius.md, padding: "4px 8px" }}>
-          <Icon name="search" size={12} style={{ color: theme.text.ghost, flexShrink: 0 }} />
+        <div className="av-search-wrap" style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, background: theme.bg.base, border: "1px solid " + theme.border.default, borderRadius: theme.radius.md, padding: "4px 8px", transition: "border-color 150ms ease-out" }}>
+          <Icon name="search" size={13} style={{ color: theme.text.dim, flexShrink: 0 }} />
           <input
+            ref={searchRef}
             type="text"
             value={query}
             onChange={function (e) { setQuery(e.target.value); }}
-            placeholder="Search sessions..."
+            placeholder="Search sessions (/)"
+            className="av-search"
             style={{
               background: "transparent",
               border: "none",
               outline: "none",
               color: theme.text.primary,
-              fontSize: theme.fontSize.base,
+              fontSize: theme.fontSize.sm,
               fontFamily: theme.font.mono,
               width: "100%",
             }}
@@ -165,32 +267,18 @@ export default function InboxView({ entries, onOpenSession, maxEntries, onImport
             </button>
           )}
         </div>
-        <select
-          aria-label="Sort inbox sessions"
+        <CustomSelect
+          ariaLabel="Sort inbox sessions"
           value={sortMode}
-          onChange={function (event) { setSortMode(event.target.value); }}
-          style={{
-            background: theme.bg.base,
-            color: theme.text.muted,
-            border: "1px solid " + theme.border.default,
-            borderRadius: theme.radius.md,
-            padding: "5px 8px",
-            fontSize: theme.fontSize.xs,
-            fontFamily: theme.font.ui,
-            outline: "none",
-            flexShrink: 0,
-          }}
-        >
-          {SORT_OPTIONS.map(function (option) {
-            return <option key={option.id} value={option.id}>{option.label}</option>;
-          })}
-        </select>
+          onChange={function (val) { setSortMode(val); }}
+          options={SORT_OPTIONS}
+        />
         {onImport && (
           <label title="Import a session file" style={{
             display: "flex", alignItems: "center", gap: 4, padding: "5px 8px",
             background: alpha(theme.accent.primary, 0.08), border: "1px solid " + alpha(theme.accent.primary, 0.4),
             borderRadius: theme.radius.md, color: theme.accent.primary, fontSize: theme.fontSize.xs,
-            fontFamily: theme.font.ui, cursor: "pointer", flexShrink: 0, userSelect: "none",
+            fontFamily: theme.font.mono, cursor: "pointer", flexShrink: 0, userSelect: "none",
           }}>
             <Icon name="upload" size={11} /> Import
             <input type="file" accept=".jsonl" style={{ display: "none" }} onChange={function (e) {
@@ -212,13 +300,59 @@ export default function InboxView({ entries, onOpenSession, maxEntries, onImport
             borderRadius: theme.radius.xl,
             padding: "18px 16px",
             color: theme.text.muted,
+            fontSize: theme.fontSize.sm,
+            fontFamily: theme.font.mono,
             lineHeight: 1.8,
             background: alpha(theme.bg.base, 0.4),
           }}>
             {query
               ? "No sessions matching \"" + query + "\""
-              : <>Sessions from <span style={{ fontFamily: theme.font.mono, color: theme.text.secondary }}>~/.claude/projects/</span> are auto-discovered when running via CLI. You can also drag and drop a session file to import it.</>
+              : <>Sessions from <span style={{ fontFamily: theme.font.mono, color: theme.text.secondary }}>~/.copilot/session-state/</span> and <span style={{ fontFamily: theme.font.mono, color: theme.text.secondary }}>~/.claude/projects/</span> are auto-discovered when running via CLI. You can also drag and drop a session file to import it.</>
             }
+            {!query && (onLoadSample || onStartCompare) && (
+              <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 12 }}>
+                {onLoadSample && (
+                  <button
+                    type="button"
+                    onClick={onLoadSample}
+                    style={{
+                      color: theme.accent.primary,
+                      cursor: "pointer",
+                      fontSize: theme.fontSize.sm,
+                      fontFamily: theme.font.mono,
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                    }}
+                  >
+                    load a demo session
+                  </button>
+                )}
+                {onLoadSample && onStartCompare && (
+                  <span style={{ color: theme.text.ghost, fontSize: theme.fontSize.sm }}>or</span>
+                )}
+                {onStartCompare && (
+                  <button
+                    type="button"
+                    onClick={onStartCompare}
+                    style={{
+                      color: theme.accent.primary,
+                      cursor: "pointer",
+                      fontSize: theme.fontSize.sm,
+                      fontFamily: theme.font.mono,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                    }}
+                  >
+                    <Icon name="arrow-up-down" size={12} /> compare two sessions
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -262,12 +396,12 @@ export default function InboxView({ entries, onOpenSession, maxEntries, onImport
                     borderRadius: theme.radius.md,
                     padding: "6px 10px",
                     fontSize: theme.fontSize.base,
-                    fontFamily: theme.font.ui,
+                    fontFamily: theme.font.mono,
                     cursor: (entry.hasContent || entry.discoveredPath) ? "pointer" : "default",
                     flexShrink: 0,
                   }}
                 >
-                  Open in Observe
+                  Open
                 </button>
               </div>
 
@@ -352,12 +486,12 @@ export default function InboxView({ entries, onOpenSession, maxEntries, onImport
                         borderRadius: theme.radius.md,
                         padding: "5px 10px",
                         fontSize: theme.fontSize.sm,
-                        fontFamily: theme.font.ui,
+                        fontFamily: theme.font.mono,
                         cursor: "pointer",
                         flexShrink: 0,
                       }}
                     >
-                      Analyze
+                      Open
                     </button>
                   </div>
                 </div>
@@ -376,7 +510,7 @@ export default function InboxView({ entries, onOpenSession, maxEntries, onImport
                   borderRadius: theme.radius.lg,
                   color: theme.text.dim,
                   fontSize: theme.fontSize.sm,
-                  fontFamily: theme.font.ui,
+                  fontFamily: theme.font.mono,
                   cursor: "pointer",
                   marginTop: 4,
                 }}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { theme, TRACK_TYPES } from "../lib/theme.js";
+import { theme, TRACK_TYPES, alpha } from "../lib/theme.js";
 import { buildCommandPaletteIndex, searchCommandPalette } from "../lib/commandPalette.js";
 import Icon from "./Icon.jsx";
 
@@ -7,7 +7,7 @@ import Icon from "./Icon.jsx";
  * CommandPalette - Cmd+K fuzzy search overlay
  * Search events, jump to turns, filter by tool, switch views.
  */
-export default function CommandPalette({ events, turns, onSeek, onSetView, onClose }) {
+export default function CommandPalette({ events, turns, onSeek, onSetView, onAction, onClose }) {
   var [query, setQuery] = useState("");
   var [selectedIdx, setSelectedIdx] = useState(0);
   var inputRef = useRef(null);
@@ -28,6 +28,7 @@ export default function CommandPalette({ events, turns, onSeek, onSetView, onClo
 
   function runItemAction(item) {
     if (!item) return;
+    if (item.type === "action" && item.actionId && onAction) onAction(item.actionId);
     if (item.type === "view" && item.viewId) onSetView(item.viewId);
     if ((item.type === "turn" || item.type === "event") && item.seekTime !== undefined) onSeek(item.seekTime);
     onClose();
@@ -52,7 +53,7 @@ export default function CommandPalette({ events, turns, onSeek, onSetView, onClo
 
   return (
     <div onClick={onClose} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+      position: "fixed", inset: 0, background: alpha(theme.bg.base, 0.6),
       display: "flex", alignItems: "flex-start", justifyContent: "center",
       paddingTop: 120, zIndex: theme.z.modal, backdropFilter: "blur(4px)",
     }}>
@@ -100,7 +101,8 @@ export default function CommandPalette({ events, turns, onSeek, onSetView, onClo
             var isSelected = i === selectedIdx;
             var trackInfo = item.track ? TRACK_TYPES[item.track] : null;
             var itemColor = item.color || (
-              item.type === "view" ? theme.accent.primary
+              item.type === "action" ? theme.accent.primary
+              : item.type === "view" ? theme.accent.primary
               : item.type === "turn" ? theme.accent.primary
               : (trackInfo ? trackInfo.color : theme.text.secondary)
             );
