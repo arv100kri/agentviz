@@ -205,8 +205,13 @@ function formatContext(ctx) {
   }
 
   if (ctx.relevantEvents && ctx.relevantEvents.length) {
-    parts.push("\n## Events matching question keywords");
-    parts.push(JSON.stringify(ctx.relevantEvents));
+    parts.push("\n## Events matching question keywords (with tool call details)");
+    for (var ri = 0; ri < ctx.relevantEvents.length; ri++) {
+      var re = ctx.relevantEvents[ri];
+      var rLine = "- [Turn " + re.turn + "] " + (re.tool || re.toolName || "unknown") + ": " + (re.snippet || re.text || "(no text)");
+      if (re.isError) rLine += " [ERROR]";
+      parts.push(rLine);
+    }
   }
 
   if (ctx.turnMessages && ctx.turnMessages.length) {
