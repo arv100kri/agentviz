@@ -264,26 +264,55 @@ function MarkdownContent({ text, onSeekTurn }) {
 
   function flushTable() {
     if (tableRows.length === 0) return;
-    // Skip separator rows (|---|---|)
-    var dataRows = tableRows.filter(function (r) { return !/^\|[\s\-:]+\|$/.test(r.trim()); });
-    if (dataRows.length === 0) { tableRows = []; return; }
+    // Separate header, separator, and data rows
+    var header = null;
+    var dataRows = [];
+    for (var r = 0; r < tableRows.length; r++) {
+      var row = tableRows[r].trim();
+      // Skip separator rows like |---|---|
+      if (/^\|[\s\-:|]+\|$/.test(row)) continue;
+      if (!header) {
+        header = row;
+      } else {
+        dataRows.push(row);
+      }
+    }
+    if (!header) { tableRows = []; return; }
+
+    function parseCells(row) {
+      return row.split("|").filter(function (c, ci, arr) { return ci > 0 && ci < arr.length - 1; }).map(function (c) { return c.trim(); });
+    }
+
+    var headerCells = parseCells(header);
+
     elements.push(
-      <div key={"tbl-" + elements.length} style={{ overflowX: "auto", margin: "4px 0" }}>
+      <div key={"tbl-" + elements.length} style={{ overflowX: "auto", margin: "6px 0" }}>
         <table style={{ borderCollapse: "collapse", fontSize: theme.fontSize.sm, width: "100%" }}>
+          <thead>
+            <tr>
+              {headerCells.map(function (cell, k) {
+                return <th key={k} style={{
+                  border: "1px solid " + alpha(theme.text.muted, 0.2),
+                  padding: "4px 8px",
+                  textAlign: "left",
+                  fontWeight: 600,
+                  background: alpha(theme.text.muted, 0.08),
+                  whiteSpace: "nowrap",
+                }}>{renderParts(parseMessageContent(cell), onSeekTurn)}</th>;
+              })}
+            </tr>
+          </thead>
           <tbody>
             {dataRows.map(function (row, j) {
-              var cells = row.split("|").filter(function (c, ci, arr) { return ci > 0 && ci < arr.length - 1; });
-              var Tag = j === 0 ? "th" : "td";
+              var cells = parseCells(row);
               return (
                 <tr key={j}>
                   {cells.map(function (cell, k) {
-                    return <Tag key={k} style={{
-                      border: "1px solid " + alpha(theme.text.muted, 0.2),
-                      padding: "3px 8px",
+                    return <td key={k} style={{
+                      border: "1px solid " + alpha(theme.text.muted, 0.15),
+                      padding: "4px 8px",
                       textAlign: "left",
-                      fontWeight: j === 0 ? 600 : "normal",
-                      background: j === 0 ? alpha(theme.text.muted, 0.06) : "transparent",
-                    }}>{renderParts(parseMessageContent(cell.trim()), onSeekTurn)}</Tag>;
+                    }}>{renderParts(parseMessageContent(cell), onSeekTurn)}</td>;
                   })}
                 </tr>
               );
@@ -422,6 +451,7 @@ function MessageBubble({ message, onSeekTurn }) {
           answered in {message.elapsedMs < 1000
             ? message.elapsedMs + "ms"
             : (message.elapsedMs / 1000).toFixed(1) + "s"}
+          {message.model && " \u00B7 " + message.model}
         </span>
       )}
     </div>
