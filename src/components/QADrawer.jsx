@@ -148,22 +148,9 @@ function ThinkingIndicator({ phase }) {
   );
 }
 
-function ThinkingBubble({ messages }) {
-  // Show thinking from the last streaming assistant message only
-  var thinkingText = "";
-  var isStreaming = false;
-  for (var i = messages.length - 1; i >= 0; i--) {
-    var msg = messages[i];
-    if (msg.role !== "assistant") continue;
-    var match = (msg.content || "").match(/^<think>([\s\S]*?)(<\/think>|$)/i);
-    if (match && match[1].trim()) {
-      thinkingText = match[1].trim();
-      isStreaming = msg.streaming;
-    }
-    break;
-  }
-  // Only show while the message is still streaming
-  if (!thinkingText || !isStreaming) return null;
+function ThinkingBubble({ isStreaming, hasAnswerBubble, streamPhase }) {
+  // Show when model is working but no answer bubble exists yet
+  if (!isStreaming || hasAnswerBubble) return null;
 
   return (
     <div style={{
@@ -171,28 +158,10 @@ function ThinkingBubble({ messages }) {
       border: "1px solid rgba(34, 197, 94, 0.2)",
       borderRadius: theme.radius.lg,
       padding: "10px 12px",
-      fontSize: theme.fontSize.sm,
-      fontFamily: theme.font.mono,
-      color: theme.text.secondary,
-      lineHeight: 1.5,
-      whiteSpace: "pre-wrap",
-      wordBreak: "break-word",
       alignSelf: "flex-start",
       maxWidth: "92%",
-      maxHeight: 200,
-      overflow: "auto",
     }}>
-      <div style={{
-        fontSize: theme.fontSize.xs,
-        fontWeight: 600,
-        color: "rgb(34, 197, 94)",
-        textTransform: "uppercase",
-        letterSpacing: "0.5px",
-        marginBottom: 6,
-      }}>
-        {"\uD83D\uDCA1"} Thinking
-      </div>
-      {thinkingText}
+      <ThinkingIndicator phase={streamPhase} />
     </div>
   );
 }
@@ -446,16 +415,8 @@ function MessageBubble({ message, onSeekTurn }) {
   var bg = isUser ? alpha(theme.agent.user, 0.08) : alpha(theme.agent.assistant, 0.06);
   var borderColor = isUser ? alpha(theme.agent.user, 0.15) : alpha(theme.agent.assistant, 0.12);
 
-  // Strip thinking blocks from display -- they render in ThinkingBubble
   var content = message.content || "";
-  var answerText = content.replace(/^<think>[\s\S]*?(<\/think>|$)/i, "").trim();
-
-  // If streaming and no answer text yet (still in think block), don't render bubble
-  if (message.streaming && !answerText) return null;
-  // If finished but no answer (only thinking), show a minimal note
-  if (!message.streaming && !answerText && !isUser) {
-    answerText = "(The model's response was entirely in its thinking process. Toggle thinking on to see it.)";
-  }
+  var answerText = content;
 
   return (
     <div style={{
@@ -700,11 +661,17 @@ export default function QADrawer({ open, onClose, onDisable, sessionKey, session
             return <MessageBubble key={i} message={msg} onSeekTurn={handleSeekTurn} />;
           })}
 
-          {/* Thinking bubble -- green tinted, visible when toggle on and streaming */}
-          {showThinking && <ThinkingBubble messages={qa.messages} />}
+          {/* Green thinking bubble -- shows while waiting for first token */}
+          {showThinking && (
+            <ThinkingBubble
+              isStreaming={qa.isStreaming}
+              hasAnswerBubble={qa.messages.some(function (m) { return m.role === "assistant" && m.streaming; })}
+              streamPhase={qa.streamPhase}
+            />
+          )}
 
-          {/* Show thinking indicator when streaming but no bubble yet */}
-          {qa.isStreaming && !qa.messages.some(function (m) { return m.streaming; }) && (
+          {/* Fallback indicator when thinking toggle is off */}
+          {!showThinking && qa.isStreaming && !qa.messages.some(function (m) { return m.streaming; }) && (
             <div style={{
               alignSelf: "flex-start",
               maxWidth: "92%",
