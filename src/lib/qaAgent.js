@@ -166,6 +166,22 @@ function formatContext(ctx) {
     parts.push(typeof ctx.metadata === "string" ? ctx.metadata : JSON.stringify(ctx.metadata, null, 2));
   }
 
+  // Relevant events go first -- these are the primary evidence for answering the question
+  if (ctx.relevantEvents && ctx.relevantEvents.length) {
+    parts.push("\n## RELEVANT TOOL CALLS (primary evidence -- use these to answer the question)");
+    for (var ri = 0; ri < ctx.relevantEvents.length; ri++) {
+      var re = ctx.relevantEvents[ri];
+      var rLine = "- [Turn " + re.turn + "] " + (re.tool || re.toolName || "unknown") + ": " + (re.snippet || re.text || "(no text)");
+      if (re.isError) rLine += " [ERROR]";
+      parts.push(rLine);
+    }
+  }
+
+  if (ctx.relevantTurns && ctx.relevantTurns.length) {
+    parts.push("\n## Relevant turn events");
+    parts.push(typeof ctx.relevantTurns === "string" ? ctx.relevantTurns : JSON.stringify(ctx.relevantTurns));
+  }
+
   if (ctx.sessionTimeline && ctx.sessionTimeline.length) {
     parts.push("\n## Session timeline (chunk summaries across entire session)");
     for (var ci = 0; ci < ctx.sessionTimeline.length; ci++) {
@@ -197,21 +213,6 @@ function formatContext(ctx) {
   if (ctx.commandHistory && ctx.commandHistory.length) {
     parts.push("\n## Command history");
     parts.push(JSON.stringify(ctx.commandHistory));
-  }
-
-  if (ctx.relevantTurns && ctx.relevantTurns.length) {
-    parts.push("\n## Relevant turn events");
-    parts.push(typeof ctx.relevantTurns === "string" ? ctx.relevantTurns : JSON.stringify(ctx.relevantTurns));
-  }
-
-  if (ctx.relevantEvents && ctx.relevantEvents.length) {
-    parts.push("\n## Events matching question keywords (with tool call details)");
-    for (var ri = 0; ri < ctx.relevantEvents.length; ri++) {
-      var re = ctx.relevantEvents[ri];
-      var rLine = "- [Turn " + re.turn + "] " + (re.tool || re.toolName || "unknown") + ": " + (re.snippet || re.text || "(no text)");
-      if (re.isError) rLine += " [ERROR]";
-      parts.push(rLine);
-    }
   }
 
   if (ctx.turnMessages && ctx.turnMessages.length) {
