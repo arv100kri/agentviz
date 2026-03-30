@@ -31,6 +31,33 @@ function withTimeout(promise, ms, label) {
   });
 }
 
+// ── Warm client pool ─────────────────────────────────────────────
+// Keep a started CopilotClient ready so the first Q&A call doesn't
+// pay the cold-start penalty (~5-15s). The client is started once on
+// import and reused across calls. If it dies, we recreate on next use.
+
+var _warmClient = null;
+var _warmingPromise = null;
+
+function getWarmClient() {
+  if (_warmClient) return Promise.resolve(_warmClient);
+  if (_warmingPromise) return _warmingPromise;
+  _warmingPromise = (async function () {
+    var client = new CopilotClient();
+    await withTimeout(client.start(), SDK_TIMEOUT_MS, "Copilot SDK start");
+    _warmClient = client;
+    _warmingPromise = null;
+    return client;
+  })().catch(function (err) {
+    _warmingPromise = null;
+    throw err;
+  });
+  return _warmingPromise;
+}
+
+// Kick off warm-up immediately on import (fire and forget)
+getWarmClient().catch(function () {});
+
 /**
  * Run a Q&A query against the Copilot SDK.
  *
@@ -46,11 +73,11 @@ export async function runQAQuery(payload, opts) {
   var onToken = opts && opts.onToken;
   var model = opts && opts.model;
 
-  var client = new CopilotClient();
+  var client;
   var session;
 
   try {
-    await withTimeout(client.start(), SDK_TIMEOUT_MS, "Copilot SDK start");
+    client = await getWarmClient();
 
     var sessionOpts = {
       onPermissionRequest: approveAll,
@@ -58,7 +85,14 @@ export async function runQAQuery(payload, opts) {
     };
     if (model) sessionOpts.model = model;
 
-    session = await withTimeout(client.createSession(sessionOpts), SDK_TIMEOUT_MS, "Copilot SDK session");
+    try {
+      session = await withTimeout(client.createSession(sessionOpts), SDK_TIMEOUT_MS, "Copilot SDK session");
+    } catch (sessionErr) {
+      // Warm client may be stale -- invalidate and retry once
+      _warmClient = null;
+      client = await getWarmClient();
+      session = await withTimeout(client.createSession(sessionOpts), SDK_TIMEOUT_MS, "Copilot SDK session (retry)");
+    }
 
     if (signal && signal.aborted) throw Object.assign(new Error("Aborted"), { name: "AbortError" });
     if (signal) {
@@ -98,8 +132,10 @@ export async function runQAQuery(payload, opts) {
       throw Object.assign(new Error("Aborted"), { name: "AbortError" });
     }
   } finally {
+    // Only disconnect the session; keep the warm client alive for reuse.
+    // If the session errors in a way that corrupts the client, invalidate it
+    // so the next call creates a fresh one.
     if (session) await session.disconnect().catch(function () {});
-    await client.stop().catch(function () {});
   }
 }
 
