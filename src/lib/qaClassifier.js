@@ -54,7 +54,7 @@ function buildSessionIndex(data) {
   var events = data.events || [];
   var turns = data.turns || [];
 
-  // Tool index: toolName -> [{turn, snippet, isError}]
+  // Tool index: toolName -> [{turn, snippet, isError, searchText}]
   var toolIndex = {};
   for (var i = 0; i < events.length; i++) {
     var e = events[i];
@@ -62,10 +62,14 @@ function buildSessionIndex(data) {
     var name = e.toolName.toLowerCase();
     if (!toolIndex[name]) toolIndex[name] = [];
     var inputStr = e.toolInput ? (typeof e.toolInput === "string" ? e.toolInput : JSON.stringify(e.toolInput)) : "";
+    var textStr = e.text || "";
+    // Combine text + input for both display and search
+    var combined = (textStr + " " + inputStr).trim();
     toolIndex[name].push({
       turn: e.turnIndex,
-      snippet: (e.text || inputStr || "").slice(0, 80),
+      snippet: combined.slice(0, 150),
       isError: e.isError || false,
+      searchText: combined.toLowerCase().slice(0, 500),
     });
   }
 
@@ -134,12 +138,13 @@ export function searchToolIndex(index, keyword) {
     }
   }
 
-  // Also search snippets across all tools
+  // Also search full text (tool input + event text) across all tools
   if (results.length === 0) {
     for (var tn in index.toolIndex) {
       var entries = index.toolIndex[tn];
       for (var i = 0; i < entries.length; i++) {
-        if (entries[i].snippet.toLowerCase().indexOf(kw) !== -1) {
+        var searchIn = entries[i].searchText || entries[i].snippet.toLowerCase();
+        if (searchIn.indexOf(kw) !== -1) {
           results.push(Object.assign({ tool: tn }, entries[i]));
         }
       }
