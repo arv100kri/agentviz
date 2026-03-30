@@ -10,43 +10,100 @@ import { theme, alpha } from "../lib/theme.js";
 import Icon from "./Icon.jsx";
 import useQA from "../hooks/useQA.js";
 
-var TURN_REF_RE = /\[Turns?\s*#?\s*(\d+(?:\s*[-,]\s*\d+)*)\]/gi;
+// Bracketed turn references: [Turn 0], [Turns 0-5], [Turn 0, Turn 5], [Turn 0 and Turn 2]
+var BRACKETED_TURN_RE = /\[Turns?\s*#?\s*[\d][\d\s,\-\u2013andTurn#]*/gi;
+// Unbracketed: Turn 5, turn 3 (case insensitive)
+var UNBRACKETED_TURN_RE = /Turn\s*#?\s*(\d+)/gi;
 var BOLD_RE = /\*\*(.+?)\*\*/g;
+var CODE_RE = /`([^`]+)`/g;
+
+function expandTurnNums(body) {
+  var nums = [];
+  var segments = body.split(/,|\band\b/);
+  for (var i = 0; i < segments.length; i++) {
+    var seg = segments[i].trim();
+    var rangeMatch = seg.match(/(?:Turns?\s*#?\s*)?(\d+)\s*[-\u2013]\s*(?:Turn\s*#?\s*)?(\d+)/i);
+    if (rangeMatch) {
+      var lo = parseInt(rangeMatch[1], 10);
+      var hi = parseInt(rangeMatch[2], 10);
+      for (var n = lo; n <= hi; n++) nums.push(n);
+      continue;
+    }
+    var singleMatch = seg.match(/(?:Turns?\s*#?\s*)?(\d+)/i);
+    if (singleMatch) nums.push(parseInt(singleMatch[1], 10));
+  }
+  return nums;
+}
 
 /**
- * Parse text into parts: turn refs, bold spans, and plain text.
+ * Parse text into parts: turn refs, bold spans, code spans, and plain text.
  */
 function parseMessageContent(text) {
-  // First pass: split on turn refs
+  // Collect all turn reference markers with position info
+  var markers = [];
+
+  // Pass 1: bracketed groups
+  BRACKETED_TURN_RE.lastIndex = 0;
+  var bm;
+  while ((bm = BRACKETED_TURN_RE.exec(text)) !== null) {
+    var close = text.indexOf("]", bm.index);
+    if (close === -1) continue;
+    var full = text.substring(bm.index, close + 1);
+    var body = full.slice(1, -1);
+    var nums = expandTurnNums(body);
+    if (nums.length > 0) {
+      markers.push({ start: bm.index, end: close + 1, label: full, turns: nums });
+    }
+    BRACKETED_TURN_RE.lastIndex = close + 1;
+  }
+
+  // Pass 2: unbracketed "Turn N" not already inside a bracketed group
+  UNBRACKETED_TURN_RE.lastIndex = 0;
+  var um;
+  while ((um = UNBRACKETED_TURN_RE.exec(text)) !== null) {
+    var inside = markers.some(function (m) { return um.index >= m.start && um.index < m.end; });
+    if (inside) continue;
+    markers.push({ start: um.index, end: UNBRACKETED_TURN_RE.lastIndex, label: um[0], turns: [parseInt(um[1], 10)] });
+  }
+
+  markers.sort(function (a, b) { return a.start - b.start; });
+
+  // Build turn-ref parts
   var turnParts = [];
   var last = 0;
-  var match;
-  TURN_REF_RE.lastIndex = 0;
-  while ((match = TURN_REF_RE.exec(text)) !== null) {
-    if (match.index > last) turnParts.push({ type: "text", value: text.slice(last, match.index) });
-    var nums = match[1].split(/\s*[,\-]\s*/).map(Number).filter(function (n) { return !isNaN(n); });
-    turnParts.push({ type: "ref", label: match[0], turns: nums });
-    last = match.index + match[0].length;
+  for (var i = 0; i < markers.length; i++) {
+    var m = markers[i];
+    if (m.start > last) turnParts.push({ type: "text", value: text.substring(last, m.start) });
+    turnParts.push({ type: "ref", label: m.label, turns: m.turns });
+    last = m.end;
   }
-  if (last < text.length) turnParts.push({ type: "text", value: text.slice(last) });
+  if (last < text.length) turnParts.push({ type: "text", value: text.substring(last) });
 
-  // Second pass: split text nodes on **bold**
+  // Second pass: split text nodes on **bold** and `code`
   var result = [];
-  for (var i = 0; i < turnParts.length; i++) {
-    var part = turnParts[i];
+  for (var j = 0; j < turnParts.length; j++) {
+    var part = turnParts[j];
     if (part.type !== "text") { result.push(part); continue; }
-    var str = part.value;
-    var bLast = 0;
-    BOLD_RE.lastIndex = 0;
-    var bMatch;
-    while ((bMatch = BOLD_RE.exec(str)) !== null) {
-      if (bMatch.index > bLast) result.push({ type: "text", value: str.slice(bLast, bMatch.index) });
-      result.push({ type: "bold", value: bMatch[1] });
-      bLast = bMatch.index + bMatch[0].length;
-    }
-    if (bLast < str.length) result.push({ type: "text", value: str.slice(bLast) });
+    splitFormattedText(part.value, result);
   }
   return result;
+}
+
+function splitFormattedText(str, out) {
+  // Combine bold and code into a single pass using alternation
+  var RE = /\*\*(.+?)\*\*|`([^`]+)`/g;
+  var last = 0;
+  var match;
+  while ((match = RE.exec(str)) !== null) {
+    if (match.index > last) out.push({ type: "text", value: str.slice(last, match.index) });
+    if (match[1] != null) {
+      out.push({ type: "bold", value: match[1] });
+    } else {
+      out.push({ type: "code", value: match[2] });
+    }
+    last = RE.lastIndex;
+  }
+  if (last < str.length) out.push({ type: "text", value: str.slice(last) });
 }
 
 function SuggestedChips({ sessionData, onAsk }) {
@@ -144,6 +201,9 @@ function MessageBubble({ message, onSeekTurn }) {
         }
         if (part.type === "bold") {
           return <strong key={i} style={{ color: theme.text.primary, fontWeight: 600 }}>{part.value}</strong>;
+        }
+        if (part.type === "code") {
+          return <code key={i} style={{ background: alpha(theme.text.primary, 0.08), borderRadius: 3, padding: "1px 4px", fontSize: theme.fontSize.sm }}>{part.value}</code>;
         }
         return <span key={i}>{part.value}</span>;
       })}
