@@ -148,7 +148,6 @@ export default function useQA(sessionData, sessionKey) {
           }
           // First token -- create the bubble now
           return prev.concat({ role: "assistant", content: token, instant: false, streaming: true, startedAt: startedAt });
-          return prev;
         });
       },
       onDone: function () {

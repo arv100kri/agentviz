@@ -148,6 +148,105 @@ function ThinkingIndicator({ phase }) {
   );
 }
 
+function ThinkingOverlay({ messages }) {
+  // Extract thinking text from the last assistant message that has a think block
+  var thinkingText = "";
+  for (var i = messages.length - 1; i >= 0; i--) {
+    var msg = messages[i];
+    if (msg.role !== "assistant") continue;
+    var match = (msg.content || "").match(/^<think>([\s\S]*?)(<\/think>|$)/i);
+    if (match && match[1].trim()) {
+      thinkingText = match[1].trim();
+      break;
+    }
+  }
+  if (!thinkingText) return null;
+
+  return (
+    <div style={{
+      position: "absolute",
+      top: 52,
+      left: 8,
+      right: 8,
+      maxHeight: "40%",
+      overflow: "auto",
+      background: alpha(theme.bg.surface, 0.97),
+      border: "1px solid " + alpha(theme.accent.primary, 0.15),
+      borderRadius: theme.radius.lg,
+      padding: "10px 12px",
+      fontSize: theme.fontSize.sm,
+      fontFamily: theme.font.mono,
+      color: theme.text.secondary,
+      lineHeight: 1.5,
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+      zIndex: 10,
+      boxShadow: theme.shadow.md,
+    }}>
+      <div style={{
+        fontSize: theme.fontSize.xs,
+        fontWeight: 600,
+        color: theme.accent.primary,
+        textTransform: "uppercase",
+        letterSpacing: "0.5px",
+        marginBottom: 6,
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+      }}>
+        {"\uD83D\uDCA1"} Model thinking
+      </div>
+      {thinkingText}
+    </div>
+  );
+}
+
+function ToggleSwitch({ checked, onChange, label }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      title={label}
+      onClick={function () { onChange(!checked); }}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: 0,
+        fontFamily: theme.font.mono,
+        fontSize: theme.fontSize.xs,
+        color: theme.text.ghost,
+      }}
+    >
+      <span style={{ fontSize: 11 }}>{"\uD83D\uDCA1"}</span>
+      <span style={{
+        position: "relative",
+        width: 28,
+        height: 16,
+        borderRadius: 8,
+        background: checked ? theme.accent.primary : alpha(theme.text.muted, 0.25),
+        transition: "background 150ms ease",
+        flexShrink: 0,
+      }}>
+        <span style={{
+          position: "absolute",
+          top: 2,
+          left: checked ? 14 : 2,
+          width: 12,
+          height: 12,
+          borderRadius: "50%",
+          background: "#fff",
+          transition: "left 150ms ease",
+        }} />
+      </span>
+    </button>
+  );
+}
+
 function SuggestedChips({ sessionData, onAsk }) {
   var chips = useMemo(function () {
     var c = ["What tools were used most?", "Summarize this session"];
@@ -187,24 +286,160 @@ function SuggestedChips({ sessionData, onAsk }) {
   );
 }
 
-function MessageBubble({ message, onSeekTurn, phase, showThinking }) {
+function renderParts(parts, onSeekTurn) {
+  return parts.map(function (part, i) {
+    if (part.type === "ref") {
+      return (
+        <button
+          key={i}
+          className="av-btn"
+          aria-label={"Jump to " + part.label.replace(/[\[\]]/g, "")}
+          onClick={function () {
+            if (onSeekTurn && part.turns.length) onSeekTurn(part.turns[0]);
+          }}
+          style={{
+            display: "inline",
+            background: theme.accent.muted,
+            color: theme.accent.primary,
+            border: "none",
+            borderRadius: theme.radius.full,
+            fontFamily: theme.font.mono,
+            fontSize: theme.fontSize.sm,
+            padding: "1px 6px",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          {part.label.replace(/[\[\]]/g, "")}
+        </button>
+      );
+    }
+    if (part.type === "bold") {
+      return <strong key={i} style={{ color: theme.text.primary, fontWeight: 600 }}>{part.value}</strong>;
+    }
+    if (part.type === "code") {
+      return <code key={i} style={{ background: alpha(theme.text.primary, 0.08), borderRadius: 3, padding: "1px 4px", fontSize: theme.fontSize.sm }}>{part.value}</code>;
+    }
+    return <span key={i}>{part.value}</span>;
+  });
+}
+
+function MarkdownContent({ text, onSeekTurn }) {
+  if (!text) return null;
+  var lines = text.split("\n");
+  var elements = [];
+  var listItems = [];
+  var tableRows = [];
+
+  function flushList() {
+    if (listItems.length === 0) return;
+    elements.push(
+      <ul key={"ul-" + elements.length} style={{ margin: "4px 0", paddingLeft: 18 }}>
+        {listItems.map(function (item, j) {
+          return <li key={j} style={{ marginBottom: 2 }}>{renderParts(parseMessageContent(item), onSeekTurn)}</li>;
+        })}
+      </ul>
+    );
+    listItems = [];
+  }
+
+  function flushTable() {
+    if (tableRows.length === 0) return;
+    // Skip separator rows (|---|---|)
+    var dataRows = tableRows.filter(function (r) { return !/^\|[\s\-:]+\|$/.test(r.trim()); });
+    if (dataRows.length === 0) { tableRows = []; return; }
+    elements.push(
+      <div key={"tbl-" + elements.length} style={{ overflowX: "auto", margin: "4px 0" }}>
+        <table style={{ borderCollapse: "collapse", fontSize: theme.fontSize.sm, width: "100%" }}>
+          <tbody>
+            {dataRows.map(function (row, j) {
+              var cells = row.split("|").filter(function (c, ci, arr) { return ci > 0 && ci < arr.length - 1; });
+              var Tag = j === 0 ? "th" : "td";
+              return (
+                <tr key={j}>
+                  {cells.map(function (cell, k) {
+                    return <Tag key={k} style={{
+                      border: "1px solid " + alpha(theme.text.muted, 0.2),
+                      padding: "3px 8px",
+                      textAlign: "left",
+                      fontWeight: j === 0 ? 600 : "normal",
+                      background: j === 0 ? alpha(theme.text.muted, 0.06) : "transparent",
+                    }}>{renderParts(parseMessageContent(cell.trim()), onSeekTurn)}</Tag>;
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+    tableRows = [];
+  }
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var trimmed = line.trim();
+
+    // Table row
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      flushList();
+      tableRows.push(trimmed);
+      continue;
+    } else {
+      flushTable();
+    }
+
+    // List item (- or *)
+    var listMatch = trimmed.match(/^[-*]\s+(.*)/);
+    if (listMatch) {
+      flushTable();
+      listItems.push(listMatch[1]);
+      continue;
+    } else {
+      flushList();
+    }
+
+    // Numbered list (1. 2. etc)
+    var numMatch = trimmed.match(/^\d+\.\s+(.*)/);
+    if (numMatch) {
+      listItems.push(numMatch[1]);
+      continue;
+    } else if (listItems.length > 0 && !listMatch) {
+      flushList();
+    }
+
+    // Empty line
+    if (!trimmed) {
+      elements.push(<div key={"br-" + i} style={{ height: 6 }} />);
+      continue;
+    }
+
+    // Regular text line
+    var parts = parseMessageContent(trimmed);
+    elements.push(<div key={"p-" + i}>{renderParts(parts, onSeekTurn)}</div>);
+  }
+
+  flushList();
+  flushTable();
+
+  return <>{elements}</>;
+}
+
+function MessageBubble({ message, onSeekTurn }) {
   var isUser = message.role === "user";
   var bg = isUser ? alpha(theme.agent.user, 0.08) : alpha(theme.agent.assistant, 0.06);
   var borderColor = isUser ? alpha(theme.agent.user, 0.15) : alpha(theme.agent.assistant, 0.12);
 
-  // Separate thinking from answer content
+  // Strip thinking blocks from display -- they render in ThinkingOverlay
   var content = message.content || "";
-  var thinkingText = "";
-  var answerText = content;
+  var answerText = content.replace(/^<think>[\s\S]*?(<\/think>|$)/i, "").trim();
 
-  // Match <think>...</think> blocks (may be unclosed if still streaming)
-  var thinkMatch = content.match(/^<think>([\s\S]*?)(<\/think>|$)/i);
-  if (thinkMatch) {
-    thinkingText = thinkMatch[1].trim();
-    answerText = content.slice(thinkMatch[0].length).trim();
+  // If streaming and no answer text yet (still in think block), don't render bubble
+  if (message.streaming && !answerText) return null;
+  // If finished but no answer (only thinking), show a minimal note
+  if (!message.streaming && !answerText && !isUser) {
+    answerText = "(The model's response was entirely in its thinking process. Toggle thinking on to see it.)";
   }
-
-  var parts = isUser ? [{ type: "text", value: answerText }] : parseMessageContent(answerText);
 
   return (
     <div style={{
@@ -216,66 +451,14 @@ function MessageBubble({ message, onSeekTurn, phase, showThinking }) {
       fontFamily: theme.font.mono,
       color: theme.text.primary,
       lineHeight: 1.6,
-      whiteSpace: "pre-wrap",
       wordBreak: "break-word",
       alignSelf: isUser ? "flex-end" : "flex-start",
       maxWidth: "92%",
     }}>
-      {thinkingText && showThinking && (
-        <div style={{
-          background: alpha(theme.text.muted, 0.06),
-          border: "1px solid " + alpha(theme.text.muted, 0.1),
-          borderRadius: theme.radius.md,
-          padding: "8px 10px",
-          marginBottom: 10,
-          fontSize: theme.fontSize.sm,
-          color: theme.text.secondary,
-          lineHeight: 1.5,
-        }}>
-          <span style={{ fontSize: theme.fontSize.xs, fontWeight: 600, color: theme.text.ghost, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            {"\uD83D\uDCA1"} Thinking
-          </span>
-          <div style={{ marginTop: 4 }}>{thinkingText}</div>
-        </div>
-      )}
-      {thinkingText && !showThinking && !answerText && message.streaming && (
-        <ThinkingIndicator phase="streaming" />
-      )}
-      {parts.map(function (part, i) {
-        if (part.type === "ref") {
-          return (
-            <button
-              key={i}
-              className="av-btn"
-              aria-label={"Jump to " + part.label.replace(/[\[\]]/g, "")}
-              onClick={function () {
-                if (onSeekTurn && part.turns.length) onSeekTurn(part.turns[0]);
-              }}
-              style={{
-                display: "inline",
-                background: theme.accent.muted,
-                color: theme.accent.primary,
-                border: "none",
-                borderRadius: theme.radius.full,
-                fontFamily: theme.font.mono,
-                fontSize: theme.fontSize.sm,
-                padding: "1px 6px",
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              {part.label.replace(/[\[\]]/g, "")}
-            </button>
-          );
-        }
-        if (part.type === "bold") {
-          return <strong key={i} style={{ color: theme.text.primary, fontWeight: 600 }}>{part.value}</strong>;
-        }
-        if (part.type === "code") {
-          return <code key={i} style={{ background: alpha(theme.text.primary, 0.08), borderRadius: 3, padding: "1px 4px", fontSize: theme.fontSize.sm }}>{part.value}</code>;
-        }
-        return <span key={i}>{part.value}</span>;
-      })}
+      {isUser
+        ? <span>{answerText}</span>
+        : <MarkdownContent text={answerText} onSeekTurn={onSeekTurn} />
+      }
       {message.instant && (
         <span style={{
           display: "block",
@@ -424,24 +607,11 @@ export default function QADrawer({ open, onClose, onDisable, sessionKey, session
             Session Q&A
           </span>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button
-              className="av-btn"
-              onClick={function () { setShowThinking(function (v) { return !v; }); }}
-              aria-label={showThinking ? "Hide thinking" : "Show thinking"}
-              title={showThinking ? "Hide model thinking" : "Show model thinking"}
-              style={{
-                background: showThinking ? alpha(theme.accent.primary, 0.12) : "none",
-                border: "1px solid " + (showThinking ? alpha(theme.accent.primary, 0.3) : "transparent"),
-                borderRadius: theme.radius.sm,
-                color: showThinking ? theme.accent.primary : theme.text.ghost,
-                cursor: "pointer",
-                fontSize: theme.fontSize.xs,
-                fontFamily: theme.font.mono,
-                padding: "2px 6px",
-              }}
-            >
-              {"\uD83D\uDCA1"}
-            </button>
+            <ToggleSwitch
+              checked={showThinking}
+              onChange={setShowThinking}
+              label={showThinking ? "Hide thinking" : "Show thinking"}
+            />
             {qa.messages.length > 0 && (
               <button
                 className="av-btn"
@@ -478,6 +648,9 @@ export default function QADrawer({ open, onClose, onDisable, sessionKey, session
           </div>
         </div>
 
+        {/* Thinking overlay -- floats above messages when toggle is on */}
+        {showThinking && <ThinkingOverlay messages={qa.messages} />}
+
         {/* Messages area */}
         <div style={{
           flex: 1,
@@ -511,8 +684,7 @@ export default function QADrawer({ open, onClose, onDisable, sessionKey, session
           )}
 
           {qa.messages.map(function (msg, i) {
-            var isLastStreaming = msg.streaming && i === qa.messages.length - 1;
-            return <MessageBubble key={i} message={msg} onSeekTurn={handleSeekTurn} phase={isLastStreaming ? qa.streamPhase : null} showThinking={showThinking} />;
+            return <MessageBubble key={i} message={msg} onSeekTurn={handleSeekTurn} />;
           })}
 
           {/* Show thinking indicator when streaming but no bubble yet */}
