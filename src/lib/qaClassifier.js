@@ -26,7 +26,7 @@ var PATTERNS = [
   { id: "format",    re: /\b(what\s+format|which\s+format|session\s+format|what\s+type\s+of\s+session|is\s+this\s+(claude|copilot))\b/i },
   { id: "userMsgs",  re: /\b(what\s+did\s+the\s+user\s+(ask|say|type|write|request)|user\s+(messages?|prompts?|questions?)|list\s+(all\s+)?(user\s+)?(messages?|prompts?))\b/i },
   { id: "events",    re: /\b(how\s+many\s+events?|event\s+count|total\s+events?|number\s+of\s+events?)\b/i },
-  { id: "toolDetail",re: /\b(how\s+many\s+times?\s+(was|did|were)\s+(\w+)\s+(used|called|invoked)|(\w+)\s+tool\s+(count|usage|calls?)|how\s+was\s+(\w+)\s+used)\b/i },
+  { id: "toolDetail",re: /\b(how\s+many\s+times?\s+(was|did|were)\s+(\w+)\s+(used|called|invoked)|(\w+)\s+tool\s+(count|usage|calls?)|how\s+was\s+(\w+)\s+used|how\s+many\s+(\w+)\s+(queries|calls|invocations|executions)\s+(were|was|did))\b/i },
   { id: "summary",   re: /\b(summarize?\s+(this|the)\s+session|session\s+(summary|overview|recap))\b/i },
 ];
 
@@ -195,14 +195,19 @@ export function classifyInstant(question, data) {
     var tdMatch = q.match(/\b(?:how\s+many\s+times?\s+(?:was|did|were)\s+)(\w+)/i);
     if (!tdMatch) tdMatch = q.match(/\b(\w+)\s+tool\s+(?:count|usage|calls?)/i);
     if (!tdMatch) tdMatch = q.match(/\bhow\s+was\s+(\w+)\s+used/i);
+    if (!tdMatch) tdMatch = q.match(/\bhow\s+many\s+(\w+)\s+(?:queries|calls|invocations|executions)/i);
     if (!tdMatch) return null;
     var toolName = tdMatch[1].toLowerCase();
     var tdCount = 0;
     var tdMatched = null;
+    // Search both exact tool name match and partial match (e.g., "kusto" matches "kusto-public-test-execute_query")
     for (var tdi = 0; tdi < events.length; tdi++) {
-      if (events[tdi].track === "tool_call" && events[tdi].toolName && events[tdi].toolName.toLowerCase() === toolName) {
-        tdCount++;
-        if (!tdMatched) tdMatched = events[tdi].toolName;
+      if (events[tdi].track === "tool_call" && events[tdi].toolName) {
+        var evToolLower = events[tdi].toolName.toLowerCase();
+        if (evToolLower === toolName || evToolLower.indexOf(toolName) !== -1) {
+          tdCount++;
+          if (!tdMatched) tdMatched = events[tdi].toolName;
+        }
       }
     }
     if (tdCount === 0) return instant("Tool **" + toolName + "** was not used in this session.");

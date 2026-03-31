@@ -11,7 +11,7 @@ import { theme, alpha } from "../../lib/theme.js";
 import QAView from "../../components/QAView.jsx";
 import Icon from "../../components/Icon.jsx";
 
-export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata, playback, setActiveView }) {
+export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata, playback, setActiveView, sessionKey }) {
   // Escape to close
   React.useEffect(function () {
     if (!open) return;
@@ -66,6 +66,7 @@ export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata
         rawText: "",
         enableInstantClassifier: true,
         onClose: onClose,
+        sessionKey: sessionKey,
         onSeekTurn: function (turnTime) {
           if (playback && playback.seek) {
             playback.seek(turnTime);

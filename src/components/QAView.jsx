@@ -301,9 +301,25 @@ var AVAILABLE_MODELS = [
 
 var DEFAULT_MODEL = "gpt-5.4";
 
-export default function QAView({ qa, events, turns, metadata, sessionFilePath, rawText, onSeekTurn, onSetView, enableInstantClassifier, onClose }) {
+export default function QAView({ qa, events, turns, metadata, sessionFilePath, rawText, onSeekTurn, onSetView, enableInstantClassifier, onClose, sessionKey }) {
   var [input, setInput] = useState("");
-  var [instantMessages, setInstantMessages] = useState([]);
+  var instantStorageKey = sessionKey ? "agentviz:qa-instant:" + sessionKey : null;
+  var [instantMessages, setInstantMessages] = useState(function () {
+    if (!instantStorageKey) return [];
+    try { var raw = localStorage.getItem(instantStorageKey); return raw ? JSON.parse(raw) : []; } catch (_) { return []; }
+  });
+
+  // Persist instant messages on change
+  useEffect(function () {
+    if (!instantStorageKey) return;
+    try { localStorage.setItem(instantStorageKey, JSON.stringify(instantMessages)); } catch (_) {}
+  }, [instantMessages, instantStorageKey]);
+
+  // Reload instant messages when sessionKey changes
+  useEffect(function () {
+    if (!instantStorageKey) return;
+    try { var raw = localStorage.getItem(instantStorageKey); setInstantMessages(raw ? JSON.parse(raw) : []); } catch (_) {}
+  }, [instantStorageKey]);
   var [instantSeq, setInstantSeq] = useState(0);
   var [loadingNowMs, setLoadingNowMs] = useState(function () { return Date.now(); });
   var messagesEndRef = useRef(null);
@@ -668,7 +684,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
             <button
               className="av-btn"
               style={clearBtnStyle}
-              onClick={function () { setInstantMessages([]); qa.clearHistory(); }}
+              onClick={function () { setInstantMessages([]); if (instantStorageKey) { try { localStorage.removeItem(instantStorageKey); } catch (_) {} } qa.clearHistory(); }}
               title="Clear conversation"
             >
               Clear

@@ -2230,15 +2230,26 @@ export function compileSessionQAQueryProgram(question, artifacts, options) {
 export function buildSessionQAProgramCacheKey(program, options) {
   if (!program || typeof program !== "object") return "";
   var opts = options && typeof options === "object" ? options : {};
-  return stableSerialize({
-    version: 1,
+  var key = {
+    version: 2,
     fingerprint: opts.fingerprint ? String(opts.fingerprint) : "",
     family: program.family || "",
     intent: program.intent || "",
     routePreference: program.routePreference || "",
     evidenceMode: program.evidenceMode || "",
     slots: program.slots || {},
-  });
+  };
+  // For broad families where slots don't differentiate questions,
+  // include question text to prevent unrelated cache hits.
+  // For specific families (metric, turn-lookup, tool-lookup) the slots
+  // already capture the intent, so paraphrases should share a cache entry.
+  var family = program.family || "";
+  if (family === "session-summary" || family === "broad-synthesis" || family === "exact-raw-evidence" || !family) {
+    key.questionKey = program.questionProfile && program.questionProfile.normalizedQuestion
+      ? program.questionProfile.normalizedQuestion.slice(0, 80)
+      : "";
+  }
+  return stableSerialize(key);
 }
 
 export function describeSessionQAQueryProgram(program) {

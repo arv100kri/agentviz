@@ -841,6 +841,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
       metadata: metadata,
       playback: playback,
       setActiveView: setActiveView,
+      sessionKey: sessionKey,
     })
   );
 }
