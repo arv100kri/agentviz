@@ -252,12 +252,7 @@ export async function handleSessionQA(options) {
       programCacheKey = buildSessionQAProgramCacheKey(queryProgram, {
         fingerprint: precomputed ? precomputed.fingerprint : null,
       });
-      // Only use program cache for deterministic families where the answer
-      // is uniquely determined by the family + slots (e.g., metric, turn-lookup).
-      // For broad families (session-summary, broad-synthesis), different questions
-      // can have the same program key but different correct answers.
-      var isDeterministicFamily = queryProgram.deterministic && !queryProgram.needsModel;
-      var cachedProgramPlan = isDeterministicFamily && programCacheKey && resolvedSession.programCache
+      var cachedProgramPlan = programCacheKey && resolvedSession.programCache
         ? resolvedSession.programCache[programCacheKey]
         : null;
 
@@ -470,7 +465,7 @@ export async function handleSessionQA(options) {
     var contextFamily = queryProgram ? queryProgram.family : "unknown";
     var cachedModelAnswer = null;
     if (context && modelAnswerCache && typeof modelAnswerCache.get === "function") {
-      cachedModelAnswer = modelAnswerCache.get(contextFingerprint, contextFamily, context, requestedModel || "default");
+      cachedModelAnswer = modelAnswerCache.get(contextFingerprint, contextFamily, context, requestedModel || "default", question);
     }
     if (cachedModelAnswer && cachedModelAnswer.answer) {
       sendProgress("using-cached-program-answer", {
@@ -643,7 +638,8 @@ export async function handleSessionQA(options) {
         context,
         answer,
         references,
-        requestedModel || "default"
+        requestedModel || "default",
+        question
       );
     }
 

@@ -237,26 +237,27 @@ export function createModelAnswerCache(maxEntries) {
   var cache = {};
   var order = [];
 
-  function makeKey(fingerprint, family, contextSubstr, model) {
-    // Use a truncated but unique key to avoid hash collisions
+  function makeKey(fingerprint, family, contextSubstr, model, question) {
+    // Include question text in key so different questions never share cache entries
     var fp = (fingerprint || "").slice(0, 40);
     var fam = (family || "").slice(0, 30);
     var ctx = (contextSubstr || "").slice(0, 200);
     var mod = (model || "").slice(0, 20);
-    return fp + "|" + fam + "|" + mod + "|" + ctx;
+    var q = (question || "").toLowerCase().replace(/[^a-z0-9 ]/g, "").trim().slice(0, 120);
+    return fp + "|" + fam + "|" + mod + "|" + q + "|" + ctx;
   }
 
   return {
-    get: function (fingerprint, family, context, model) {
-      var key = makeKey(fingerprint, family, context, model);
+    get: function (fingerprint, family, context, model, question) {
+      var key = makeKey(fingerprint, family, context, model, question);
       var entry = cache[key];
       if (!entry) return null;
       var idx = order.indexOf(key);
       if (idx > 0) { order.splice(idx, 1); order.unshift(key); }
       return entry;
     },
-    set: function (fingerprint, family, context, answer, references, model) {
-      var key = makeKey(fingerprint, family, context, model);
+    set: function (fingerprint, family, context, answer, references, model, question) {
+      var key = makeKey(fingerprint, family, context, model, question);
       cache[key] = { answer: answer, references: references, model: model, cachedAt: Date.now() };
       var idx = order.indexOf(key);
       if (idx !== -1) order.splice(idx, 1);

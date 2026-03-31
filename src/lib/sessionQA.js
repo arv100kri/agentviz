@@ -2239,16 +2239,14 @@ export function buildSessionQAProgramCacheKey(program, options) {
     evidenceMode: program.evidenceMode || "",
     slots: program.slots || {},
   };
-  // For broad families where slots don't differentiate questions,
-  // include question text to prevent unrelated cache hits.
-  // For specific families (metric, turn-lookup, tool-lookup) the slots
-  // already capture the intent, so paraphrases should share a cache entry.
-  var family = program.family || "";
-  if (family === "session-summary" || family === "broad-synthesis" || family === "exact-raw-evidence" || !family) {
-    key.questionKey = program.questionProfile && program.questionProfile.normalizedQuestion
-      ? program.questionProfile.normalizedQuestion.slice(0, 80)
-      : "";
-  }
+  // Always include normalized question text so that different questions
+  // never share a program cache entry, even within the same family.
+  // Exact paraphrases still benefit (they normalize identically).
+  key.questionKey = program.normalizedQuestion
+    ? program.normalizedQuestion.slice(0, 120)
+    : (program.questionProfile && program.questionProfile.normalizedQuestion
+      ? program.questionProfile.normalizedQuestion.slice(0, 120)
+      : (program.question || "").toLowerCase().replace(/[^a-z0-9 ]/g, "").trim().slice(0, 120));
   return stableSerialize(key);
 }
 
