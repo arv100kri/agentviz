@@ -97,7 +97,7 @@ function FaxMetadataHeader({ faxEntry, onBack, onPickUp, onOpenQA }) {
     React.createElement("button", {
       className: "av-btn",
       onClick: function () { if (onOpenQA) onOpenQA(); },
-      title: "Open Q&A (Ctrl+Shift+K)",
+      title: "Ctrl+Shift+K",
       style: {
         background: "transparent",
         border: "1px solid " + theme.border.default,
@@ -112,11 +112,8 @@ function FaxMetadataHeader({ faxEntry, onBack, onPickUp, onOpenQA }) {
         gap: 4,
       },
     },
-      React.createElement(Icon, { name: "message-circle", size: 14 }),
-      "Q&A",
-      React.createElement("span", {
-        style: { fontSize: 9, color: theme.text.ghost, marginLeft: 4 },
-      }, "\u2318\u21E7K")
+      React.createElement(Icon, { name: "message-square-text", size: 14 }),
+      "Q&A"
     ),
     React.createElement("button", {
       className: "av-btn",
