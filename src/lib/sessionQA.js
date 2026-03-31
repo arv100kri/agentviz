@@ -2033,7 +2033,7 @@ function buildSessionQAQueryProgramSlots(questionProfile, metricMatch) {
       .sort(function (left, right) { return left - right; })
     : [];
 
-  return {
+  var result = {
     metricKey: metricMatch ? metricMatch.key : null,
     turnHints: turnHints,
     toolNames: normalizeProgramSlotValues(safeProfile.matchedToolNames),
@@ -2053,6 +2053,33 @@ function buildSessionQAQueryProgramSlots(questionProfile, metricMatch) {
       return typeof m === "string" ? m : (m && m.term ? m.term : "");
     }).filter(Boolean) : [],
   };
+  // Extract subject terms adjacent to "query/queries/command/commands" for filtered lookups.
+  // E.g., "any kusto queries" -> "kusto", "first docker command" -> "docker"
+  if (result.matchers.length === 0 && (result.wantsCommands || result.wantsQueries)) {
+    var nq = safeProfile.normalizedQuestion || "";
+    var subjectMatch = nq.match(/\b(\w+)\s+(quer(?:y|ies)|commands?)\b/i);
+    if (subjectMatch) {
+      var subject = subjectMatch[1].toLowerCase();
+      var skipWords = { any: 1, the: 1, a: 1, an: 1, all: 1, some: 1, many: 1, how: 1, what: 1, which: 1, were: 1, was: 1, are: 1, is: 1, did: 1, do: 1, first: 1, last: 1, this: 1, that: 1, those: 1, these: 1, no: 1, run: 1, more: 1, most: 1, few: 1, several: 1, distinct: 1 };
+      if (!skipWords[subject] && subject.length > 2) {
+        result.matchers.push(subject);
+      }
+    }
+    if (result.matchers.length === 0) {
+      // Also try "X commands/queries were/are" pattern
+      var subjectMatch2 = nq.match(/\b(quer(?:y|ies)|commands?)\s+(?:were|was|are|is|run|ran|executed|used|issued)\b/i);
+      if (subjectMatch2) {
+        // Look for a qualifying noun before the keyword
+        var beforeKeyword = nq.slice(0, subjectMatch2.index).trim().split(/\s+/);
+        var lastWord = beforeKeyword[beforeKeyword.length - 1] || "";
+        var skipWords2 = { any: 1, the: 1, a: 1, an: 1, all: 1, some: 1, many: 1, how: 1, what: 1, which: 1, no: 1, more: 1, of: 1 };
+        if (lastWord.length > 2 && !skipWords2[lastWord.toLowerCase()]) {
+          result.matchers.push(lastWord.toLowerCase());
+        }
+      }
+    }
+  }
+  return result;
 }
 
 var FAX_METADATA_PATTERNS = [
