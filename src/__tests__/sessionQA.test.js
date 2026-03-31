@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import {
   buildQAContext,
   buildQAPrompt,
@@ -1207,5 +1207,55 @@ describe("parseTurnReferences", function () {
     await load();
     var indices = expandTurnIndices("Turn 0, Turn 0, Turn 1");
     expect(indices).toEqual([0, 1]);
+  });
+});
+
+describe("compileSessionQAQueryProgram metric matching", function () {
+  var artifacts;
+
+  function getMetricMatch(question) {
+    var program = compileSessionQAQueryProgram(question, artifacts);
+    return program.metricMatch;
+  }
+
+  beforeAll(function () {
+    artifacts = buildSessionQAArtifacts(SAMPLE_EVENTS, SAMPLE_TURNS, SAMPLE_METADATA);
+  });
+
+  it("matches 'most used tool' as top-tool", function () {
+    var match = getMetricMatch("What was the most used tool?");
+    expect(match).toBeTruthy();
+    expect(match.key).toBe("top-tool");
+  });
+
+  it("matches 'tools used most frequently' as tool-frequency-ranking", function () {
+    var match = getMetricMatch("What tools were used most frequently?");
+    expect(match).toBeTruthy();
+    expect(match.key).toBe("tool-frequency-ranking");
+    expect(match.answer).toContain("edit");
+  });
+
+  it("matches 'tool frequency breakdown' as tool-frequency-ranking", function () {
+    var match = getMetricMatch("Show me the tool frequency breakdown");
+    expect(match).toBeTruthy();
+    expect(match.key).toBe("tool-frequency-ranking");
+  });
+
+  it("matches 'most common tools' as tool-frequency-ranking", function () {
+    var match = getMetricMatch("What are the most common tools?");
+    expect(match).toBeTruthy();
+    expect(match.key).toBe("tool-frequency-ranking");
+  });
+
+  it("matches 'tool ranking' as tool-frequency-ranking", function () {
+    var match = getMetricMatch("Show the tool ranking");
+    expect(match).toBeTruthy();
+    expect(match.key).toBe("tool-frequency-ranking");
+  });
+
+  it("matches 'top tools' as top-tool", function () {
+    var match = getMetricMatch("What are the top tools?");
+    expect(match).toBeTruthy();
+    expect(match.key).toBe("top-tool");
   });
 });

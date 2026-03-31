@@ -1897,8 +1897,22 @@ function buildMetricQuestionMatch(questionProfile, metricCatalog) {
     };
   }
 
+  // Tool frequency ranking (plural "tools" questions)
+  var topTools = Array.isArray(metricCatalog.topTools) ? metricCatalog.topTools : [];
+  if (topTools.length > 0 && hasAnyTerm(normalizedQuestion, ["tool", "tools"]) &&
+      hasAnyTerm(normalizedQuestion, ["frequently", "frequency", "ranking", "breakdown", "distribution", "popular", "common"])) {
+    var toolLines = topTools.map(function (t) { return t.name + " (" + formatMetricCount(t.count, "call") + ")"; });
+    return {
+      key: "tool-frequency-ranking",
+      answer: "Tools by frequency:\n" + toolLines.map(function (l, i) { return (i + 1) + ". " + l; }).join("\n"),
+      references: [],
+      detail: "Matched tool frequency ranking from the precomputed metrics catalog.",
+    };
+  }
+
   if ((normalizedQuestion.indexOf("most used tool") !== -1 || normalizedQuestion.indexOf("top tool") !== -1 ||
-      normalizedQuestion.indexOf("used most") !== -1 || normalizedQuestion.indexOf("most frequent tool") !== -1) && topTool) {
+      normalizedQuestion.indexOf("used most") !== -1 || normalizedQuestion.indexOf("most frequent tool") !== -1 ||
+      (hasAnyTerm(normalizedQuestion, ["tool", "tools"]) && hasAnyTerm(normalizedQuestion, ["most", "top"]))) && topTool) {
     return {
       key: "top-tool",
       answer: "The most-used tool was " + topTool.name + " with " + formatMetricCount(topTool.count, "call") + ".",
@@ -1906,6 +1920,7 @@ function buildMetricQuestionMatch(questionProfile, metricCatalog) {
       detail: "Matched top tool usage from the precomputed metrics catalog.",
     };
   }
+
 
   if (normalizedQuestion.indexOf("autonomy efficiency") !== -1 && autonomy.autonomyEfficiency != null) {
     return {
