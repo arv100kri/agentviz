@@ -308,6 +308,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
   var [loadingNowMs, setLoadingNowMs] = useState(function () { return Date.now(); });
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
+  var lastQuestionRef = useRef("");
 
   // Interleave server messages and instant messages by insertion order.
   // Server messages keep their original order. Instant messages are inserted
@@ -368,6 +369,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
     if (e) e.preventDefault();
     if (!input.trim()) return;
     var q = input.trim();
+    lastQuestionRef.current = q;
     setInput("");
     if (tryInstantAnswer(q)) return;
     qa.askQuestion(q, events, turns, metadata, qa.selectedModel, sessionFilePath, rawText);
@@ -765,6 +767,12 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
           placeholder="Ask a question about this session..."
           value={input}
           onChange={function (e) { setInput(e.target.value); }}
+          onKeyDown={function (e) {
+            if (e.key === "ArrowUp" && !input && lastQuestionRef.current) {
+              e.preventDefault();
+              setInput(lastQuestionRef.current);
+            }
+          }}
         />
         {qa.loading && (
           <button
