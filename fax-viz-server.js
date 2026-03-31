@@ -177,6 +177,10 @@ export function createFaxVizServer({ faxDir, distDir }) {
 
     // Session Q&A cache: shared handler
     if (pathname === "/api/session-qa-cache") {
+      // Clear model answer cache on DELETE so cached model answers don't persist
+      if (req.method === "DELETE" && modelAnswerCache && modelAnswerCache.clear) {
+        modelAnswerCache.clear();
+      }
       handleQACacheEndpoint(req, res, parsed, { sessionQACache: sessionQACache });
       return;
     }

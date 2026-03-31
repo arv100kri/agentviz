@@ -237,18 +237,18 @@ export function createModelAnswerCache(maxEntries) {
   var cache = {};
   var order = [];
 
-  function hashKey(fingerprint, family, contextSubstr, model) {
-    var input = (fingerprint || "") + "|" + (family || "") + "|" + (model || "") + "|" + (contextSubstr || "");
-    var hash = 0;
-    for (var i = 0; i < input.length; i++) {
-      hash = ((hash << 5) - hash + input.charCodeAt(i)) | 0;
-    }
-    return String(Math.abs(hash));
+  function makeKey(fingerprint, family, contextSubstr, model) {
+    // Use a truncated but unique key to avoid hash collisions
+    var fp = (fingerprint || "").slice(0, 40);
+    var fam = (family || "").slice(0, 30);
+    var ctx = (contextSubstr || "").slice(0, 200);
+    var mod = (model || "").slice(0, 20);
+    return fp + "|" + fam + "|" + mod + "|" + ctx;
   }
 
   return {
     get: function (fingerprint, family, context, model) {
-      var key = hashKey(fingerprint, family, context, model);
+      var key = makeKey(fingerprint, family, context, model);
       var entry = cache[key];
       if (!entry) return null;
       var idx = order.indexOf(key);
@@ -256,7 +256,7 @@ export function createModelAnswerCache(maxEntries) {
       return entry;
     },
     set: function (fingerprint, family, context, answer, references, model) {
-      var key = hashKey(fingerprint, family, context, model);
+      var key = makeKey(fingerprint, family, context, model);
       cache[key] = { answer: answer, references: references, model: model, cachedAt: Date.now() };
       var idx = order.indexOf(key);
       if (idx !== -1) order.splice(idx, 1);
