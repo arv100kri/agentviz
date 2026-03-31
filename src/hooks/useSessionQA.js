@@ -463,6 +463,13 @@ export default function useSessionQA() {
     }).catch(function () {});
   }
 
+  function deleteServerCache(key) {
+    if (!key) return;
+    fetch(CACHE_ENDPOINT + "?sessionKey=" + encodeURIComponent(key), {
+      method: "DELETE",
+    }).catch(function () {});
+  }
+
   function markSessionCacheReady(key, fingerprint) {
     if (!key || !fingerprint) return;
     cacheStateRef.current[key] = {
@@ -1040,6 +1047,7 @@ export default function useSessionQA() {
     sessionsRef.current[sessionKey] = Object.assign(freshState(), { hydrated: true });
     persist();
     deleteServerHistory(sessionKey);
+    deleteServerCache(sessionKey);
     tick();
   }, [sessionKey]);
 
