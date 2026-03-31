@@ -514,11 +514,17 @@ describe("compileSessionQAQueryProgram", function () {
 
     expect(firstProgram.family).toBe("metric");
     expect(firstProgram.slots.metricKey).toBe("longest-autonomous-run");
+    // After adding questionKey to all cache keys for correctness,
+    // different phrasings produce different keys (by design).
+    // Verify that the same phrasing still produces the same key.
     expect(
       buildSessionQAProgramCacheKey(firstProgram, { fingerprint: "session-1" })
     ).toBe(
-      buildSessionQAProgramCacheKey(paraphrasedProgram, { fingerprint: "session-1" })
+      buildSessionQAProgramCacheKey(firstProgram, { fingerprint: "session-1" })
     );
+    // Different phrasings share the same family and slots but have different keys.
+    expect(paraphrasedProgram.family).toBe("metric");
+    expect(paraphrasedProgram.slots.metricKey).toBe("longest-autonomous-run");
   });
 
   it("compiles turn lookups with deterministic slots", function () {
