@@ -72,6 +72,36 @@ function parseManifest(bundlePath) {
   }
 }
 
+// Resolve server version once at startup
+var serverVersion = (function () {
+  var ver = { version: "0.0.0", commit: "unknown", branch: "unknown", startedAt: new Date().toISOString() };
+  // Read package.json version
+  try {
+    var pkgPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "package.json");
+    var pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+    ver.version = pkg.version || ver.version;
+  } catch (_) {}
+  // Try git (works when running from repo checkout)
+  try {
+    ver.commit = execSync("git rev-parse --short HEAD", { stdio: ["pipe", "pipe", "pipe"] }).toString().trim();
+    ver.branch = execSync("git rev-parse --abbrev-ref HEAD", { stdio: ["pipe", "pipe", "pipe"] }).toString().trim();
+  } catch (_) {
+    // npx install: try reading commit from the resolved URL in package-lock or _resolved
+    try {
+      var modDir = path.dirname(url.fileURLToPath(import.meta.url));
+      var lockPath = path.resolve(modDir, "../../package-lock.json");
+      if (fs.existsSync(lockPath)) {
+        var lock = JSON.parse(fs.readFileSync(lockPath, "utf8"));
+        var resolved = lock.packages && lock.packages["node_modules/agentviz"] && lock.packages["node_modules/agentviz"].resolved;
+        if (resolved && /#([0-9a-f]+)$/.test(resolved)) {
+          ver.commit = RegExp.$1.slice(0, 8);
+        }
+      }
+    } catch (_) {}
+  }
+  return ver;
+})();
+
 function discoverFaxBundles(faxDir) {
   var results = [];
   var entries;
@@ -188,6 +218,14 @@ export function createFaxVizServer({ faxDir, distDir }) {
     // Session Q&A history: shared handler
     if (pathname === "/api/session-qa-history") {
       handleQAHistoryEndpoint(req, res, parsed);
+      return;
+    }
+
+    // GET /api/version
+    if (pathname === "/api/version") {
+      res.setHeader("Content-Type", "application/json");
+      res.writeHead(200);
+      res.end(JSON.stringify(serverVersion));
       return;
     }
 
