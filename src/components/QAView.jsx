@@ -308,7 +308,14 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
   var [loadingNowMs, setLoadingNowMs] = useState(function () { return Date.now(); });
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
-  var lastQuestionRef = useRef("");
+  var lastQuestionRef = useRef(function () {
+    try { return localStorage.getItem("agentviz:qa-last-question") || ""; } catch (_) { return ""; }
+  }());
+
+  function trackLastQuestion(q) {
+    lastQuestionRef.current = q;
+    try { localStorage.setItem("agentviz:qa-last-question", q); } catch (_) {}
+  }
 
   // Interleave server messages and instant messages by insertion order.
   // Server messages keep their original order. Instant messages are inserted
@@ -369,13 +376,14 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
     if (e) e.preventDefault();
     if (!input.trim()) return;
     var q = input.trim();
-    lastQuestionRef.current = q;
+    trackLastQuestion(q);
     setInput("");
     if (tryInstantAnswer(q)) return;
     qa.askQuestion(q, events, turns, metadata, qa.selectedModel, sessionFilePath, rawText);
   }
 
   function handleSuggestion(q) {
+    trackLastQuestion(q);
     if (tryInstantAnswer(q)) return;
     qa.askQuestion(q, events, turns, metadata, qa.selectedModel, sessionFilePath, rawText);
   }
