@@ -16,6 +16,7 @@ import useSessionQA from "../../hooks/useSessionQA.js";
 import { IMPORTANCE_COLORS } from "../lib/faxConstants.js";
 import Icon from "../../components/Icon.jsx";
 import PickUpModal from "./PickUpModal.jsx";
+import FaxQADrawer from "./FaxQADrawer.jsx";
 
 var PLAYBACK_SPEEDS = [0.5, 1, 2, 4, 8];
 
@@ -23,7 +24,6 @@ var FAX_VIEWS = [
   { id: "replay", label: "Replay", icon: "play" },
   { id: "tracks", label: "Tracks", icon: "tracks" },
   { id: "stats", label: "Stats", icon: "stats" },
-  { id: "qa", label: "Q&A", icon: "message-square-text" },
 ];
 
 // Views that require events.jsonl
@@ -510,6 +510,10 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
   var showPickup = _showPickup[0];
   var setShowPickup = _showPickup[1];
 
+  var _showQA = useState(false);
+  var showQA = _showQA[0];
+  var setShowQA = _showQA[1];
+
   var _trackFilters = usePersistentState("fax-viz:track-filters", {});
   var trackFilters = _trackFilters[0];
   var setTrackFilters = _trackFilters[1];
@@ -655,26 +659,34 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
     return focusSearchInput(searchInputRef);
   }, []);
 
+  // Ctrl+Shift+K to toggle Q&A drawer
+  useEffect(function () {
+    function handleQAShortcut(e) {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowQA(function (prev) { return !prev; });
+      }
+    }
+    window.addEventListener("keydown", handleQAShortcut);
+    return function () { window.removeEventListener("keydown", handleQAShortcut); };
+  }, []);
+
   // Keyboard shortcuts (full AGENTVIZ set)
   useKeyboardShortcuts({
     hasSession: Boolean(session),
     showHero: false,
-    showPalette: false,
+    showPalette: showQA,
     time: playback.time,
     onTogglePalette: function () {},
     onDismissHero: function () {},
     onPlayPause: playback.playPause,
     onSeek: playback.seek,
     onSetView: function (viewId) {
-      // Map AGENTVIZ number-key view names to fax-viz equivalents
-      // 1=replay, 2=tracks, 3=waterfall->stats, 4=graph->qa
       var viewMap = {
         replay: "replay",
         tracks: "tracks",
         waterfall: "stats",
-        graph: "qa",
         stats: "stats",
-        qa: "qa",
       };
       var target = viewMap[viewId];
       if (target) {
@@ -736,27 +748,6 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
       });
     }
 
-    if (activeView === "qa") {
-      // Pass empty events to QAView to avoid freezing the browser when
-      // serializing 10k+ events for cache registration. The fax-viz server
-      // injects fax bundle markdown context server-side via sessionKey.
-      return React.createElement(QAView, {
-        qa: qa,
-        events: [],
-        turns: session ? session.turns : [],
-        metadata: metadata,
-        sessionFilePath: null,
-        rawText: "",
-        onSeekTurn: function (turnTime) {
-          if (session) {
-            playback.seek(turnTime);
-            setActiveView("replay");
-          }
-        },
-        onSetView: setActiveView,
-      });
-    }
-
     // Fallback: no events, show markdown content
     if (!faxEntry.hasEvents) {
       return React.createElement("div", {
@@ -766,7 +757,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
         },
       },
         React.createElement("div", { style: { fontSize: 14 } }, "This fax bundle has no session events."),
-        React.createElement("div", { style: { fontSize: 12 } }, "Use the Q&A tab to ask questions about the fax context.")
+        React.createElement("div", { style: { fontSize: 12 } }, "Press Ctrl+Shift+K to open Q&A and ask questions about the fax context.")
       );
     }
 
@@ -819,6 +810,15 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
       faxLabel: faxEntry.label,
       senderAlias: faxEntry.sender && faxEntry.sender.alias ? faxEntry.sender.alias : "Unknown",
       sourceRoot: faxEntry.sourceRoot || null,
+    }),
+    React.createElement(FaxQADrawer, {
+      open: showQA,
+      onClose: function () { setShowQA(false); },
+      qa: qa,
+      turns: session ? session.turns : [],
+      metadata: metadata,
+      playback: playback,
+      setActiveView: setActiveView,
     })
   );
 }
