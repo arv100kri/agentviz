@@ -320,6 +320,7 @@ export function buildSessionQAPrecomputeFingerprint(entry, fsModule) {
   }
 
   return [
+    entry && entry.sessionKey ? String(entry.sessionKey).toLowerCase() : "",
     entry && entry.sessionFilePath ? String(entry.sessionFilePath).toLowerCase() : "",
     rawText ? [rawText.length, hashText(rawText)].join(":") : "",
     events.length,
