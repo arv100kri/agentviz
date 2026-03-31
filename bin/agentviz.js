@@ -10,7 +10,7 @@
  */
 
 import { createServer } from "../server.js";
-import { DEFAULT_API_PORT } from "../config.js";
+import { DEFAULT_API_PORT, PORT_FILE } from "../config.js";
 import { formatCliHelp, parseCliArgs, resolveCliExecution } from "../src/lib/cliArgs.js";
 import { runSessionDigestAgent } from "../src/lib/sessionDigestAgent.js";
 import fs from "fs";
@@ -147,16 +147,30 @@ function startInteractiveServer(sessionFile, noOpen) {
         }
         process.stdout.write("  Logs: " + LOG_FILE + "\n");
         process.stdout.write("  Press Ctrl+C to stop.\n\n");
+
+        // Write port to file so fax-viz can coordinate
+        try {
+          fs.mkdirSync(path.dirname(PORT_FILE), { recursive: true });
+          fs.writeFileSync(PORT_FILE, String(port), "utf8");
+        } catch (e) {}
+
         if (!noOpen) {
           openBrowser(url);
         }
 
+        function cleanupPortFile() {
+          try { fs.unlinkSync(PORT_FILE); } catch (e) {}
+        }
+
         process.on("SIGINT", function () {
+          cleanupPortFile();
           server.close(function () { process.exit(0); });
         });
         process.on("SIGTERM", function () {
+          cleanupPortFile();
           server.close(function () { process.exit(0); });
         });
+        process.on("exit", cleanupPortFile);
 
         resolve();
       });

@@ -7,7 +7,7 @@
  */
 
 import { createFaxVizServer } from "../fax-viz-server.js";
-import { FAX_VIZ_PORT } from "../src/fax-viz/lib/faxConstants.js";
+import { DEFAULT_API_PORT, PORT_FILE } from "../config.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -101,7 +101,19 @@ if (!fs.existsSync(resolvedFaxDir)) {
 // Check for dist bundle
 var hasDistBundle = fs.existsSync(path.join(distDir, "fax-viz-index.html"));
 
-findFreePort(FAX_VIZ_PORT, function (err, port) {
+// Determine preferred port: one after the running AgentViz port
+function getPreferredPort() {
+  try {
+    var portStr = fs.readFileSync(PORT_FILE, "utf8").trim();
+    var agentVizPort = parseInt(portStr, 10);
+    if (agentVizPort > 0) {
+      return agentVizPort + 1;
+    }
+  } catch (e) {}
+  return DEFAULT_API_PORT + 1;
+}
+
+findFreePort(getPreferredPort(), function (err, port) {
   if (err) {
     exitWithError("Could not find a free port: " + err.message);
     return;

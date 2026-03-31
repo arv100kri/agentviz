@@ -84,7 +84,6 @@ function discoverFaxBundles(faxDir) {
   for (var i = 0; i < entries.length; i++) {
     if (!entries[i].isDirectory()) continue;
     var folderName = entries[i].name;
-    if (!folderName.startsWith("fax-context-")) continue;
 
     var bundlePath = path.join(faxDir, folderName);
     var manifest = parseManifest(bundlePath);

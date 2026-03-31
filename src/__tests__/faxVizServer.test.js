@@ -67,7 +67,21 @@ beforeAll(function () {
   }));
   fs.writeFileSync(path.join(noEventsDir, "handoff.md"), "# Handoff\n\nNo events bundle.");
 
-  // Non-fax directory (should be ignored)
+  // Bundle without fax-context- prefix (should still be discovered)
+  var customNameDir = path.join(tmpDir, "my-custom-bundle");
+  fs.mkdirSync(customNameDir, { recursive: true });
+  fs.writeFileSync(path.join(customNameDir, "manifest.json"), JSON.stringify({
+    schemaVersion: "fax-context-bundle/v1",
+    createdUtc: "2026-03-24T10:00:00Z",
+    bundleLabel: "Custom Bundle",
+    threadId: "thread-003",
+    importance: "urgent",
+    sender: { alias: "Custom User", email: "custom@example.com", program: "copilot-cli", sessionId: "session-003" },
+    artifacts: ["manifest.json"],
+    sharedArtifacts: [],
+  }));
+
+  // Directory without manifest.json (should be ignored)
   fs.mkdirSync(path.join(tmpDir, "random-folder"), { recursive: true });
 });
 
@@ -82,10 +96,11 @@ describe("fax-viz-server", function () {
       var response = await makeRequest(server, "GET", "/api/faxes");
       expect(response.status).toBe(200);
       var body = JSON.parse(response.body);
-      expect(body.faxes).toHaveLength(2);
+      expect(body.faxes).toHaveLength(3);
       // Sorted by date desc (newest first)
       expect(body.faxes[0].id).toBe("fax-context-test-bundle-20260326-180423");
       expect(body.faxes[1].id).toBe("fax-context-no-events-20260325-120000");
+      expect(body.faxes[2].id).toBe("my-custom-bundle");
     });
 
     it("parses manifest fields correctly", async function () {
@@ -110,11 +125,21 @@ describe("fax-viz-server", function () {
       expect(fax.importance).toBe("normal");
     });
 
-    it("ignores non-fax directories", async function () {
+    it("ignores directories without manifest.json", async function () {
       var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
       var response = await makeRequest(server, "GET", "/api/faxes");
       var ids = JSON.parse(response.body).faxes.map(function (f) { return f.id; });
       expect(ids).not.toContain("random-folder");
+    });
+
+    it("discovers bundles without fax-context- prefix", async function () {
+      var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
+      var response = await makeRequest(server, "GET", "/api/faxes");
+      var faxes = JSON.parse(response.body).faxes;
+      var custom = faxes.find(function (f) { return f.id === "my-custom-bundle"; });
+      expect(custom).toBeDefined();
+      expect(custom.label).toBe("Custom Bundle");
+      expect(custom.importance).toBe("urgent");
     });
   });
 
