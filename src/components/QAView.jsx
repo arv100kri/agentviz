@@ -704,10 +704,16 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
           }
           if (!msg.content) return null;
           var timingLabel = formatAnswerTiming(msg.timing);
+          var isInstant = msg.timing && msg.timing.totalMs === 0 && msg._insertAt != null;
+          var isCached = msg.cached;
           return (
             <div key={i} style={assistantMsgStyle}>
               {renderMarkdownContent(msg.content, handleTurnClick)}
-              {timingLabel && <div style={assistantMetaStyle}>{timingLabel}</div>}
+              <div style={assistantMetaStyle}>
+                {isInstant && "\u26A1 instant"}
+                {isCached && "\u21BB cached"}
+                {!isInstant && !isCached && timingLabel}
+              </div>
             </div>
           );
         })}
