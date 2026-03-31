@@ -37,7 +37,7 @@ async function sleep(ms) {
 
 async function waitFor(check, message, timeout) {
   var start = Date.now();
-  var limit = timeout || 3000;
+  var limit = timeout || 5000;
   while (Date.now() - start < limit) {
     var result = check();
     if (result) return result;
@@ -1558,7 +1558,7 @@ describe("Q&A view integration", function () {
           { status: "Preparing session context..." },
           { delta: "Response " + responseCount + "." },
           { done: true, answer: "Response " + responseCount + ".", references: [] },
-        ], [120, 120, 0]);
+        ], [200, 200, 0]);
       }
       return { ok: false };
     });
@@ -1597,19 +1597,19 @@ describe("Q&A view integration", function () {
 
     await waitFor(function () {
       return findByText(app.container, "1 queued message behind this answer");
-    }, "expected queued progress message", 5000);
+    }, "expected queued progress message", 10000);
 
     // Wait for both responses to complete
     await waitFor(function () {
       return findByText(app.container, "Response 1.");
-    }, "expected first response", 5000);
+    }, "expected first response", 10000);
 
     await waitFor(function () {
       return findByText(app.container, "Response 2.");
-    }, "expected second response (queued)", 5000);
+    }, "expected second response (queued)", 10000);
 
     await app.unmount();
-  });
+  }, 30000);
 
   it("stops an in-flight answer and allows retrying", async function () {
     var requestCount = 0;

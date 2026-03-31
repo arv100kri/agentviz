@@ -717,6 +717,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
               <div style={{ fontSize: theme.fontSize.sm, color: theme.text.secondary }}>{loadingLabel}</div>
               {loadingDetail && <div style={{ fontSize: theme.fontSize.xs, color: theme.text.ghost, marginTop: 2 }}>{loadingDetail}</div>}
               {loadingElapsedLabel && <div style={{ fontSize: theme.fontSize.xs, color: theme.text.ghost, marginTop: 2 }}>{loadingElapsedLabel}</div>}
+              {qa.queuedCount > 0 && <div style={{ fontSize: theme.fontSize.xs, color: theme.text.ghost, marginTop: 2 }}>{qa.queuedCount} queued {qa.queuedCount === 1 ? "message" : "messages"} behind this answer</div>}
             </div>
           </div>
         )}
