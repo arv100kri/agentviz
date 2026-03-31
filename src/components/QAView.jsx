@@ -99,6 +99,156 @@ function parseTurnReferences(text) {
 
 export { parseTurnReferences, expandTurnIndices };
 
+// ── Markdown rendering ──────────────────────────────────────────────────────
+
+var BOLD_RE = /\*\*(.+?)\*\*/g;
+var CODE_RE = /`([^`]+)`/g;
+
+function splitFormattedText(str, parts, handleTurnClick) {
+  // Parse turn refs first
+  var turnParts = parseTurnReferences(str);
+
+  for (var ti = 0; ti < turnParts.length; ti++) {
+    var tp = turnParts[ti];
+    if (tp.type === "ref") {
+      parts.push({ type: "ref", turnIndex: tp.turnIndex, value: tp.value });
+      continue;
+    }
+    // Split text on **bold** and `code`
+    var RE = /\*\*(.+?)\*\*|`([^`]+)`/g;
+    var last = 0;
+    var match;
+    var text = tp.value;
+    while ((match = RE.exec(text)) !== null) {
+      if (match.index > last) parts.push({ type: "text", value: text.slice(last, match.index) });
+      if (match[1] != null) parts.push({ type: "bold", value: match[1] });
+      else parts.push({ type: "code", value: match[2] });
+      last = RE.lastIndex;
+    }
+    if (last < text.length) parts.push({ type: "text", value: text.slice(last) });
+  }
+}
+
+function renderInlineParts(parts, handleTurnClick) {
+  return parts.map(function (part, i) {
+    if (part.type === "ref") {
+      return (
+        <button type="button" key={i} style={turnRefInlineStyle}
+          onClick={function () { if (handleTurnClick) handleTurnClick(part.turnIndex); }}
+          title={"Jump to Turn " + part.turnIndex}>
+          {part.value}
+        </button>
+      );
+    }
+    if (part.type === "bold") return <strong key={i} style={{ fontWeight: 600 }}>{part.value}</strong>;
+    if (part.type === "code") return <code key={i} style={codeInlineStyle}>{part.value}</code>;
+    return <span key={i}>{part.value}</span>;
+  });
+}
+
+var turnRefInlineStyle = {
+  display: "inline",
+  background: alpha(theme.accent.primary, 0.12),
+  color: theme.accent.primary,
+  border: "none",
+  borderRadius: theme.radius.full + "px",
+  fontFamily: theme.font.mono,
+  fontSize: theme.fontSize.sm,
+  padding: "1px 6px",
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
+var codeInlineStyle = {
+  background: alpha(theme.text.primary, 0.08),
+  borderRadius: 3,
+  padding: "1px 4px",
+  fontSize: theme.fontSize.sm,
+};
+
+function renderMarkdownContent(text, handleTurnClick) {
+  if (!text) return null;
+  var lines = text.split("\n");
+  var elements = [];
+  var listItems = [];
+  var tableRows = [];
+
+  function flushList() {
+    if (listItems.length === 0) return;
+    elements.push(
+      <ul key={"ul-" + elements.length} style={{ margin: "4px 0", paddingLeft: 18 }}>
+        {listItems.map(function (item, j) {
+          var parts = [];
+          splitFormattedText(item, parts);
+          return <li key={j} style={{ marginBottom: 2 }}>{renderInlineParts(parts, handleTurnClick)}</li>;
+        })}
+      </ul>
+    );
+    listItems = [];
+  }
+
+  function flushTable() {
+    if (tableRows.length === 0) return;
+    var header = null;
+    var dataRows = [];
+    for (var r = 0; r < tableRows.length; r++) {
+      var row = tableRows[r].trim();
+      if (/^\|[\s\-:|]+\|$/.test(row)) continue;
+      if (!header) header = row;
+      else dataRows.push(row);
+    }
+    if (!header) { tableRows = []; return; }
+    function parseCells(row) {
+      return row.split("|").filter(function (c, ci, arr) { return ci > 0 && ci < arr.length - 1; }).map(function (c) { return c.trim(); });
+    }
+    var headerCells = parseCells(header);
+    elements.push(
+      <div key={"tbl-" + elements.length} style={{ overflowX: "auto", margin: "6px 0" }}>
+        <table style={{ borderCollapse: "collapse", fontSize: theme.fontSize.sm, width: "100%" }}>
+          <thead><tr>
+            {headerCells.map(function (cell, k) {
+              var p = []; splitFormattedText(cell, p);
+              return <th key={k} style={{ border: "1px solid " + alpha(theme.text.muted, 0.2), padding: "4px 8px", textAlign: "left", fontWeight: 600, background: alpha(theme.text.muted, 0.08) }}>{renderInlineParts(p, handleTurnClick)}</th>;
+            })}
+          </tr></thead>
+          <tbody>
+            {dataRows.map(function (row, j) {
+              var cells = parseCells(row);
+              return <tr key={j}>{cells.map(function (cell, k) {
+                var p = []; splitFormattedText(cell, p);
+                return <td key={k} style={{ border: "1px solid " + alpha(theme.text.muted, 0.15), padding: "4px 8px", textAlign: "left" }}>{renderInlineParts(p, handleTurnClick)}</td>;
+              })}</tr>;
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+    tableRows = [];
+  }
+
+  for (var i = 0; i < lines.length; i++) {
+    var trimmed = lines[i].trim();
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) { flushList(); tableRows.push(trimmed); continue; } else { flushTable(); }
+    var listMatch = trimmed.match(/^[-*]\s+(.*)/);
+    if (listMatch) { flushTable(); listItems.push(listMatch[1]); continue; } else { flushList(); }
+    var numMatch = trimmed.match(/^\d+\.\s+(.*)/);
+    if (numMatch) { listItems.push(numMatch[1]); continue; } else if (listItems.length > 0) { flushList(); }
+    if (!trimmed) { elements.push(<div key={"br-" + i} style={{ height: 6 }} />); continue; }
+    // Headers
+    var h3 = trimmed.match(/^###\s+(.*)/);
+    if (h3) { flushList(); flushTable(); var p3 = []; splitFormattedText(h3[1], p3); elements.push(<div key={"h3-" + i} style={{ fontWeight: 600, fontSize: theme.fontSize.sm, marginTop: 8, marginBottom: 2 }}>{renderInlineParts(p3, handleTurnClick)}</div>); continue; }
+    var h2 = trimmed.match(/^##\s+(.*)/);
+    if (h2) { flushList(); flushTable(); var p2 = []; splitFormattedText(h2[1], p2); elements.push(<div key={"h2-" + i} style={{ fontWeight: 700, fontSize: theme.fontSize.base, marginTop: 10, marginBottom: 2 }}>{renderInlineParts(p2, handleTurnClick)}</div>); continue; }
+    var h1 = trimmed.match(/^#\s+(.*)/);
+    if (h1) { flushList(); flushTable(); var p1 = []; splitFormattedText(h1[1], p1); elements.push(<div key={"h1-" + i} style={{ fontWeight: 700, fontSize: theme.fontSize.md, marginTop: 12, marginBottom: 4 }}>{renderInlineParts(p1, handleTurnClick)}</div>); continue; }
+    // Regular line
+    var parts = []; splitFormattedText(trimmed, parts);
+    elements.push(<div key={"p-" + i}>{renderInlineParts(parts, handleTurnClick)}</div>);
+  }
+  flushList(); flushTable();
+  return <>{elements}</>;
+}
+
 function formatAnswerTiming(timing) {
   var totalMs = timing && timing.totalMs;
   var numericTotalMs = typeof totalMs === "number" ? totalMs : Number(totalMs);
@@ -513,47 +663,39 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
             );
           }
           if (!msg.content) return null;
-          var parts = parseTurnReferences(msg.content);
           var timingLabel = formatAnswerTiming(msg.timing);
           return (
             <div key={i} style={assistantMsgStyle}>
-              {parts.map(function (part, pi) {
-                if (part.type === "ref") {
-                  return (
-                    <button
-                      type="button"
-                      key={pi}
-                      style={turnRefStyle}
-                      onClick={function () { handleTurnClick(part.turnIndex); }}
-                      title={"Jump to Turn " + part.turnIndex}
-                    >
-                      {part.value}
-                    </button>
-                  );
-                }
-                return <span key={pi}>{part.value}</span>;
-              })}
+              {renderMarkdownContent(msg.content, handleTurnClick)}
               {timingLabel && <div style={assistantMetaStyle}>{timingLabel}</div>}
             </div>
           );
         })}
 
         {qa.loading && (
-          <div style={loadingBubbleStyle}>
-            <Icon name="hourglass" size={14} style={{ marginTop: 1, flexShrink: 0 }} />
+          <div style={{
+            background: "rgba(34, 197, 94, 0.08)",
+            border: "1px solid rgba(34, 197, 94, 0.2)",
+            borderRadius: theme.radius.lg + "px",
+            padding: "10px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}>
+            <span style={{ display: "inline-flex", gap: 3 }}>
+              {[0, 1, 2].map(function (dot) {
+                return <span key={dot} style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: "rgb(34, 197, 94)",
+                  opacity: 0.4,
+                  animation: "pulse 1.2s ease-in-out " + (dot * 0.2) + "s infinite",
+                }} />;
+              })}
+            </span>
             <div>
-              <div style={loadingTitleStyle}>{loadingLabel}</div>
-              {loadingDetail && <div style={loadingDetailStyle}>{loadingDetail}</div>}
-              {(loadingElapsedLabel || qa.queuedCount > 0) && (
-                <div style={loadingMetaStyle}>
-                  {loadingElapsedLabel && <span>{loadingElapsedLabel}</span>}
-                  {qa.queuedCount > 0 && (
-                    <span>
-                      {qa.queuedCount} queued {qa.queuedCount === 1 ? "message" : "messages"} behind this answer
-                    </span>
-                  )}
-                </div>
-              )}
+              <div style={{ fontSize: theme.fontSize.sm, color: theme.text.secondary }}>{loadingLabel}</div>
+              {loadingDetail && <div style={{ fontSize: theme.fontSize.xs, color: theme.text.ghost, marginTop: 2 }}>{loadingDetail}</div>}
+              {loadingElapsedLabel && <div style={{ fontSize: theme.fontSize.xs, color: theme.text.ghost, marginTop: 2 }}>{loadingElapsedLabel}</div>}
             </div>
           </div>
         )}
