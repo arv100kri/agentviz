@@ -144,7 +144,8 @@ function createFactStoreSchema(db) {
     "CREATE TABLE IF NOT EXISTS turns (turn_index INTEGER PRIMARY KEY, user_message TEXT, summary TEXT, event_count INTEGER, tool_count INTEGER, error_count INTEGER, has_error INTEGER, start_time REAL, end_time REAL, tool_names_json TEXT, focus_entities_json TEXT)",
     "CREATE TABLE IF NOT EXISTS tool_calls (call_id TEXT PRIMARY KEY, turn_index INTEGER, event_index INTEGER, turn_tool_index INTEGER, tool_name TEXT, tool_name_normalized TEXT, duration REAL, is_error INTEGER, payload_type TEXT, operation TEXT, buckets_json TEXT, input_preview TEXT, output_preview TEXT, user_message TEXT, path_preview TEXT, query_preview TEXT, command_preview TEXT, raw_line_start INTEGER, raw_line_end INTEGER, raw_char_start INTEGER, raw_char_end INTEGER)",
     "CREATE TABLE IF NOT EXISTS tool_call_entities (call_id TEXT NOT NULL, turn_index INTEGER, tool_name_normalized TEXT, entity_type TEXT NOT NULL, entity_value TEXT NOT NULL, PRIMARY KEY (call_id, entity_type, entity_value))",
-    "CREATE TABLE IF NOT EXISTS summary_chunks (chunk_index INTEGER PRIMARY KEY, start_turn INTEGER, end_turn INTEGER, turn_count INTEGER, error_count INTEGER, has_error INTEGER, tool_names_json TEXT, focus_entities_json TEXT, summary TEXT, raw_range_json TEXT)"
+    "CREATE TABLE IF NOT EXISTS summary_chunks (chunk_index INTEGER PRIMARY KEY, start_turn INTEGER, end_turn INTEGER, turn_count INTEGER, error_count INTEGER, has_error INTEGER, tool_names_json TEXT, focus_entities_json TEXT, summary TEXT, raw_range_json TEXT)",
+    "CREATE TABLE IF NOT EXISTS fax_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
   ].join(";"));
   db.exec([
     "CREATE INDEX IF NOT EXISTS tool_calls_tool_name_idx ON tool_calls(tool_name_normalized)",
@@ -161,7 +162,8 @@ function clearFactStoreTables(db) {
     "DELETE FROM turns",
     "DELETE FROM tool_calls",
     "DELETE FROM tool_call_entities",
-    "DELETE FROM summary_chunks"
+    "DELETE FROM summary_chunks",
+    "DELETE FROM fax_metadata"
   ].join(";"));
 }
 
@@ -191,6 +193,42 @@ function writeFactStoreMetrics(db, metricCatalog) {
       ? null
       : JSON.stringify(value);
     insertMetric.run(key, numericValue, textValue, jsonValue, null);
+  }
+}
+
+function writeFactStoreFaxMetadata(db, faxMetadata) {
+  if (!faxMetadata || typeof faxMetadata !== "object") return;
+  var insert = db.prepare("INSERT OR REPLACE INTO fax_metadata (key, value) VALUES (?, ?)");
+  var manifest = faxMetadata;
+
+  if (manifest.sender) {
+    var s = manifest.sender;
+    var senderStr = typeof s === "string" ? s : (s.alias || s.email || s.name || JSON.stringify(s));
+    insert.run("sender", senderStr);
+    if (s.email && typeof s.email === "string") insert.run("sender_email", s.email);
+    if (s.alias && typeof s.alias === "string") insert.run("sender_alias", s.alias);
+    if (s.program && typeof s.program === "string") insert.run("sender_tool", s.program);
+  }
+  if (manifest.importance) insert.run("importance", String(manifest.importance));
+  if (manifest.thread) insert.run("thread", String(manifest.thread));
+  if (manifest.summary) insert.run("summary", String(manifest.summary));
+  if (manifest.timestamp) insert.run("timestamp", String(manifest.timestamp));
+  if (manifest.repo) insert.run("repo", String(manifest.repo));
+  if (manifest.branch) insert.run("branch", String(manifest.branch));
+  if (manifest.bundleLabel) insert.run("bundle_label", String(manifest.bundleLabel));
+  if (manifest.program) insert.run("program", String(manifest.program));
+  if (manifest.progress) {
+    if (Array.isArray(manifest.progress.stepsCompleted) && manifest.progress.stepsCompleted.length > 0) {
+      insert.run("steps_completed", manifest.progress.stepsCompleted.join(", "));
+      insert.run("steps_completed_count", String(manifest.progress.stepsCompleted.length));
+    }
+    if (Array.isArray(manifest.progress.stepsRemaining) && manifest.progress.stepsRemaining.length > 0) {
+      insert.run("steps_remaining", manifest.progress.stepsRemaining.join(", "));
+      insert.run("steps_remaining_count", String(manifest.progress.stepsRemaining.length));
+    }
+  }
+  if (Array.isArray(manifest.doNotRetry) && manifest.doNotRetry.length > 0) {
+    insert.run("do_not_retry", manifest.doNotRetry.join(", "));
   }
 }
 
@@ -324,6 +362,7 @@ async function buildFactStoreAtPath(filePath, entry, precomputed, storage) {
       entry && entry.sessionFilePath ? String(entry.sessionFilePath) : ""
     );
     writeFactStoreMetrics(db, precomputed && precomputed.artifacts && precomputed.artifacts.metricCatalog);
+    writeFactStoreFaxMetadata(db, entry && entry.faxMetadata);
     writeFactStoreTurns(db, precomputed && precomputed.artifacts && precomputed.artifacts.turnSummaries);
     writeFactStoreToolCalls(db, precomputed && precomputed.artifacts && precomputed.artifacts.ledger);
     writeFactStoreSummaryChunks(db, precomputed && precomputed.artifacts && precomputed.artifacts.summaryChunks);
@@ -653,6 +692,43 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
   if (!db) return null;
 
   try {
+    // Fax metadata lookup — deterministic answers for sender, importance, repo, etc.
+    if (queryProgram.family === "fax-metadata") {
+      var faxRows = null;
+      try { faxRows = db.prepare("SELECT key, value FROM fax_metadata").all(); } catch (_) {}
+      if (faxRows && faxRows.length > 0) {
+        var faxMap = {};
+        for (var fi = 0; fi < faxRows.length; fi++) faxMap[faxRows[fi].key] = faxRows[fi].value;
+        var faxSlot = queryProgram.slots && queryProgram.slots.faxMetadataKey || "";
+        // Direct key lookup
+        if (faxSlot && faxMap[faxSlot]) {
+          return {
+            answer: "**" + faxSlot.replace(/_/g, " ") + "**: " + faxMap[faxSlot],
+            references: [],
+            detail: "Looked up fax metadata key: " + faxSlot,
+            model: "AGENTVIZ fax metadata",
+          };
+        }
+        // Build a full metadata summary
+        var faxLines = [];
+        var displayOrder = ["sender", "sender_email", "sender_tool", "importance", "repo", "branch", "bundle_label", "summary", "timestamp", "thread", "steps_completed", "steps_remaining", "do_not_retry"];
+        for (var di = 0; di < displayOrder.length; di++) {
+          if (faxMap[displayOrder[di]]) {
+            faxLines.push("- **" + displayOrder[di].replace(/_/g, " ") + "**: " + faxMap[displayOrder[di]]);
+          }
+        }
+        if (faxLines.length > 0) {
+          return {
+            answer: "Fax metadata:\n" + faxLines.join("\n"),
+            references: [],
+            detail: "Retrieved all fax metadata from the SQLite fact store.",
+            model: "AGENTVIZ fax metadata",
+          };
+        }
+      }
+      return null;
+    }
+
     // Implicit turn lookup for "last turn" / "first turn" questions
     if ((queryProgram.family === "session-summary" || queryProgram.family === "broad-synthesis") &&
         queryProgram.normalizedQuestion) {
@@ -772,6 +848,39 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
           "Queried the SQLite fact store for query usage."
         );
         return queryResult ? Object.assign(queryResult, { model: "AGENTVIZ SQLite fact store" }) : null;
+      }
+      // Check for entity-specific terms from question matchers (e.g., "kusto" from "were any kusto queries run?")
+      var matcherTerms = queryProgram.slots && queryProgram.slots.matchers;
+      if (matcherTerms && matcherTerms.length > 0) {
+        for (var mi = 0; mi < matcherTerms.length; mi++) {
+          var matcherTerm = typeof matcherTerms[mi] === "string" ? matcherTerms[mi] : (matcherTerms[mi].term || matcherTerms[mi].value || "");
+          if (!matcherTerm) continue;
+          // Try as query entity first, then command, then tool name
+          var mqResult = lookupEntityUsage(db, "queries", matcherTerm, "Queried for " + matcherTerm + " queries.");
+          if (mqResult) return Object.assign(mqResult, { model: "AGENTVIZ SQLite fact store" });
+          var mcResult = lookupEntityUsage(db, "commands", matcherTerm, "Queried for " + matcherTerm + " commands.");
+          if (mcResult) return Object.assign(mcResult, { model: "AGENTVIZ SQLite fact store" });
+          // Also check tool_calls by name match
+          var toolMatchRows = db.prepare(
+            "SELECT tool_name, COUNT(*) AS use_count FROM tool_calls WHERE tool_name_normalized LIKE ? GROUP BY tool_name ORDER BY use_count DESC LIMIT 10"
+          ).all("%" + matcherTerm.toLowerCase() + "%");
+          if (toolMatchRows && toolMatchRows.length > 0) {
+            var tmLines = toolMatchRows.map(function (r) { return "- " + r.tool_name + ": " + pluralize(r.use_count, "call"); });
+            return {
+              answer: "Found " + pluralize(toolMatchRows.length, "tool") + " matching \"" + matcherTerm + "\":\n" + tmLines.join("\n"),
+              references: [],
+              detail: "Searched tool calls for " + matcherTerm,
+              model: "AGENTVIZ SQLite fact store",
+            };
+          }
+          // No matches found for this specific term
+          return {
+            answer: "No " + matcherTerm + " queries or commands were found in this session.",
+            references: [],
+            detail: "Searched commands, queries, and tool names for " + matcherTerm + " with zero results.",
+            model: "AGENTVIZ SQLite fact store",
+          };
+        }
       }
       // Generic command/query listing when no specific terms are provided
       var allCommandRows = db.prepare(

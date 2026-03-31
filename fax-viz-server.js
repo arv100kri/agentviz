@@ -378,16 +378,20 @@ export function createFaxVizServer({ faxDir, distDir }) {
 
         // Build contextExtender that prepends fax metadata + markdown context
         var contextExtender = null;
+        var manifestData = null;
         if (faxId) {
           var bundlePath = path.join(faxDir, faxId);
           if (bundlePath.startsWith(faxDir)) {
             var mdFiles = readBundleMarkdownFiles(bundlePath);
-            // Read manifest for sender/importance/thread metadata
-            var manifestData = null;
             try {
               var manifestPath = path.join(bundlePath, "manifest.json");
               manifestData = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
             } catch (_) {}
+
+            // Inject manifest into resolvedSession so fact store can persist it
+            if (manifestData) {
+              resolvedSession.faxMetadata = manifestData;
+            }
 
             if (mdFiles.length > 0 || manifestData) {
               contextExtender = function (sessionContext) {
@@ -463,6 +467,7 @@ export function createFaxVizServer({ faxDir, distDir }) {
             homeDir: os.homedir(),
             modelAnswerCache: modelAnswerCache,
             requestKind: payload.requestKind || null,
+            speculativeOptimizations: payload.speculativeOptimizations !== false,
             qaRequestStartedAt: qaRequestStartedAt,
             onAbort: function (abortFn) {
               res.on("close", abortFn);

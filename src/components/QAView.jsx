@@ -823,6 +823,15 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
           borderTop: "1px solid " + theme.border.subtle,
         }}>
           <span>Esc to close</span>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
+            <input
+              type="checkbox"
+              checked={qa.speculativeOptimizations}
+              onChange={function (e) { qa.setSpeculativeOptimizations(e.target.checked); }}
+              style={{ margin: 0, cursor: "pointer" }}
+            />
+            <span style={{ fontSize: theme.fontSize.xs }}>Speculative</span>
+          </label>
           <span>Ctrl+Shift+K</span>
         </div>
       )}

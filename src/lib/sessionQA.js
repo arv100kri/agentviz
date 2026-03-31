@@ -2049,7 +2049,35 @@ function buildSessionQAQueryProgramSlots(questionProfile, metricMatch) {
     wantsTools: Boolean(safeProfile.wantsTools),
     broadSummary: Boolean(safeProfile.broadSummary),
     requiresExactEvidence: Boolean(safeProfile.requiresExactEvidence),
+    matchers: Array.isArray(safeProfile.matchers) ? safeProfile.matchers.map(function (m) {
+      return typeof m === "string" ? m : (m && m.term ? m.term : "");
+    }).filter(Boolean) : [],
   };
+}
+
+var FAX_METADATA_PATTERNS = [
+  { re: /\bwho\s+sent\b/i, key: "sender" },
+  { re: /\bsender\b/i, key: "sender" },
+  { re: /\bimportance\b|\bpriority\b|\bhow\s+(important|urgent)\b/i, key: "importance" },
+  { re: /\bwhat\s+(repo|repository)\b|\bwhich\s+(repo|repository)\b|\brepo(sitory)?\s+(is|was|for)\b/i, key: "repo" },
+  { re: /\bwhat\s+branch\b|\bwhich\s+branch\b|\bbranch\s+(is|was|for|name)\b/i, key: "branch" },
+  { re: /\bthread\s*(id)?\b/i, key: "thread" },
+  { re: /\bsteps?\s+(completed|done|finished)\b|\bcompleted\s+steps?\b/i, key: "steps_completed" },
+  { re: /\bsteps?\s+(remaining|left|todo|to do)\b|\bremaining\s+steps?\b/i, key: "steps_remaining" },
+  { re: /\bdo\s+not\s+retry\b|\bavoided?\s+approaches?\b|\babandoned\b/i, key: "do_not_retry" },
+  { re: /\bbundle\s*(label|name)\b|\bfax\s*(name|label|subject)\b/i, key: "bundle_label" },
+  { re: /\bwhat\s+tool\s+(was\s+used\s+to\s+send|sent|generated)\b|\bsender\s+tool\b/i, key: "sender_tool" },
+  { re: /\bfax\s+(metadata|details|info)\b|\babout\s+this\s+fax\b|\bfax\s+summary\b/i, key: "" },
+];
+
+function matchFaxMetadataQuestion(normalizedQuestion) {
+  if (!normalizedQuestion) return null;
+  for (var i = 0; i < FAX_METADATA_PATTERNS.length; i++) {
+    if (FAX_METADATA_PATTERNS[i].re.test(normalizedQuestion)) {
+      return FAX_METADATA_PATTERNS[i].key;
+    }
+  }
+  return null;
 }
 
 function determineSessionQAProgramFamily(questionProfile, metricMatch) {
@@ -2066,6 +2094,21 @@ function determineSessionQAProgramFamily(questionProfile, metricMatch) {
       deterministic: true,
       needsModel: false,
       raceEligible: false,
+    };
+  }
+
+  // Fax metadata questions: sender, importance, repo, branch, thread, progress
+  var faxMetadataKey = matchFaxMetadataQuestion(normalizedQuestion);
+  if (faxMetadataKey) {
+    return {
+      family: "fax-metadata",
+      intent: "fax-metadata-lookup",
+      routePreference: "index",
+      canAnswerFromFactStore: true,
+      deterministic: true,
+      needsModel: false,
+      raceEligible: false,
+      faxMetadataKey: faxMetadataKey,
     };
   }
 
@@ -2215,7 +2258,7 @@ export function compileSessionQAQueryProgram(question, artifacts, options) {
     evidenceMode: slots.requiresExactEvidence
       ? "exact"
       : (slots.broadSummary ? "summary" : "structured"),
-    slots: slots,
+    slots: Object.assign({}, slots, familyInfo.faxMetadataKey != null ? { faxMetadataKey: familyInfo.faxMetadataKey } : {}),
     totalTurns: metricCatalog && typeof metricCatalog.totalTurns === "number" ? metricCatalog.totalTurns : null,
     metricMatch: metricMatch ? {
       key: metricMatch.key || null,

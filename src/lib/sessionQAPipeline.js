@@ -158,6 +158,7 @@ export async function handleSessionQA(options) {
   var modelAnswerCache = options.modelAnswerCache || null;
   var requestKind = options.requestKind || null;
   var qaRequestStartedAt = options.qaRequestStartedAt || Date.now();
+  var speculativeOptimizations = options.speculativeOptimizations !== false;
 
   var events = resolvedSession.events;
   var turns = resolvedSession.turns;
@@ -252,7 +253,7 @@ export async function handleSessionQA(options) {
       programCacheKey = buildSessionQAProgramCacheKey(queryProgram, {
         fingerprint: precomputed ? precomputed.fingerprint : null,
       });
-      var cachedProgramPlan = programCacheKey && resolvedSession.programCache
+      var cachedProgramPlan = speculativeOptimizations && programCacheKey && resolvedSession.programCache
         ? resolvedSession.programCache[programCacheKey]
         : null;
 
@@ -303,7 +304,7 @@ export async function handleSessionQA(options) {
       }
 
       var fallbackPlanPromise = null;
-      if (!route && shouldLaunchSessionQARace(queryProgram)) {
+      if (!route && speculativeOptimizations && shouldLaunchSessionQARace(queryProgram)) {
         sendProgress("launching-fallback-route", {
           detail: "Launching the existing router in parallel while AGENTVIZ checks the SQLite fact store.",
           force: true,
@@ -319,7 +320,7 @@ export async function handleSessionQA(options) {
         fallbackPlanPromise.catch(function () {});
       }
 
-      if (!route && queryProgram.canAnswerFromFactStore) {
+      if (!route && speculativeOptimizations && queryProgram.canAnswerFromFactStore) {
         var factStore = await ensureSessionQAFactStore(resolvedSession, precomputed, { homeDir: homeDir });
         if (factStore && factStore.path) {
           sendProgress("querying-fact-store", {
@@ -464,7 +465,7 @@ export async function handleSessionQA(options) {
     var contextFingerprint = precomputed ? precomputed.fingerprint : null;
     var contextFamily = queryProgram ? queryProgram.family : "unknown";
     var cachedModelAnswer = null;
-    if (context && modelAnswerCache && typeof modelAnswerCache.get === "function") {
+    if (speculativeOptimizations && context && modelAnswerCache && typeof modelAnswerCache.get === "function") {
       cachedModelAnswer = modelAnswerCache.get(contextFingerprint, contextFamily, context, requestedModel || "default", question);
     }
     if (cachedModelAnswer && cachedModelAnswer.answer) {

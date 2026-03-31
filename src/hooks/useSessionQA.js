@@ -344,7 +344,7 @@ function buildSessionCacheFingerprint(payload) {
   ].join("|");
 }
 
-function buildQARequestBody(question, model, qaSessionId, key, fallbackPayload, useLeanPayload, requestKind) {
+function buildQARequestBody(question, model, qaSessionId, key, fallbackPayload, useLeanPayload, requestKind, extraOptions) {
   var body = {
     question: question,
     model: model,
@@ -352,6 +352,9 @@ function buildQARequestBody(question, model, qaSessionId, key, fallbackPayload, 
   if (key) body.sessionKey = key;
   if (qaSessionId) body.qaSessionId = qaSessionId;
   if (requestKind) body.requestKind = requestKind;
+  if (extraOptions && extraOptions.speculativeOptimizations === false) {
+    body.speculativeOptimizations = false;
+  }
   if (!useLeanPayload) {
     body.events = fallbackPayload.events;
     body.turns = fallbackPayload.turns;
@@ -413,6 +416,7 @@ export default function useSessionQA() {
   var queueRef = useRef({});
   var cacheStateRef = useRef({});
   var cacheSyncRef = useRef({});
+  var speculativeOptRef = useRef(true);
   var [renderTick, setRenderTick] = useState(0);
   var messageIdRef = useRef(0);
   function tick() { setRenderTick(function (n) { return n + 1; }); }
@@ -707,7 +711,8 @@ export default function useSessionQA() {
         key,
         entry.fallbackPayload,
         useLeanPayload,
-        requestKind
+        requestKind,
+        { speculativeOptimizations: speculativeOptRef.current }
       );
       return fetch("/api/qa", {
         method: "POST",
@@ -728,7 +733,8 @@ export default function useSessionQA() {
           key,
           entry.fallbackPayload,
           false,
-          requestKind
+          requestKind,
+          { speculativeOptimizations: speculativeOptRef.current }
         );
         return fetch("/api/qa", {
           method: "POST",
@@ -1075,5 +1081,10 @@ export default function useSessionQA() {
     stopAnswer: stopAnswer,
     clearHistory: clearHistory,
     switchSession: switchSession,
+    speculativeOptimizations: speculativeOptRef.current,
+    setSpeculativeOptimizations: function (value) {
+      speculativeOptRef.current = value;
+      tick();
+    },
   };
 }
