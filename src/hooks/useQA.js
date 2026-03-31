@@ -9,8 +9,44 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { classify, buildModelContext, fingerprintQuestion, getSessionIndex, searchToolIndex } from "../lib/qaClassifier.js";
 
 var STORAGE_PREFIX = "agentviz:qa:";
+var CACHE_PREFIX = "agentviz:qa-cache:";
+var INDEX_PREFIX = "agentviz:qa-index:";
+var ALL_QA_PREFIXES = [STORAGE_PREFIX, CACHE_PREFIX, INDEX_PREFIX];
 var MAX_PERSISTED_MESSAGES = 50;
-var ROTATION_THRESHOLD = 6; // rotate SDK session after this many model questions
+var MAX_QA_KEYS = 20; // max sessions to keep Q&A data for
+var ROTATION_THRESHOLD = 6;
+
+/**
+ * Remove orphaned Q&A localStorage entries for sessions that no longer exist.
+ * Keeps at most MAX_QA_KEYS sessions, evicting oldest by key suffix.
+ */
+function cleanupOrphanedQAStorage() {
+  try {
+    var sessionKeys = {};
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!key) continue;
+      for (var p = 0; p < ALL_QA_PREFIXES.length; p++) {
+        if (key.startsWith(ALL_QA_PREFIXES[p])) {
+          var sessionId = key.slice(ALL_QA_PREFIXES[p].length);
+          if (!sessionKeys[sessionId]) sessionKeys[sessionId] = [];
+          sessionKeys[sessionId].push(key);
+        }
+      }
+    }
+    var ids = Object.keys(sessionKeys);
+    if (ids.length <= MAX_QA_KEYS) return;
+    // Evict oldest (by alphabetical order of session key -- rough but sufficient)
+    ids.sort();
+    var toEvict = ids.slice(0, ids.length - MAX_QA_KEYS);
+    for (var e = 0; e < toEvict.length; e++) {
+      var keys = sessionKeys[toEvict[e]];
+      for (var k = 0; k < keys.length; k++) {
+        localStorage.removeItem(keys[k]);
+      }
+    }
+  } catch (_) {}
+}
 
 function buildRecap(messages) {
   var pairs = [];
@@ -61,7 +97,6 @@ function removeMessages(key) {
   try { localStorage.removeItem(STORAGE_PREFIX + key); } catch (_) {}
 }
 
-var CACHE_PREFIX = "agentviz:qa-cache:";
 var MAX_CACHE_ENTRIES = 30;
 
 function loadCache(key) {
@@ -113,6 +148,11 @@ export default function useQA(sessionData, sessionKey) {
       sessionIndexRef.current = getSessionIndex(sessionKey, sessionData);
     }
   }, [sessionKey, sessionData]);
+
+  // Garbage-collect orphaned Q&A localStorage entries on mount
+  useEffect(function () {
+    cleanupOrphanedQAStorage();
+  }, []);
 
   // Restore messages and cache when sessionKey changes
   useEffect(function () {
