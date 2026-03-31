@@ -126,6 +126,8 @@ export default function FaxApp() {
       error: discovery.error,
       readStatus: readStatus,
       onOpenFax: openFax,
+      loadMore: discovery.loadMore,
+      hasMore: discovery.hasMore,
     })
   );
 }

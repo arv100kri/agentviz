@@ -186,7 +186,7 @@ function readBundleMarkdownFiles(bundlePath) {
   return result;
 }
 
-export function createFaxVizServer({ faxDir, distDir }) {
+export function createFaxVizServer({ faxDir, distDir, faxSource }) {
   // In-memory session Q&A cache (mirrors the main server's cache pattern)
   var sessionQACache = createSessionQACacheStore();
   var modelAnswerCache = createModelAnswerCache(50);
@@ -229,7 +229,39 @@ export function createFaxVizServer({ faxDir, distDir }) {
       return;
     }
 
-    // GET /api/faxes
+    // POST /api/refresh-token (for SharePoint token refresh)
+    if (pathname === "/api/refresh-token") {
+      res.setHeader("Content-Type", "application/json");
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end(JSON.stringify({ error: "Method not allowed" }));
+        return;
+      }
+      readBody(req, res).then(function (body) {
+        try {
+          var payload = JSON.parse(body || "{}");
+          if (!payload.token) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "token is required" }));
+            return;
+          }
+          if (faxSource && typeof faxSource.updateToken === "function") {
+            faxSource.updateToken(payload.token);
+            res.writeHead(200);
+            res.end(JSON.stringify({ success: true }));
+          } else {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "Token refresh not supported for local fax source" }));
+          }
+        } catch (e) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+
+    // GET /api/faxes — paginated fax listing
     if (pathname === "/api/faxes") {
       res.setHeader("Content-Type", "application/json");
       if (req.method !== "GET") {
@@ -237,9 +269,31 @@ export function createFaxVizServer({ faxDir, distDir }) {
         res.end(JSON.stringify({ error: "Method not allowed" }));
         return;
       }
-      var faxes = discoverFaxBundles(faxDir);
-      res.writeHead(200);
-      res.end(JSON.stringify({ faxes: faxes }));
+      var page = Math.max(1, parseInt(parsed.query.page, 10) || 1);
+      var pageSize = Math.max(1, Math.min(parseInt(parsed.query.pageSize, 10) || 50, 100));
+      var skip = (page - 1) * pageSize;
+
+      if (faxSource) {
+        faxSource.listBundles(skip, pageSize).then(function (result) {
+          res.writeHead(200);
+          res.end(JSON.stringify({
+            faxes: result.bundles,
+            pagination: { page: page, pageSize: pageSize, totalCount: result.totalCount, hasMore: result.hasMore },
+          }));
+        }).catch(function (err) {
+          var status = err.code === "TOKEN_EXPIRED" ? 401 : 500;
+          res.writeHead(status);
+          res.end(JSON.stringify({ error: err.message }));
+        });
+      } else {
+        var faxes = discoverFaxBundles(faxDir);
+        var paged = faxes.slice(skip, skip + pageSize);
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          faxes: paged,
+          pagination: { page: page, pageSize: pageSize, totalCount: faxes.length, hasMore: skip + pageSize < faxes.length },
+        }));
+      }
       return;
     }
 
@@ -289,20 +343,51 @@ export function createFaxVizServer({ faxDir, distDir }) {
         return;
       }
       var faxId = decodeURIComponent(eventsMatch[1]);
-      var eventsPath = path.join(faxDir, faxId, "events.jsonl");
-      // Prevent directory traversal
-      if (!eventsPath.startsWith(faxDir)) {
-        res.writeHead(403);
-        res.end("Forbidden");
-        return;
-      }
-      try {
-        var content = fs.readFileSync(eventsPath, "utf8");
-        res.writeHead(200);
-        res.end(content);
-      } catch (e) {
-        res.writeHead(404);
-        res.end(JSON.stringify({ error: "events.jsonl not found" }));
+
+      if (faxSource) {
+        faxSource.streamFile(faxId, "events.jsonl").then(function (stream) {
+          if (!stream) {
+            res.writeHead(404);
+            res.end(JSON.stringify({ error: "events.jsonl not found" }));
+            return;
+          }
+          res.writeHead(200);
+          if (stream.pipe) {
+            stream.pipe(res);
+          } else if (stream.getReader) {
+            // Web ReadableStream
+            var reader = stream.getReader();
+            var decoder = new TextDecoder();
+            (function pump() {
+              reader.read().then(function (result) {
+                if (result.done) { res.end(); return; }
+                res.write(typeof result.value === "string" ? result.value : decoder.decode(result.value, { stream: true }));
+                pump();
+              }).catch(function () { res.end(); });
+            })();
+          } else {
+            res.end(String(stream));
+          }
+        }).catch(function (err) {
+          var status = err.code === "TOKEN_EXPIRED" ? 401 : 500;
+          res.writeHead(status);
+          res.end(JSON.stringify({ error: err.message }));
+        });
+      } else {
+        var eventsPath = path.join(faxDir, faxId, "events.jsonl");
+        if (!eventsPath.startsWith(faxDir)) {
+          res.writeHead(403);
+          res.end("Forbidden");
+          return;
+        }
+        try {
+          var content = fs.readFileSync(eventsPath, "utf8");
+          res.writeHead(200);
+          res.end(content);
+        } catch (e) {
+          res.writeHead(404);
+          res.end(JSON.stringify({ error: "events.jsonl not found" }));
+        }
       }
       return;
     }
@@ -317,14 +402,32 @@ export function createFaxVizServer({ faxDir, distDir }) {
       }
       var faxId = decodeURIComponent(fileMatch[1]);
       var fileName = decodeURIComponent(fileMatch[2]);
-      var filePath = path.join(faxDir, faxId, fileName);
-      // Prevent directory traversal
-      if (!filePath.startsWith(path.join(faxDir, faxId))) {
-        res.writeHead(403);
-        res.end("Forbidden");
-        return;
+
+      if (faxSource) {
+        faxSource.getFile(faxId, fileName).then(function (content) {
+          if (content === null) {
+            res.writeHead(404);
+            res.end("Not found");
+            return;
+          }
+          var ext = path.extname(fileName).toLowerCase();
+          var mime = MIME[ext] || "application/octet-stream";
+          res.writeHead(200, { "Content-Type": mime });
+          res.end(content);
+        }).catch(function (err) {
+          var status = err.code === "TOKEN_EXPIRED" ? 401 : 500;
+          res.writeHead(status);
+          res.end(JSON.stringify({ error: err.message }));
+        });
+      } else {
+        var filePath = path.join(faxDir, faxId, fileName);
+        if (!filePath.startsWith(path.join(faxDir, faxId))) {
+          res.writeHead(403);
+          res.end("Forbidden");
+          return;
+        }
+        serveStatic(res, filePath);
       }
-      serveStatic(res, filePath);
       return;
     }
 
@@ -338,22 +441,43 @@ export function createFaxVizServer({ faxDir, distDir }) {
         return;
       }
       var faxId = decodeURIComponent(manifestMatch[1]);
-      var bundlePath = path.join(faxDir, faxId);
-      if (!bundlePath.startsWith(faxDir)) {
-        res.writeHead(403);
-        res.end("Forbidden");
-        return;
+
+      if (faxSource) {
+        Promise.all([
+          faxSource.getManifest(faxId),
+          faxSource.getMarkdownFiles(faxId),
+        ]).then(function (results) {
+          var manifest = results[0];
+          var markdownFiles = results[1];
+          if (!manifest) {
+            res.writeHead(404);
+            res.end(JSON.stringify({ error: "Manifest not found" }));
+            return;
+          }
+          res.writeHead(200);
+          res.end(JSON.stringify({ manifest: manifest, markdownFiles: markdownFiles }));
+        }).catch(function (err) {
+          var status = err.code === "TOKEN_EXPIRED" ? 401 : 500;
+          res.writeHead(status);
+          res.end(JSON.stringify({ error: err.message }));
+        });
+      } else {
+        var bundlePath = path.join(faxDir, faxId);
+        if (!bundlePath.startsWith(faxDir)) {
+          res.writeHead(403);
+          res.end("Forbidden");
+          return;
+        }
+        var manifest = parseManifest(bundlePath);
+        if (!manifest) {
+          res.writeHead(404);
+          res.end(JSON.stringify({ error: "Manifest not found" }));
+          return;
+        }
+        var markdownFiles = readBundleMarkdownFiles(bundlePath);
+        res.writeHead(200);
+        res.end(JSON.stringify({ manifest: manifest, markdownFiles: markdownFiles }));
       }
-      var manifest = parseManifest(bundlePath);
-      if (!manifest) {
-        res.writeHead(404);
-        res.end(JSON.stringify({ error: "Manifest not found" }));
-        return;
-      }
-      // Also include markdown file contents for the observe view
-      var markdownFiles = readBundleMarkdownFiles(bundlePath);
-      res.writeHead(200);
-      res.end(JSON.stringify({ manifest: manifest, markdownFiles: markdownFiles }));
       return;
     }
 
@@ -409,18 +533,21 @@ export function createFaxVizServer({ faxDir, distDir }) {
 
         // Inject manifest BEFORE precomputation so the fact store can persist it
         if (faxId) {
-          var bundlePath = path.join(faxDir, faxId);
-          if (bundlePath.startsWith(faxDir)) {
-            try {
-              var manifestPath = path.join(bundlePath, "manifest.json");
-              manifestData = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-            } catch (_) {}
-            if (manifestData) {
-              resolvedSession.faxMetadata = manifestData;
-              // Invalidate stale fact store so it gets rebuilt with manifest data
-              if (resolvedSession.factStore && !resolvedSession.factStore.hasFaxMetadata) {
-                resolvedSession.factStore = null;
-              }
+          if (faxSource) {
+            manifestData = await faxSource.getManifest(faxId);
+          } else {
+            var bundlePath = path.join(faxDir, faxId);
+            if (bundlePath.startsWith(faxDir)) {
+              try {
+                var manifestPath = path.join(bundlePath, "manifest.json");
+                manifestData = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+              } catch (_) {}
+            }
+          }
+          if (manifestData) {
+            resolvedSession.faxMetadata = manifestData;
+            if (resolvedSession.factStore && !resolvedSession.factStore.hasFaxMetadata) {
+              resolvedSession.factStore = null;
             }
           }
         }
@@ -436,9 +563,15 @@ export function createFaxVizServer({ faxDir, distDir }) {
         // Build contextExtender that prepends fax metadata + markdown context
         var contextExtender = null;
         if (faxId) {
-          var bundlePath2 = path.join(faxDir, faxId);
-          if (bundlePath2.startsWith(faxDir)) {
-            var mdFiles = readBundleMarkdownFiles(bundlePath2);
+          var mdFiles = [];
+          if (faxSource) {
+            mdFiles = await faxSource.getMarkdownFiles(faxId);
+          } else {
+            var bundlePath2 = path.join(faxDir, faxId);
+            if (bundlePath2.startsWith(faxDir)) {
+              mdFiles = readBundleMarkdownFiles(bundlePath2);
+            }
+          }
 
             if (mdFiles.length > 0 || manifestData) {
               contextExtender = function (sessionContext) {
@@ -482,7 +615,6 @@ export function createFaxVizServer({ faxDir, distDir }) {
                 return faxContext + sessionContext;
               };
             }
-          }
         }
 
         // SSE streaming response with instrumentation
@@ -639,41 +771,43 @@ export function createFaxVizServer({ faxDir, distDir }) {
       }
 
       var pickupFaxId = decodeURIComponent(pickupMatch[1]);
-      var pickupBundlePath = path.join(faxDir, pickupFaxId);
 
-      // Prevent directory traversal
-      if (!pickupBundlePath.startsWith(faxDir)) {
-        res.writeHead(403);
-        res.end(JSON.stringify({ error: "Forbidden" }));
-        return;
-      }
-
-      try {
-        // Read bootstrap prompt
-        var bootstrapPath = path.join(pickupBundlePath, "bootstrap-prompt.txt");
-        var bootstrap = "";
+      (async function () {
         try {
-          bootstrap = fs.readFileSync(bootstrapPath, "utf8");
-        } catch (bsErr) {}
+          var bootstrap = "";
+          var pickupManifest = null;
 
-        // Read manifest for reply intent
-        var pickupManifest = parseManifest(pickupBundlePath);
+          if (faxSource) {
+            bootstrap = (await faxSource.getFile(pickupFaxId, "bootstrap-prompt.txt")) || "";
+            pickupManifest = await faxSource.getManifest(pickupFaxId);
+          } else {
+            var pickupBundlePath = path.join(faxDir, pickupFaxId);
+            if (!pickupBundlePath.startsWith(faxDir)) {
+              res.writeHead(403);
+              res.end(JSON.stringify({ error: "Forbidden" }));
+              return;
+            }
+            try { bootstrap = fs.readFileSync(path.join(pickupBundlePath, "bootstrap-prompt.txt"), "utf8"); } catch (_) {}
+            pickupManifest = parseManifest(pickupBundlePath);
+          }
 
-        // Write reply intent to fax directory root (parent of bundle folders)
-        var intent = buildReplyIntent(pickupManifest, pickupFaxId);
-        writeReplyIntent(faxDir, intent);
+          // Write reply intent to fax directory root
+          var intent = buildReplyIntent(pickupManifest, pickupFaxId);
+          var faxDirForIntent = (faxSource && faxSource.getFaxDir && faxSource.getFaxDir()) || faxDir;
+          if (faxDirForIntent) writeReplyIntent(faxDirForIntent, intent);
 
-        // Mark as read
-        var readStatus = readReadStatus();
-        readStatus[pickupFaxId] = new Date().toISOString();
-        writeReadStatus(readStatus);
+          // Mark as read
+          var readStatus = readReadStatus();
+          readStatus[pickupFaxId] = new Date().toISOString();
+          writeReadStatus(readStatus);
 
-        res.writeHead(200);
-        res.end(JSON.stringify({ success: true, bootstrap: bootstrap }));
-      } catch (pickupErr) {
-        res.writeHead(500);
-        res.end(JSON.stringify({ error: pickupErr.message || "Pickup failed" }));
-      }
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, bootstrap: bootstrap }));
+        } catch (pickupErr) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: pickupErr.message || "Pickup failed" }));
+        }
+      })();
       return;
     }
 

@@ -31,10 +31,16 @@ function exitWithError(msg) {
 }
 
 function parseArgs(argv) {
-  var args = { faxDir: null, noOpen: false, open: null };
+  var args = { faxDir: null, noOpen: false, open: null, graphToken: null, siteId: null, drivePath: null };
   for (var i = 2; i < argv.length; i++) {
     if (argv[i] === "--fax-dir" && argv[i + 1]) {
       args.faxDir = argv[++i];
+    } else if (argv[i] === "--graph-token" && argv[i + 1]) {
+      args.graphToken = argv[++i];
+    } else if (argv[i] === "--site-id" && argv[i + 1]) {
+      args.siteId = argv[++i];
+    } else if (argv[i] === "--drive-path" && argv[i + 1]) {
+      args.drivePath = argv[++i];
     } else if (argv[i] === "--open" && argv[i + 1]) {
       args.open = argv[++i];
     } else if (argv[i] === "--no-open") {
@@ -45,12 +51,16 @@ function parseArgs(argv) {
         "  FAX-VIZ - Fax Bundle Viewer",
         "",
         "  Usage: fax-viz --fax-dir <path>",
+        "     or: fax-viz --graph-token <token> --site-id <id> [--drive-path /Fax]",
         "",
         "  Options:",
-        "    --fax-dir <path>  Path to directory containing fax bundles (required)",
-        "    --open <name>     Open browser directly to a specific fax bundle",
-        "    --no-open         Don't open browser automatically",
-        "    -h, --help        Show this help",
+        "    --fax-dir <path>       Path to local fax bundle directory",
+        "    --graph-token <token>  Microsoft Graph access token (SharePoint mode)",
+        "    --site-id <id>         SharePoint site ID (required with --graph-token)",
+        "    --drive-path <path>    Path within SharePoint drive (default: /Fax)",
+        "    --open <name>          Open browser directly to a specific fax bundle",
+        "    --no-open              Don't open browser automatically",
+        "    -h, --help             Show this help",
         "",
       ].join("\n") + "\n");
       process.exit(0);
@@ -89,13 +99,17 @@ process.on("unhandledRejection", function (reason) {
 // Main
 var args = parseArgs(process.argv);
 
-if (!args.faxDir) {
-  exitWithError("Error: --fax-dir <path> is required.\n\nUsage: fax-viz --fax-dir <path>");
-}
+var useGraph = Boolean(args.graphToken && args.siteId);
+var resolvedFaxDir = null;
 
-var resolvedFaxDir = path.resolve(args.faxDir);
-if (!fs.existsSync(resolvedFaxDir)) {
-  exitWithError("Error: fax directory not found: " + resolvedFaxDir);
+if (!useGraph) {
+  if (!args.faxDir) {
+    exitWithError("Error: --fax-dir <path> or --graph-token + --site-id is required.\n\nUsage: fax-viz --fax-dir <path>");
+  }
+  resolvedFaxDir = path.resolve(args.faxDir);
+  if (!fs.existsSync(resolvedFaxDir)) {
+    exitWithError("Error: fax directory not found: " + resolvedFaxDir);
+  }
 }
 
 // Check for dist bundle
@@ -113,33 +127,51 @@ function getPreferredPort() {
   return DEFAULT_API_PORT + 1;
 }
 
-findFreePort(getPreferredPort(), function (err, port) {
-  if (err) {
-    exitWithError("Could not find a free port: " + err.message);
-    return;
-  }
+// Create fax source (async for SharePoint, sync-wrapped for local)
+import { createFaxSource } from "../src/fax-viz/lib/faxSource.js";
+import { createCachedFaxSource } from "../src/fax-viz/lib/faxCache.js";
 
-  var serverDistDir = hasDistBundle ? distDir : null;
-  var server = createFaxVizServer({ faxDir: resolvedFaxDir, distDir: serverDistDir });
+createFaxSource({
+  faxDir: resolvedFaxDir,
+  graphToken: args.graphToken || null,
+  siteId: args.siteId || null,
+  drivePath: args.drivePath || "/Fax",
+}).then(function (rawSource) {
+  var faxSource = createCachedFaxSource(rawSource);
+  var sourceLabel = faxSource.getSourceType() === "sharepoint"
+    ? "SharePoint (site: " + args.siteId + ")"
+    : resolvedFaxDir;
 
-  server.listen(port, "127.0.0.1", function () {
-    var serverUrl = "http://localhost:" + port;
-    log("[start] listening on " + serverUrl + " fax-dir=" + resolvedFaxDir);
-    process.stdout.write("\n  FAX-VIZ. running at " + serverUrl + "\n");
-    process.stdout.write("  Fax directory: " + resolvedFaxDir + "\n");
-    process.stdout.write("  Logs: " + LOG_FILE + "\n");
-    process.stdout.write("  Press Ctrl+C to stop.\n\n");
-
-    if (!args.noOpen) {
-      var browserUrl = args.open ? serverUrl + "#/fax/" + args.open : serverUrl;
-      openBrowser(browserUrl);
+  findFreePort(getPreferredPort(), function (err, port) {
+    if (err) {
+      exitWithError("Could not find a free port: " + err.message);
+      return;
     }
 
-    process.on("SIGINT", function () {
-      server.close(function () { process.exit(0); });
-    });
-    process.on("SIGTERM", function () {
-      server.close(function () { process.exit(0); });
+    var serverDistDir = hasDistBundle ? distDir : null;
+    var server = createFaxVizServer({ faxDir: resolvedFaxDir, distDir: serverDistDir, faxSource: faxSource });
+
+    server.listen(port, "127.0.0.1", function () {
+      var serverUrl = "http://localhost:" + port;
+      log("[start] listening on " + serverUrl + " fax-dir=" + sourceLabel);
+      process.stdout.write("\n  FAX-VIZ. running at " + serverUrl + "\n");
+      process.stdout.write("  Fax source: " + sourceLabel + "\n");
+      process.stdout.write("  Logs: " + LOG_FILE + "\n");
+      process.stdout.write("  Press Ctrl+C to stop.\n\n");
+
+      if (!args.noOpen) {
+        var browserUrl = args.open ? serverUrl + "#/fax/" + args.open : serverUrl;
+        openBrowser(browserUrl);
+      }
+
+      process.on("SIGINT", function () {
+        server.close(function () { process.exit(0); });
+      });
+      process.on("SIGTERM", function () {
+        server.close(function () { process.exit(0); });
+      });
     });
   });
+}).catch(function (err) {
+  exitWithError("Failed to initialize fax source: " + err.message);
 });

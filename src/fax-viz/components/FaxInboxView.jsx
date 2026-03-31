@@ -65,7 +65,7 @@ function ThreadIndicator({ count }) {
   }, "\uD83D\uDD17 " + count);
 }
 
-export default function FaxInboxView({ faxes, loading, error, readStatus, onOpenFax }) {
+export default function FaxInboxView({ faxes, loading, error, readStatus, onOpenFax, loadMore, hasMore }) {
   var _sort = useState(SORT_OPTIONS.DATE_DESC);
   var sortBy = _sort[0];
   var setSortBy = _sort[1];
@@ -327,6 +327,21 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
         );
       })
     ),
+    hasMore && !loading && React.createElement("div", {
+      style: { padding: "12px 16px", textAlign: "center" },
+    }, React.createElement("button", {
+      onClick: loadMore,
+      style: {
+        background: theme.bg.surface,
+        color: theme.text.secondary,
+        border: "1px solid " + theme.border.subtle,
+        borderRadius: 6,
+        padding: "8px 24px",
+        cursor: "pointer",
+        fontFamily: theme.font.mono,
+        fontSize: theme.fontSize.sm,
+      },
+    }, "Load more")),
     pickupFax && React.createElement(PickUpModal, {
       isOpen: true,
       onClose: function () { setPickupFax(null); },
