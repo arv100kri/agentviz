@@ -4,6 +4,16 @@ import path from "node:path";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { createFaxVizServer } from "../../fax-viz-server.js";
 
+// Mock child_process.spawn to prevent tests from opening real terminal windows
+vi.mock("child_process", async function () {
+  var actual = await vi.importActual("child_process");
+  return Object.assign({}, actual, {
+    spawn: vi.fn(function () {
+      return { pid: 99999, on: function () {}, unref: function () {} };
+    }),
+  });
+});
+
 // Create a temporary fax directory with test bundles
 var tmpDir;
 var bundleDir;
