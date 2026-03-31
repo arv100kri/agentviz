@@ -304,12 +304,30 @@ var DEFAULT_MODEL = "gpt-5.4";
 export default function QAView({ qa, events, turns, metadata, sessionFilePath, rawText, onSeekTurn, onSetView, enableInstantClassifier }) {
   var [input, setInput] = useState("");
   var [instantMessages, setInstantMessages] = useState([]);
+  var [instantSeq, setInstantSeq] = useState(0);
   var [loadingNowMs, setLoadingNowMs] = useState(function () { return Date.now(); });
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
 
-  // Merge qa.messages with local instant messages for display
-  var allMessages = qa.messages.concat(instantMessages);
+  // Interleave server messages and instant messages by insertion order.
+  // Server messages keep their original order. Instant messages are inserted
+  // at the position they were asked (tracked by seq = qa.messages.length at time of ask).
+  var allMessages = [];
+  var serverIdx = 0;
+  var instantIdx = 0;
+  while (serverIdx < qa.messages.length || instantIdx < instantMessages.length) {
+    var nextInstant = instantIdx < instantMessages.length ? instantMessages[instantIdx] : null;
+    if (nextInstant && nextInstant._insertAt <= serverIdx) {
+      allMessages.push(nextInstant);
+      instantIdx++;
+    } else if (serverIdx < qa.messages.length) {
+      allMessages.push(qa.messages[serverIdx]);
+      serverIdx++;
+    } else {
+      allMessages.push(nextInstant);
+      instantIdx++;
+    }
+  }
 
   useEffect(function () {
     if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
@@ -336,10 +354,11 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
     if (!enableInstantClassifier || !events || events.length === 0) return false;
     var result = classifyInstant(question, { events: events, turns: turns, metadata: metadata });
     if (!result) return false;
+    var insertAt = qa.messages.length;
     setInstantMessages(function (prev) {
       return prev.concat([
-        { role: "user", content: question },
-        { role: "assistant", content: result.answer, timing: { totalMs: 0 } },
+        { role: "user", content: question, _insertAt: insertAt },
+        { role: "assistant", content: result.answer, timing: { totalMs: 0 }, _insertAt: insertAt },
       ]);
     });
     return true;

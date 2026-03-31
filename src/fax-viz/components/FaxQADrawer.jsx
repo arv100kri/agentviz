@@ -12,20 +12,22 @@ import QAView from "../../components/QAView.jsx";
 import Icon from "../../components/Icon.jsx";
 
 export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata, playback, setActiveView }) {
-  if (!open) return null;
-
   // Escape to close
   React.useEffect(function () {
+    if (!open) return;
     function handleKey(e) {
       if (e.key === "Escape") { e.preventDefault(); onClose(); }
     }
     window.addEventListener("keydown", handleKey);
     return function () { window.removeEventListener("keydown", handleKey); };
-  }, [onClose]);
+  }, [open, onClose]);
+
+  // Don't unmount when closed -- just hide. This preserves instant message state.
+  var displayStyle = open ? {} : { display: "none" };
 
   return React.createElement(React.Fragment, null,
     // Backdrop
-    React.createElement("div", {
+    open && React.createElement("div", {
       onClick: onClose,
       style: {
         position: "fixed",
@@ -34,11 +36,11 @@ export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata
         zIndex: theme.z.overlay,
       },
     }),
-    // Drawer panel
+    // Drawer panel (always mounted, visibility toggled)
     React.createElement("div", {
       role: "dialog",
       "aria-label": "Session Q&A",
-      style: {
+      style: Object.assign({
         position: "fixed",
         top: 0,
         right: 0,
@@ -53,7 +55,7 @@ export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata
         fontFamily: theme.font.mono,
         boxSizing: "border-box",
         overflow: "hidden",
-      },
+      }, displayStyle),
     },
       React.createElement(QAView, {
         qa: qa,
@@ -68,7 +70,7 @@ export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata
             playback.seek(turnTime);
             if (setActiveView) setActiveView("replay");
           }
-          onClose();
+          // Don't close the drawer -- keep Q&A overlay active
         },
         onSetView: setActiveView || function () {},
       })
