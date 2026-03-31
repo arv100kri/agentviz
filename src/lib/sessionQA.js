@@ -75,7 +75,7 @@ var PATH_HINT_TERMS = buildLookup([
   "file", "files", "path", "paths", "read", "view", "edit", "edited", "modify", "modified", "write", "wrote", "diff",
 ]);
 var ERROR_HINT_TERMS = buildLookup([
-  "error", "errors", "fail", "failed", "failure", "crash", "broken", "issue", "issues", "exception", "stack", "trace",
+  "error", "errors", "fail", "failed", "failure", "crash", "broken", "exception", "stack", "trace",
 ]);
 var EXACT_EVIDENCE_TERMS = buildLookup([
   "exact", "search", "searched", "query", "queries", "command", "commands", "output", "outputs",
