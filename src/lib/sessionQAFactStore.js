@@ -219,16 +219,31 @@ function writeFactStoreFaxMetadata(db, faxMetadata) {
   if (manifest.program) insert.run("program", String(manifest.program));
   if (manifest.progress) {
     if (Array.isArray(manifest.progress.stepsCompleted) && manifest.progress.stepsCompleted.length > 0) {
-      insert.run("steps_completed", manifest.progress.stepsCompleted.join(", "));
+      var completedTexts = manifest.progress.stepsCompleted.map(function (s) {
+        if (typeof s === "string") return s;
+        if (s && typeof s === "object") return s.step || s.summary || s.name || JSON.stringify(s);
+        return String(s);
+      });
+      insert.run("steps_completed", completedTexts.join("; "));
       insert.run("steps_completed_count", String(manifest.progress.stepsCompleted.length));
     }
     if (Array.isArray(manifest.progress.stepsRemaining) && manifest.progress.stepsRemaining.length > 0) {
-      insert.run("steps_remaining", manifest.progress.stepsRemaining.join(", "));
+      var remainingTexts = manifest.progress.stepsRemaining.map(function (s) {
+        if (typeof s === "string") return s;
+        if (s && typeof s === "object") return s.step || s.summary || s.name || JSON.stringify(s);
+        return String(s);
+      });
+      insert.run("steps_remaining", remainingTexts.join("; "));
       insert.run("steps_remaining_count", String(manifest.progress.stepsRemaining.length));
     }
   }
   if (Array.isArray(manifest.doNotRetry) && manifest.doNotRetry.length > 0) {
-    insert.run("do_not_retry", manifest.doNotRetry.join(", "));
+    var dontRetryTexts = manifest.doNotRetry.map(function (s) {
+      if (typeof s === "string") return s;
+      if (s && typeof s === "object") return s.approach || s.reason || s.name || JSON.stringify(s);
+      return String(s);
+    });
+    insert.run("do_not_retry", dontRetryTexts.join("; "));
   }
 }
 
@@ -377,11 +392,13 @@ async function buildFactStoreAtPath(filePath, entry, precomputed, storage) {
 
 export async function ensureSessionQAFactStore(entry, precomputed, options) {
   if (!entry || !precomputed || !precomputed.fingerprint || !precomputed.artifacts) return null;
+  var needsFaxMetadata = Boolean(entry.faxMetadata);
   if (
     entry.factStore &&
     entry.factStore.fingerprint === precomputed.fingerprint &&
     entry.factStore.path &&
-    fs.existsSync(entry.factStore.path)
+    fs.existsSync(entry.factStore.path) &&
+    (!needsFaxMetadata || entry.factStore.hasFaxMetadata)
   ) {
     return entry.factStore;
   }
@@ -393,18 +410,21 @@ export async function ensureSessionQAFactStore(entry, precomputed, options) {
   if (sidecarPath) candidates.push({ path: sidecarPath, storage: "sidecar" });
   candidates.push({ path: managedPath, storage: "managed" });
 
-  for (var reuseIndex = 0; reuseIndex < candidates.length; reuseIndex += 1) {
-    var reused = await openReusableFactStore(candidates[reuseIndex].path, precomputed.fingerprint);
-    if (!reused) continue;
-    entry.factStore = {
-      fingerprint: precomputed.fingerprint,
-      path: candidates[reuseIndex].path,
-      storage: candidates[reuseIndex].storage,
-      builtAt: precomputed.builtAt || null,
-      reused: true,
-      version: SESSION_QA_FACT_STORE_VERSION,
-    };
-    return entry.factStore;
+  // Only reuse from disk if fax metadata is not needed or already present
+  if (!needsFaxMetadata) {
+    for (var reuseIndex = 0; reuseIndex < candidates.length; reuseIndex += 1) {
+      var reused = await openReusableFactStore(candidates[reuseIndex].path, precomputed.fingerprint);
+      if (!reused) continue;
+      entry.factStore = {
+        fingerprint: precomputed.fingerprint,
+        path: candidates[reuseIndex].path,
+        storage: candidates[reuseIndex].storage,
+        builtAt: precomputed.builtAt || null,
+        reused: true,
+        version: SESSION_QA_FACT_STORE_VERSION,
+      };
+      return entry.factStore;
+    }
   }
 
   for (var buildIndex = 0; buildIndex < candidates.length; buildIndex += 1) {
@@ -417,6 +437,7 @@ export async function ensureSessionQAFactStore(entry, precomputed, options) {
         builtAt: precomputed.builtAt || new Date().toISOString(),
         reused: false,
         version: SESSION_QA_FACT_STORE_VERSION,
+        hasFaxMetadata: Boolean(entry.faxMetadata),
       };
       return entry.factStore;
     } catch (error) {}
@@ -700,16 +721,39 @@ export async function querySessionQAFactStore(queryProgram, factStore, options) 
         var faxMap = {};
         for (var fi = 0; fi < faxRows.length; fi++) faxMap[faxRows[fi].key] = faxRows[fi].value;
         var faxSlot = queryProgram.slots && queryProgram.slots.faxMetadataKey || "";
-        // Direct key lookup
-        if (faxSlot && faxMap[faxSlot]) {
+        // Direct key lookup with fallback aliases
+        if (faxSlot) {
+          var keyAliases = [faxSlot];
+          if (faxSlot === "sender_tool") keyAliases.push("program");
+          if (faxSlot === "sender_email") keyAliases.push("email");
+          if (faxSlot === "bundle_label") keyAliases.push("bundleLabel", "label");
+          // For "how many steps" questions, prefer the count key
+          var nq = queryProgram.normalizedQuestion || "";
+          if ((faxSlot === "steps_completed" || faxSlot === "steps_remaining") && /how\s+many/i.test(nq)) {
+            keyAliases.unshift(faxSlot + "_count");
+          }
+          var foundValue = null;
+          var foundKey = faxSlot;
+          for (var ai = 0; ai < keyAliases.length; ai++) {
+            if (faxMap[keyAliases[ai]]) { foundValue = faxMap[keyAliases[ai]]; foundKey = keyAliases[ai]; break; }
+          }
+          if (foundValue) {
+            return {
+              answer: "**" + faxSlot.replace(/_/g, " ") + "**: " + foundValue,
+              references: [],
+              detail: "Looked up fax metadata key: " + foundKey,
+              model: "AGENTVIZ fax metadata",
+            };
+          }
+          // Specific key requested but not found — say so definitively
           return {
-            answer: "**" + faxSlot.replace(/_/g, " ") + "**: " + faxMap[faxSlot],
+            answer: "The fax metadata does not include a value for **" + faxSlot.replace(/_/g, " ") + "**.",
             references: [],
-            detail: "Looked up fax metadata key: " + faxSlot,
+            detail: "Fax metadata key " + faxSlot + " not found in the fact store.",
             model: "AGENTVIZ fax metadata",
           };
         }
-        // Build a full metadata summary
+        // No specific key — build a full metadata summary
         var faxLines = [];
         var displayOrder = ["sender", "sender_email", "sender_tool", "importance", "repo", "branch", "bundle_label", "summary", "timestamp", "thread", "steps_completed", "steps_remaining", "do_not_retry"];
         for (var di = 0; di < displayOrder.length; di++) {

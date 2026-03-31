@@ -2056,17 +2056,18 @@ function buildSessionQAQueryProgramSlots(questionProfile, metricMatch) {
 }
 
 var FAX_METADATA_PATTERNS = [
+  { re: /\bsender\s*email\b|\bemail.*(sender|fax)\b|\bwhat\s+is\s+the\s+sender\s*'?s?\s+email\b/i, key: "sender_email" },
+  { re: /\bsender\s+tool\b|\bwhat\s+tool\s+(was\s+used\s+to\s+)?(send|sent|generated?|create)\s+(this\s+)?fax\b/i, key: "sender_tool" },
   { re: /\bwho\s+sent\b/i, key: "sender" },
   { re: /\bsender\b/i, key: "sender" },
   { re: /\bimportance\b|\bpriority\b|\bhow\s+(important|urgent)\b/i, key: "importance" },
-  { re: /\bwhat\s+(repo|repository)\b|\bwhich\s+(repo|repository)\b|\brepo(sitory)?\s+(is|was|for)\b/i, key: "repo" },
-  { re: /\bwhat\s+branch\b|\bwhich\s+branch\b|\bbranch\s+(is|was|for|name)\b/i, key: "branch" },
-  { re: /\bthread\s*(id)?\b/i, key: "thread" },
-  { re: /\bsteps?\s+(completed|done|finished)\b|\bcompleted\s+steps?\b/i, key: "steps_completed" },
-  { re: /\bsteps?\s+(remaining|left|todo|to do)\b|\bremaining\s+steps?\b/i, key: "steps_remaining" },
-  { re: /\bdo\s+not\s+retry\b|\bavoided?\s+approaches?\b|\babandoned\b/i, key: "do_not_retry" },
+  { re: /\bfax\s+(repo|repository)\b/i, key: "repo" },
+  { re: /\bfax\s+branch\b/i, key: "branch" },
+  { re: /\bthread\s*(id)?\s*(for|of)\s*(this\s+)?fax\b|\bfax\s+thread\b/i, key: "thread" },
+  { re: /\bsteps?\s+(completed|done|finished)\b|\bcompleted\s+steps?\b|\bhow\s+many\s+steps\s+(are\s+)?(completed|done)\b/i, key: "steps_completed" },
+  { re: /\bsteps?\s+(remaining|left|todo|to do)\b|\bremaining\s+steps?\b|\bhow\s+many\s+steps\s+(are\s+)?(remaining|left)\b/i, key: "steps_remaining" },
+  { re: /\bdo\s+not\s+retry\b|\bdo-not-retry\b|\bavoided?\s+approaches?\b|\babandoned\b/i, key: "do_not_retry" },
   { re: /\bbundle\s*(label|name)\b|\bfax\s*(name|label|subject)\b/i, key: "bundle_label" },
-  { re: /\bwhat\s+tool\s+(was\s+used\s+to\s+send|sent|generated)\b|\bsender\s+tool\b/i, key: "sender_tool" },
   { re: /\bfax\s+(metadata|details|info)\b|\babout\s+this\s+fax\b|\bfax\s+summary\b/i, key: "" },
 ];
 

@@ -402,8 +402,27 @@ export function createFaxVizServer({ faxDir, distDir }) {
 
         // Extract faxId from sessionKey (format: "fax:<faxId>")
         var faxId = null;
+        var manifestData = null;
         if (sessionKey && sessionKey.startsWith("fax:")) {
           faxId = sessionKey.substring(4);
+        }
+
+        // Inject manifest BEFORE precomputation so the fact store can persist it
+        if (faxId) {
+          var bundlePath = path.join(faxDir, faxId);
+          if (bundlePath.startsWith(faxDir)) {
+            try {
+              var manifestPath = path.join(bundlePath, "manifest.json");
+              manifestData = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+            } catch (_) {}
+            if (manifestData) {
+              resolvedSession.faxMetadata = manifestData;
+              // Invalidate stale fact store so it gets rebuilt with manifest data
+              if (resolvedSession.factStore && !resolvedSession.factStore.hasFaxMetadata) {
+                resolvedSession.factStore = null;
+              }
+            }
+          }
         }
 
         // Ensure precomputed artifacts and program cache exist
@@ -416,20 +435,10 @@ export function createFaxVizServer({ faxDir, distDir }) {
 
         // Build contextExtender that prepends fax metadata + markdown context
         var contextExtender = null;
-        var manifestData = null;
         if (faxId) {
-          var bundlePath = path.join(faxDir, faxId);
-          if (bundlePath.startsWith(faxDir)) {
-            var mdFiles = readBundleMarkdownFiles(bundlePath);
-            try {
-              var manifestPath = path.join(bundlePath, "manifest.json");
-              manifestData = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-            } catch (_) {}
-
-            // Inject manifest into resolvedSession so fact store can persist it
-            if (manifestData) {
-              resolvedSession.faxMetadata = manifestData;
-            }
+          var bundlePath2 = path.join(faxDir, faxId);
+          if (bundlePath2.startsWith(faxDir)) {
+            var mdFiles = readBundleMarkdownFiles(bundlePath2);
 
             if (mdFiles.length > 0 || manifestData) {
               contextExtender = function (sessionContext) {
