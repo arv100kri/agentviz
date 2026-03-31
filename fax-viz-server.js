@@ -420,8 +420,23 @@ export function createFaxVizServer({ faxDir, distDir }) {
           }
         }
 
-        // SSE streaming response
-        var sseSend = setupSSE(res);
+        // SSE streaming response with instrumentation
+        var rawSseSend = setupSSE(res);
+        var qaLog = { question: question, sessionKey: sessionKey, startedAt: qaRequestStartedAt };
+        var sseSend = function (data) {
+          // Capture key pipeline events for debugging
+          if (data && data.phase) qaLog.lastPhase = data.phase;
+          if (data && data.detail && typeof data.detail === "string") {
+            if (data.detail.indexOf("paraphrase") !== -1) qaLog.paraphraseCacheHit = data.detail.indexOf("Found") !== -1;
+            if (data.detail.indexOf("cached") !== -1 && data.detail.indexOf("Reusing") !== -1) qaLog.programCacheHit = true;
+          }
+          if (data && data.done) {
+            qaLog.elapsedMs = Date.now() - qaRequestStartedAt;
+            qaLog.answerLength = data.answer ? data.answer.length : 0;
+            console.log("[Q&A LOG]", JSON.stringify(qaLog));
+          }
+          rawSseSend(data);
+        };
 
         try {
           await handleSessionQA({

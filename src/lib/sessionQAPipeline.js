@@ -252,7 +252,12 @@ export async function handleSessionQA(options) {
       programCacheKey = buildSessionQAProgramCacheKey(queryProgram, {
         fingerprint: precomputed ? precomputed.fingerprint : null,
       });
-      var cachedProgramPlan = programCacheKey && resolvedSession.programCache
+      // Only use program cache for deterministic families where the answer
+      // is uniquely determined by the family + slots (e.g., metric, turn-lookup).
+      // For broad families (session-summary, broad-synthesis), different questions
+      // can have the same program key but different correct answers.
+      var isDeterministicFamily = queryProgram.deterministic && !queryProgram.needsModel;
+      var cachedProgramPlan = isDeterministicFamily && programCacheKey && resolvedSession.programCache
         ? resolvedSession.programCache[programCacheKey]
         : null;
 
