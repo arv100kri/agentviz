@@ -372,15 +372,34 @@ export function createFaxVizServer({ faxDir, distDir }) {
           resolvedSession.programCache = {};
         }
 
-        // Build contextExtender that prepends fax markdown context
+        // Build contextExtender that prepends fax metadata + markdown context
         var contextExtender = null;
         if (faxId) {
           var bundlePath = path.join(faxDir, faxId);
           if (bundlePath.startsWith(faxDir)) {
             var mdFiles = readBundleMarkdownFiles(bundlePath);
-            if (mdFiles.length > 0) {
+            // Read manifest for sender/importance/thread metadata
+            var manifestData = null;
+            try {
+              var manifestPath = path.join(bundlePath, "manifest.json");
+              manifestData = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+            } catch (_) {}
+
+            if (mdFiles.length > 0 || manifestData) {
               contextExtender = function (sessionContext) {
                 var faxContext = "\n\n--- FAX BUNDLE CONTEXT ---\n\n";
+                if (manifestData) {
+                  faxContext += "## Fax Metadata\n\n";
+                  if (manifestData.sender) faxContext += "- **Sender**: " + manifestData.sender + "\n";
+                  if (manifestData.importance) faxContext += "- **Importance**: " + manifestData.importance + "\n";
+                  if (manifestData.thread) faxContext += "- **Thread**: " + manifestData.thread + "\n";
+                  if (manifestData.summary) faxContext += "- **Summary**: " + manifestData.summary + "\n";
+                  if (manifestData.timestamp) faxContext += "- **Timestamp**: " + manifestData.timestamp + "\n";
+                  if (manifestData.repo) faxContext += "- **Repo**: " + manifestData.repo + "\n";
+                  if (manifestData.branch) faxContext += "- **Branch**: " + manifestData.branch + "\n";
+                  if (manifestData.program) faxContext += "- **Program**: " + manifestData.program + "\n";
+                  faxContext += "\n";
+                }
                 for (var i = 0; i < mdFiles.length; i++) {
                   faxContext += "## " + mdFiles[i].name + "\n\n" + mdFiles[i].content + "\n\n";
                 }
