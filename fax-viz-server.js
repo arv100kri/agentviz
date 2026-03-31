@@ -392,6 +392,9 @@ export function createFaxVizServer({ faxDir, distDir }) {
             if (mdFiles.length > 0 || manifestData) {
               contextExtender = function (sessionContext) {
                 var faxContext = "\n\n--- FAX BUNDLE CONTEXT ---\n\n";
+                faxContext += "NOTE: This is a fax bundle (a context handoff between agents). ";
+                faxContext += "The fax documents below are the PRIMARY source of truth. ";
+                faxContext += "If the session data shows 0 turns or no events, answer from the fax documents instead.\n\n";
                 if (manifestData) {
                   faxContext += "## Fax Metadata\n\n";
                   if (manifestData.sender) {
@@ -408,6 +411,17 @@ export function createFaxVizServer({ faxDir, distDir }) {
                   if (manifestData.repo) faxContext += "- **Repo**: " + manifestData.repo + "\n";
                   if (manifestData.branch) faxContext += "- **Branch**: " + manifestData.branch + "\n";
                   if (manifestData.program && !manifestData.sender) faxContext += "- **Program**: " + manifestData.program + "\n";
+                  if (manifestData.progress) {
+                    if (manifestData.progress.stepsCompleted && manifestData.progress.stepsCompleted.length > 0) {
+                      faxContext += "- **Steps completed**: " + manifestData.progress.stepsCompleted.join(", ") + "\n";
+                    }
+                    if (manifestData.progress.stepsRemaining && manifestData.progress.stepsRemaining.length > 0) {
+                      faxContext += "- **Steps remaining**: " + manifestData.progress.stepsRemaining.join(", ") + "\n";
+                    }
+                  }
+                  if (manifestData.doNotRetry && manifestData.doNotRetry.length > 0) {
+                    faxContext += "- **Do not retry**: " + manifestData.doNotRetry.join(", ") + "\n";
+                  }
                   faxContext += "\n";
                 }
                 for (var i = 0; i < mdFiles.length; i++) {
