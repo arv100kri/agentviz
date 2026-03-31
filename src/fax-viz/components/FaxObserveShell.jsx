@@ -37,7 +37,7 @@ function formatSenderProgram(program) {
   return program.charAt(0).toUpperCase() + program.slice(1);
 }
 
-function FaxMetadataHeader({ faxEntry, onBack, onPickUp }) {
+function FaxMetadataHeader({ faxEntry, onBack, onPickUp, onOpenQA }) {
   var importanceColor = IMPORTANCE_COLORS[faxEntry.importance] || IMPORTANCE_COLORS.normal;
 
   var progress = faxEntry.progress;
@@ -94,6 +94,30 @@ function FaxMetadataHeader({ faxEntry, onBack, onPickUp }) {
       },
     }, (faxEntry.importance || "normal").toUpperCase()),
     React.createElement("div", { style: { flex: 1 } }),
+    React.createElement("button", {
+      className: "av-btn",
+      onClick: function () { if (onOpenQA) onOpenQA(); },
+      title: "Open Q&A (Ctrl+Shift+K)",
+      style: {
+        background: "transparent",
+        border: "1px solid " + theme.border.default,
+        borderRadius: theme.radius.md + "px",
+        color: theme.text.secondary,
+        padding: theme.space.sm + "px " + theme.space.md + "px",
+        fontSize: theme.fontSize.sm,
+        fontFamily: theme.font.mono,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+      },
+    },
+      React.createElement(Icon, { name: "message-circle", size: 14 }),
+      "Q&A",
+      React.createElement("span", {
+        style: { fontSize: 9, color: theme.text.ghost, marginLeft: 4 },
+      }, "\u2318\u21E7K")
+    ),
     React.createElement("button", {
       className: "av-btn",
       onClick: function () { if (onPickUp) onPickUp(); },
@@ -768,7 +792,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
     ref: containerRef,
     style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" },
   },
-    React.createElement(FaxMetadataHeader, { faxEntry: faxEntry, onBack: onBack, onPickUp: function () { setShowPickup(true); } }),
+    React.createElement(FaxMetadataHeader, { faxEntry: faxEntry, onBack: onBack, onPickUp: function () { setShowPickup(true); }, onOpenQA: function () { setShowQA(true); } }),
     React.createElement(ViewTabs, {
       activeView: activeView,
       views: FAX_VIEWS,

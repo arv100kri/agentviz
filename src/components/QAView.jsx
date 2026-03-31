@@ -301,7 +301,7 @@ var AVAILABLE_MODELS = [
 
 var DEFAULT_MODEL = "gpt-5.4";
 
-export default function QAView({ qa, events, turns, metadata, sessionFilePath, rawText, onSeekTurn, onSetView, enableInstantClassifier }) {
+export default function QAView({ qa, events, turns, metadata, sessionFilePath, rawText, onSeekTurn, onSetView, enableInstantClassifier, onClose }) {
   var [input, setInput] = useState("");
   var [instantMessages, setInstantMessages] = useState([]);
   var [instantSeq, setInstantSeq] = useState(0);
@@ -780,6 +780,20 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
           Send
         </button>
       </form>
+      {onClose && (
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "4px " + theme.space.xl + "px",
+          fontSize: theme.fontSize.xs,
+          color: theme.text.ghost,
+          borderTop: "1px solid " + theme.border.subtle,
+        }}>
+          <span>Esc to close</span>
+          <span>Ctrl+Shift+K</span>
+        </div>
+      )}
     </div>
   );
 }

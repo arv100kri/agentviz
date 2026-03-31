@@ -390,14 +390,20 @@ export function createFaxVizServer({ faxDir, distDir }) {
                 var faxContext = "\n\n--- FAX BUNDLE CONTEXT ---\n\n";
                 if (manifestData) {
                   faxContext += "## Fax Metadata\n\n";
-                  if (manifestData.sender) faxContext += "- **Sender**: " + manifestData.sender + "\n";
+                  if (manifestData.sender) {
+                    var s = manifestData.sender;
+                    var senderStr = typeof s === "string" ? s : (s.alias || s.email || s.name || JSON.stringify(s));
+                    faxContext += "- **Sender**: " + senderStr + "\n";
+                    if (s.email && s.alias) faxContext += "- **Sender email**: " + s.email + "\n";
+                    if (s.program) faxContext += "- **Sender tool**: " + s.program + "\n";
+                  }
                   if (manifestData.importance) faxContext += "- **Importance**: " + manifestData.importance + "\n";
                   if (manifestData.thread) faxContext += "- **Thread**: " + manifestData.thread + "\n";
                   if (manifestData.summary) faxContext += "- **Summary**: " + manifestData.summary + "\n";
                   if (manifestData.timestamp) faxContext += "- **Timestamp**: " + manifestData.timestamp + "\n";
                   if (manifestData.repo) faxContext += "- **Repo**: " + manifestData.repo + "\n";
                   if (manifestData.branch) faxContext += "- **Branch**: " + manifestData.branch + "\n";
-                  if (manifestData.program) faxContext += "- **Program**: " + manifestData.program + "\n";
+                  if (manifestData.program && !manifestData.sender) faxContext += "- **Program**: " + manifestData.program + "\n";
                   faxContext += "\n";
                 }
                 for (var i = 0; i < mdFiles.length; i++) {

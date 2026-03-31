@@ -65,6 +65,7 @@ export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata
         sessionFilePath: null,
         rawText: "",
         enableInstantClassifier: true,
+        onClose: onClose,
         onSeekTurn: function (turnTime) {
           if (playback && playback.seek) {
             playback.seek(turnTime);
