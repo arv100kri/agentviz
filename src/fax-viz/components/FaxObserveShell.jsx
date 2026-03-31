@@ -815,6 +815,7 @@ export default function FaxObserveShell({ faxEntry, onBack }) {
       open: showQA,
       onClose: function () { setShowQA(false); },
       qa: qa,
+      events: session ? session.events : [],
       turns: session ? session.turns : [],
       metadata: metadata,
       playback: playback,

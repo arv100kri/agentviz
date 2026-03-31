@@ -11,7 +11,7 @@ import { theme, alpha } from "../../lib/theme.js";
 import QAView from "../../components/QAView.jsx";
 import Icon from "../../components/Icon.jsx";
 
-export default function FaxQADrawer({ open, onClose, qa, turns, metadata, playback, setActiveView }) {
+export default function FaxQADrawer({ open, onClose, qa, events, turns, metadata, playback, setActiveView }) {
   if (!open) return null;
 
   // Escape to close
@@ -57,11 +57,12 @@ export default function FaxQADrawer({ open, onClose, qa, turns, metadata, playba
     },
       React.createElement(QAView, {
         qa: qa,
-        events: [],
+        events: events || [],
         turns: turns || [],
         metadata: metadata || {},
         sessionFilePath: null,
         rawText: "",
+        enableInstantClassifier: true,
         onSeekTurn: function (turnTime) {
           if (playback && playback.seek) {
             playback.seek(turnTime);

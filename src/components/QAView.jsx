@@ -9,6 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { theme, alpha } from "../lib/theme.js";
 import { formatDuration } from "../lib/formatTime.js";
 import Icon from "./Icon.jsx";
+import { classifyInstant } from "../lib/qaClassifier.js";
 
 var SUGGESTED_QUESTIONS = [
   "What tools were used most frequently?",
@@ -300,17 +301,21 @@ var AVAILABLE_MODELS = [
 
 var DEFAULT_MODEL = "gpt-5.4";
 
-export default function QAView({ qa, events, turns, metadata, sessionFilePath, rawText, onSeekTurn, onSetView }) {
+export default function QAView({ qa, events, turns, metadata, sessionFilePath, rawText, onSeekTurn, onSetView, enableInstantClassifier }) {
   var [input, setInput] = useState("");
+  var [instantMessages, setInstantMessages] = useState([]);
   var [loadingNowMs, setLoadingNowMs] = useState(function () { return Date.now(); });
   var messagesEndRef = useRef(null);
   var inputRef = useRef(null);
+
+  // Merge qa.messages with local instant messages for display
+  var allMessages = qa.messages.concat(instantMessages);
 
   useEffect(function () {
     if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [qa.messages.length, qa.loading, qa.loadingLabel, qa.queuedCount]);
+  }, [allMessages.length, qa.loading, qa.loadingLabel, qa.queuedCount]);
 
   useEffect(function () {
     if (inputRef.current) inputRef.current.focus();
@@ -327,14 +332,30 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
     };
   }, [qa.loading, qa.loadingStartedAtMs]);
 
+  function tryInstantAnswer(question) {
+    if (!enableInstantClassifier || !events || events.length === 0) return false;
+    var result = classifyInstant(question, { events: events, turns: turns, metadata: metadata });
+    if (!result) return false;
+    setInstantMessages(function (prev) {
+      return prev.concat([
+        { role: "user", content: question },
+        { role: "assistant", content: result.answer, timing: { totalMs: 0 } },
+      ]);
+    });
+    return true;
+  }
+
   function handleSubmit(e) {
     if (e) e.preventDefault();
     if (!input.trim()) return;
-    qa.askQuestion(input.trim(), events, turns, metadata, qa.selectedModel, sessionFilePath, rawText);
+    var q = input.trim();
     setInput("");
+    if (tryInstantAnswer(q)) return;
+    qa.askQuestion(q, events, turns, metadata, qa.selectedModel, sessionFilePath, rawText);
   }
 
   function handleSuggestion(q) {
+    if (tryInstantAnswer(q)) return;
     qa.askQuestion(q, events, turns, metadata, qa.selectedModel, sessionFilePath, rawText);
   }
 
@@ -581,7 +602,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
     background: theme.bg.surface,
   };
 
-  var hasMessages = qa.messages.length > 0;
+  var hasMessages = allMessages.length > 0;
   var loadingLabel = qa.loadingLabel || "Working on your question...";
   var loadingDetail = qa.loadingDetail || null;
   var loadingElapsedLabel = formatLoadingElapsed(getLiveLoadingElapsedMs(qa, loadingNowMs));
@@ -618,7 +639,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
             <button
               className="av-btn"
               style={clearBtnStyle}
-              onClick={qa.clearHistory}
+              onClick={function () { setInstantMessages([]); qa.clearHistory(); }}
               title="Clear conversation"
             >
               Clear
@@ -652,7 +673,7 @@ export default function QAView({ qa, events, turns, metadata, sessionFilePath, r
           </div>
         )}
 
-        {qa.messages.map(function (msg, i) {
+        {allMessages.map(function (msg, i) {
           if (msg.role === "user") {
             var isQueued = msg.queued;
             return (
