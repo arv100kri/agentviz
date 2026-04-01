@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? "github" : "html",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:3001",
     trace: "on-first-retry",
   },
   projects: [
@@ -18,8 +18,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npx vite --port 3000 --strictPort",
-    url: "http://localhost:3000",
+    command: "npx vite --config vite.fax-viz.config.js --port 3001 --strictPort",
+    url: "http://localhost:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },
