@@ -26,5 +26,8 @@ export default defineConfig(function ({ mode }) {
         },
       },
     },
+    test: {
+      exclude: ["node_modules", "e2e", "dist-fax-viz", "build"],
+    },
   };
 });

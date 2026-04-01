@@ -4,6 +4,7 @@ node_modules
 # Build output
 dist
 dist-cli
+dist-fax-viz
 build
 
 # Environment / secrets
@@ -35,13 +36,5 @@ playwright-report/
 # Local debug artifacts
 .vitest-targeted-output.txt
 
-# AGENTVIZ runtime artifacts
-agentviz-server.log
-ag.log
-ag-*.log
-ag.*.log
-*.ag.log
-dist-fax-viz/
+# Runtime artifacts
 fax-viz-server.log
-agentviz-reference.png
-agentviz-snapshot.md

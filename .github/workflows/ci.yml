@@ -35,14 +35,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Verify screenshots exist
-        run: |
-          for file in landing session-hero replay-view tracks-view stats-view; do
-            if [ ! -f "docs/screenshots/${file}.png" ]; then
-              echo "::error::Missing screenshot: docs/screenshots/${file}.png"
-              echo "README references this screenshot. Please capture it and commit."
-              exit 1
-            fi
-          done
-          echo "All referenced screenshots present."

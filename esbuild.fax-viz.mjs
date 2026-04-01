@@ -34,7 +34,7 @@ await esbuild.build({
   // Suppress warnings about dynamic require in dependencies
   logLevel: "warning",
   banner: {
-    js: "// fax-viz bundled server — https://github.com/arv100kri/agentviz\n",
+    js: "// fax-viz bundled server\n",
   },
 });
 
