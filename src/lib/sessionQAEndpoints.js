@@ -16,7 +16,7 @@ import {
   saveSessionQAHistoryEntry,
   removeSessionQAHistoryEntry,
   resolveSessionQAArtifacts,
-} from "../../server.js";
+} from "./sessionQAServer.js";
 
 var MAX_BODY_BYTES = 100 * 1024 * 1024; // 100MB -- localhost only, no DoS surface
 

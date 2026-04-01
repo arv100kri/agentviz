@@ -21,7 +21,7 @@ import {
   ensureSessionQAPrecomputed,
   createSessionQACacheStore,
   resolveSessionQAArtifacts,
-} from "./server.js";
+} from "./src/lib/sessionQAServer.js";
 import {
   readBody,
   handleQAHistoryEndpoint,

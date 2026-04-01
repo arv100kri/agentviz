@@ -28,7 +28,7 @@ import {
   buildQAProgressPayload,
   getQAEventText,
   getQAToolName,
-} from "../../server.js";
+} from "./sessionQAServer.js";
 
 function cloneJsonValue(value) {
   if (value == null) return value;
