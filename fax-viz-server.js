@@ -147,6 +147,7 @@ function discoverFaxBundles(faxDir) {
       progress: manifest.progress || null,
       bundlePath: bundlePath,
       sourceRoot: manifest.sourceRoot || null,
+      mode: "broadcast",
     });
   }
 
