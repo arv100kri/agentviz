@@ -12,6 +12,8 @@ build
 .env.*
 
 # Editor / IDE
+.vscode/*
+!.vscode/mcp.json
 .idea/
 *.swp
 *.swo
