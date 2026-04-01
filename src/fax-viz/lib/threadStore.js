@@ -130,6 +130,7 @@ export function createThreadStore(threadsFilePath) {
       fax.threadEntryCount = thread.entries.length;
       fax.threadSubject = thread.subject || fax.label || "";
       fax.direction = entry ? entry.direction || null : null;
+      fax.mode = entry ? entry.mode || null : null;
       fax.threadPickedUp = Boolean(thread.pickedUp);
       fax.threadReplied = Boolean(thread.replied);
       return fax;

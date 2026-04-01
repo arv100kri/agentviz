@@ -25,6 +25,26 @@ function ImportanceBadge({ importance }) {
   }, label);
 }
 
+function ModeBadge({ mode }) {
+  if (!mode) return null;
+  var isBroadcast = mode === "broadcast";
+  var icon = isBroadcast ? "\uD83D\uDCE1" : "\uD83C\uDFAF";
+  var label = isBroadcast ? "BROADCAST" : "TARGETED";
+  var color = isBroadcast ? "#6b9fff" : "#c084fc";
+  return React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 600,
+      color: color,
+      border: "1px solid " + color,
+      borderRadius: 3,
+      padding: "1px 5px",
+      letterSpacing: 0.5,
+      flexShrink: 0,
+    },
+  }, icon + " " + label);
+}
+
 function formatDate(iso) {
   if (!iso) return "";
   try {
@@ -332,6 +352,7 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
                   },
                 }, directionIcon + fax.label),
                 React.createElement(ImportanceBadge, { importance: fax.importance }),
+                React.createElement(ModeBadge, { mode: fax.mode }),
                 !isThreadHeader && !isThreadChild && React.createElement(ThreadIndicator, { count: threadCounts[fax.threadId] }),
                 fax.hasEvents && React.createElement("span", {
                   style: {
