@@ -2,7 +2,7 @@ name: Release fax-viz bundle
 
 on:
   push:
-    tags: ['v*']
+    tags: ['fax-viz-v*']
 
 permissions:
   contents: write
@@ -23,16 +23,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate tag matches package.json version
+      - name: Validate tag matches fax-viz version
         run: |
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./src/fax-viz/package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#fax-viz-v}"
           if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
-            echo "ERROR: Tag $GITHUB_REF_NAME (${TAG_VERSION}) does not match package.json version (${PKG_VERSION})"
-            echo "Update package.json version to ${TAG_VERSION}, or re-tag with v${PKG_VERSION}"
+            echo "ERROR: Tag $GITHUB_REF_NAME (${TAG_VERSION}) does not match src/fax-viz/package.json version (${PKG_VERSION})"
+            echo "Update src/fax-viz/package.json version to ${TAG_VERSION}, or re-tag with fax-viz-v${PKG_VERSION}"
             exit 1
           fi
-          echo "Version validated: v${PKG_VERSION}"
+          echo "Version validated: fax-viz-v${PKG_VERSION}"
 
       - name: Build fax-viz bundle
         run: npm run build:fax-viz-bundle

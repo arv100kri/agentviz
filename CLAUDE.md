@@ -156,16 +156,16 @@ Version is tracked in `package.json` `"version"` field. Follow **semantic versio
 
 ### Releasing fax-viz bundles
 
-The fax-viz server is bundled into a distributable zip via `npm run build:fax-viz-bundle`. A GitHub Actions workflow (`.github/workflows/release-fax-viz.yml`) automatically builds and publishes the bundle when a version tag is pushed.
+fax-viz has its own version in `src/fax-viz/package.json`, independent of the main AGENTVIZ version. A GitHub Actions workflow (`.github/workflows/release-fax-viz.yml`) builds and publishes the bundle when a `fax-viz-v*` tag is pushed.
 
 To release:
 ```bash
-# 1. Ensure package.json version is updated
+# 1. Ensure src/fax-viz/package.json version is updated
 # 2. Commit all changes
-# 3. Tag with the version from package.json (prefixed with v)
-git tag v$(node -p "require('./package.json').version")
+# 3. Tag with the fax-viz version
+git tag fax-viz-v$(node -p "require('./src/fax-viz/package.json').version")
 # 4. Push the tag
-git push origin v$(node -p "require('./package.json').version")
+git push origin fax-viz-v$(node -p "require('./src/fax-viz/package.json').version")
 ```
 
 The workflow builds the bundle and uploads `fax-viz-bundle.zip` to the GitHub Release page. The bundle contains:
