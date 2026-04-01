@@ -1,0 +1,54 @@
+name: Release fax-viz bundle
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build fax-viz bundle
+        run: npm run build:fax-viz-bundle
+
+      - name: Create release archive
+        run: |
+          cd build
+          zip -r ../fax-viz-bundle.zip fax-viz-server.mjs dist-fax-viz/
+          cd ..
+          echo "## Bundle contents" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "- \`fax-viz-server.mjs\` — bundled server ($(du -h build/fax-viz-server.mjs | cut -f1))" >> release-notes.md
+          echo "- \`dist-fax-viz/\` — static web assets ($(du -sh build/dist-fax-viz | cut -f1))" >> release-notes.md
+          echo "- Total: $(du -sh build | cut -f1)" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Usage" >> release-notes.md
+          echo '```bash' >> release-notes.md
+          echo "unzip fax-viz-bundle.zip" >> release-notes.md
+          echo "node fax-viz-server.mjs --fax-dir /path/to/fax/bundles" >> release-notes.md
+          echo '```' >> release-notes.md
+          echo "" >> release-notes.md
+          echo "Requires Node.js 18+. Q&A features require \`@github/copilot-sdk\`." >> release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: fax-viz-bundle.zip
+          body_path: release-notes.md
+          draft: false
+          prerelease: false

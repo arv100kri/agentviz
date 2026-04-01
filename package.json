@@ -27,6 +27,7 @@
     "build:fax-viz": "vite build --config vite.fax-viz.config.js",
     "build:fax-viz:debug": "vite build --config vite.fax-viz.config.js --mode debug",
     "build": "npm run build:web && npm run build:cli && npm run build:fax-viz",
+    "build:fax-viz-bundle": "npm run build:fax-viz && node esbuild.fax-viz.mjs",
     "build:debug": "npm run build:web:debug && npm run build:cli:debug && npm run build:fax-viz:debug",
     "dev:fax-viz": "vite --config vite.fax-viz.config.js",
     "preview": "vite preview",
