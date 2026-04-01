@@ -1,211 +1,35 @@
 <div align="center">
 
-# ◇ AGENTVIZ
+# FAX-VIZ
 
-**See what your AI agents actually do.**
+**Browse, review, and pick up fax context bundles.**
 
-Drop a Claude Code or Copilot CLI session file and explore the agent's reasoning, tool calls, turn flow, and output through replay, tracks, waterfall, graph, stats, and Q&A views. Or run it from the CLI for a live view that updates as your session unfolds.
+A standalone web viewer for fax context bundles shared between AI agent sessions. Browse your inbox, inspect session replays, ask questions with AI-powered Q&A, and pick up bundles to continue work.
 
-[![CI](https://github.com/jayparikh/agentviz/actions/workflows/ci.yml/badge.svg)](https://github.com/jayparikh/agentviz/actions/workflows/ci.yml)
 ![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 <br />
 
-<img src="docs/screenshots/session-hero.svg" alt="AGENTVIZ session views" width="800" />
+<img src="docs/screenshots/fax-inbox.svg" alt="FAX-VIZ inbox view" width="800" />
 
-*Move between replay, tracks, waterfall, graph, stats, and Q&A views to inspect the same session from different angles.*
+*Browse fax bundles with importance badges, thread grouping, and unread tracking.*
 
 </div>
 
 ---
 
-## Why AGENTVIZ?
+## Why FAX-VIZ?
 
-AI coding agents (Claude Code, Copilot CLI, etc.) generate dense session logs, but reading raw JSONL is painful. AGENTVIZ turns those logs into something you can actually explore:
+When AI agents hand off context between sessions, the result is a fax context bundle: a directory of markdown files, session events, and metadata. FAX-VIZ gives you a visual way to:
 
-- **Replay** sessions like a video, stepping through each tool call and reasoning step
-- **Trace** decision flow in a graph view with expandable turn and tool-call structure
-- **Visualize** timing and concurrency in tracks and waterfall timelines
-- **Analyze** tool usage patterns, error rates, and model behavior at a glance
-- **Debug** failures by jumping directly between errors with one keystroke
-- **Stream live** as a session unfolds -- the view updates in real time
-- **Export CLI digests and stats** for post-mortems, sharing, and automation
-- **Discover sessions** automatically from the Copilot CLI session store
-- **Get AI coaching** on prompt engineering, skills, and MCP setup grounded in best practices
-- **Ask questions** about any session in natural language and get answers grounded in session data
+- **Browse** incoming fax bundles in an inbox with search, importance filtering, and thread grouping
+- **Inspect** session replays, tracks, and stats from any fax bundle
+- **Ask questions** about session data and fax content with AI-powered Q&A
+- **Pick up** a fax to continue work in Copilot CLI or Claude Code with full context
 
 ## Quick Start
-
-### Web app (drag and drop)
-
-```bash
-git clone https://github.com/jayparikh/agentviz.git
-cd agentviz
-npm install
-npm run dev
-```
-
-Opens at [localhost:3000](http://localhost:3000). Drop a `.jsonl` session file or click **load a demo session** to try it instantly.
-
-### CLI (interactive + analysis)
-
-```bash
-# Interactive replay: point at a specific session file
-node bin/agentviz.js ~/.claude/projects/my-project/session.jsonl
-
-# Or pass a directory -- opens the most recently modified .jsonl inside it
-node bin/agentviz.js ~/.claude/projects/my-project/
-
-# Emit machine-readable stats JSON to stdout
-node bin/agentviz.js --stats ~/.copilot/session-state/<session-id>/events.jsonl
-
-# Generate a markdown digest
-node bin/agentviz.js --digest ~/.copilot/session-state/<session-id>/events.jsonl -o session-digest.md
-
-# Generate both outputs in one parse pass
-node bin/agentviz.js --digest ~/.copilot/session-state/<session-id>/events.jsonl -o session-digest.md --stats
-```
-
-Interactive launch opens the browser with a pulsing **LIVE** badge. As Claude Code writes new events to the session file, they stream into the view in real time via SSE, including records that are written incrementally before the trailing newline lands.
-
-Analysis modes do not open the browser. `--stats` prints structured JSON for scripts and dashboards. `--digest` writes a markdown session digest that combines deterministic evidence extraction with Copilot SDK-assisted synthesis for decisions, hypotheses, and reviewer Q&A.
-
-### Finding your session files
-
-```bash
-# Claude Code sessions
-ls ~/.claude/projects/
-
-# Copilot CLI sessions
-ls ~/.copilot/session-state/
-# Each subdirectory is a session UUID containing an events.jsonl file
-```
-
-## MCP Integration
-
-AGENTVIZ ships as an MCP server so you can open it directly from Claude Code or GitHub Copilot in VS Code without leaving your workflow. Both agents use the same `launch_agentviz` and `close_agentviz` tools.
-
-### Claude Code
-
-**Setup (one time):**
-
-```bash
-claude mcp add --scope user agentviz node /path/to/agentviz/mcp/server.js
-```
-
-This registers the server globally across all projects. Restart Claude Code to pick it up.
-
-**Usage:** In any session, just ask:
-
-> "Open agentviz" or "Show me the live view"
-
-### GitHub Copilot in VS Code
-
-**Setup:** Add the server to your VS Code user settings (`settings.json`) for global access across all projects:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "agentviz": {
-        "type": "stdio",
-        "command": "node",
-        "args": ["/path/to/agentviz/mcp/server.js"]
-      }
-    }
-  }
-}
-```
-
-Or scope it to a single project by creating `.vscode/mcp.json` in your workspace:
-
-```json
-{
-  "servers": {
-    "agentviz": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["/path/to/agentviz/mcp/server.js"]
-    }
-  }
-}
-```
-
-Reload VS Code after adding the config. In Copilot Chat, use **Agent mode** and ask:
-
-> "Open agentviz" or "Launch the live view"
-
-### What happens when you invoke it
-
-`launch_agentviz` will:
-1. Auto-detect the most recently active session file (checks `~/.claude/projects/` and `~/.copilot/session-state/`)
-2. Start a local HTTP server on a free port
-3. Open the browser with live streaming enabled
-
-To stop it, ask: "Close agentviz"
-
-### Available MCP tools
-
-| Tool | Description |
-|------|-------------|
-| `launch_agentviz` | Start the server and open the browser. Accepts an optional `session_file` path. |
-| `close_agentviz` | Stop a running server. Accepts an optional `port`; omit to stop all. |
-
-## Inbox and AI Coach
-
-When running via the CLI, AGENTVIZ automatically discovers recent sessions from `~/.copilot/session-state/` and lists them in an inbox sorted by review priority. Click any session to open it in the visualizer.
-
-Each session also gets an AI Coach analysis powered by the `@github/copilot-sdk` (gpt-4o). The coach reads your actual project config (`.github/copilot-instructions.md`, skills, MCP servers) and produces actionable recommendations for prompts, skills, and tooling setup. Recommendations can be applied directly with one click.
-
-## Session Comparison
-
-Load two agent traces side by side to compare them head to head. Great for benchmarking Claude Code vs Copilot CLI on the same task, or comparing two different prompting strategies.
-
-### Entry points
-
-- **Landing screen** -- click "compare two sessions" below the drop zone
-- **Single-session header** -- click **Compare** while viewing any session to add a second trace for comparison
-- **Compare landing** -- drop Session A and Session B independently; the view opens once both are loaded
-
-### Scorecard tab
-
-Side-by-side metrics with delta badges:
-
-| Metric | Delta color |
-|--------|-------------|
-| Duration | Green = A faster |
-| Cost / PRUs | Green = A cheaper (delta suppressed for cross-agent comparisons since units differ) |
-| Input / Output tokens | Neutral |
-| Cache reads / writes | Neutral (shown only when cache data present) |
-| Premium requests (PRU) | Green = A uses fewer (shown only for Copilot sessions) |
-| Tool calls | Neutral |
-| Errors | Green = A has fewer |
-| Turns | Neutral |
-| Files touched | Neutral |
-
-### Tools tab
-
-Horizontal bar chart showing tool call counts for both sessions on the same axis. Blue bars = Session A, purple bars = Session B.
-
-### Export
-
-Click **Export** in any header to download a single self-contained `.html` file. Share it with anyone -- no server required. Opening it reproduces the full session or comparison view exactly as you see it.
-
-Export is available in two places:
-- **Single session header** -- exports the current session
-- **Comparison header** -- exports both sessions and the full comparison view
-
-> Export requires the production build (`npm run build`). It is not available in the Vite dev server.
-
----
-
-## FAX-VIZ
-
-FAX-VIZ is a companion app for browsing **fax context bundles** -- structured handoff packages that agents exchange to transfer work between sessions or team members. It provides an inbox for incoming faxes, a full session visualizer, and a **Pick Up** flow that launches a new Copilot CLI or Claude Code session pre-loaded with the fax context.
-
-### Quick Start
 
 ```bash
 node bin/fax-viz.js --fax-dir /path/to/fax/bundles
@@ -213,35 +37,52 @@ node bin/fax-viz.js --fax-dir /path/to/fax/bundles
 
 Opens at [localhost:4243](http://localhost:4243). Use `--open <name>` to jump directly to a specific fax, or `--no-open` to suppress the browser.
 
-### Inbox View
+### Options
+
+```
+--fax-dir <path>        Path to directory containing fax bundles (required)
+--threads-file <path>   Path to threads.json for thread store integration
+--open <name>           Open browser directly to a specific fax bundle
+--no-open               Don't open browser automatically
+```
+
+## Inbox View
 
 Browse all fax bundles with search, filtering by importance (Urgent / High / Normal), and sorting by date, importance, or sender. Unread badges, thread counts, and session indicators help you triage quickly.
 
+<div align="center">
 <img src="docs/screenshots/fax-inbox.svg" alt="FAX-VIZ inbox view" width="800" />
+</div>
 
-### Observe View
+## Observe View
 
-Click any fax to open it in the observe view. The metadata header shows importance, progress, sender, artifacts, and thread info. Below it, the same tabbed views from AGENTVIZ are available: Replay, Tracks, Stats, and Q&A.
+Click any fax to open it in the observe view. The metadata header shows importance, progress, sender, artifacts, and thread info. Below it, tabbed views are available: Replay, Tracks, Stats, and Q&A.
 
-Error navigation (E / Shift+E), track filters, playback speed control, and all AGENTVIZ keyboard shortcuts work identically.
+Error navigation (E / Shift+E), track filters, playback speed control, and keyboard shortcuts work across all views.
 
+<div align="center">
 <img src="docs/screenshots/fax-observe.svg" alt="FAX-VIZ observe view" width="800" />
+</div>
 
-### Pick Up Flow
+## Pick Up Flow
 
-Click **Pick Up** to launch a new session that continues the fax's work. The modal lets you choose between Copilot CLI and Claude Code, start a new session or resume an existing one, and specify a working directory with a native folder browser.
+Click **Pick Up** to launch a new session that continues the fax's work. Choose between Copilot CLI and Claude Code, start a new session or resume an existing one, and specify a working directory.
 
 The bootstrap prompt from the fax bundle is automatically injected into the new session, giving the agent full context about the prior work, decisions, and next steps.
 
+<div align="center">
 <img src="docs/screenshots/fax-pickup.svg" alt="FAX-VIZ Pick Up modal" width="800" />
+</div>
 
-### Session Q&A
+## Session Q&A
 
-The Q&A tab works identically to AGENTVIZ Q&A, with one enhancement: fax bundle markdown files (handoff.md, analysis.md, decisions.md, collab.md) are automatically injected as additional context, so the model can answer questions about both the session trace and the fax content.
+The Q&A tab lets you ask natural-language questions about the session data. Fax bundle markdown files (handoff.md, analysis.md, decisions.md, collab.md) are automatically injected as additional context, so the model can answer questions about both the session trace and the fax content.
 
+<div align="center">
 <img src="docs/screenshots/fax-qa.svg" alt="FAX-VIZ Q&A view" width="800" />
+</div>
 
-### Fax Bundle Structure
+## Fax Bundle Structure
 
 Each fax bundle is a directory containing:
 
@@ -255,7 +96,7 @@ Each fax bundle is a directory containing:
 | `bootstrap-prompt.txt` | Pre-built prompt for the Pick Up flow |
 | `.fax-reply-intent.json` | Thread metadata for reply tracking |
 
-### API Endpoints
+## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -267,10 +108,10 @@ Each fax bundle is a directory containing:
 | `/api/copilot-sessions` | GET | List available sessions for resume |
 | `/api/browse-folder` | POST | Native OS folder picker dialog |
 | `/api/fax-read-status` | GET/POST | Read/unread tracking |
+| `/api/qa` | POST | Q&A with fax context injection |
 | `/api/version` | GET | Server version and commit info |
-| `/api/refresh-token` | POST | Update Graph API token (SharePoint mode) |
 
-### Distribution
+## Distribution
 
 FAX-VIZ can be distributed as a pre-built bundle (no npm/npx required):
 
@@ -286,119 +127,102 @@ Pre-built bundles are published as GitHub Release assets on every version tag. D
 
 The bundle contains `fax-viz-server.mjs` (~186 KB) and `dist-fax-viz/` (~355 KB). Q&A features require `@github/copilot-sdk` in the Node module path.
 
-### Shared Infrastructure
-
-FAX-VIZ shares the following with AGENTVIZ to avoid code duplication:
-
-- **Q&A pipeline** (`src/lib/sessionQAPipeline.js`) -- full question routing, fact store, model calling
-- **Q&A endpoint handlers** (`src/lib/sessionQAEndpoints.js`) -- readBody, cache, history, SSE setup
-- **Model answer cache** (`createModelAnswerCache`) -- LRU cache for cross-rephrasing reuse
-- **Session resolution** (`resolveSessionQAArtifacts`) -- cache lookup, inline payload, rawText handling
-- **Components** -- QAView, DiffViewer, DataInspector, Timeline, and all view components
-
----
-
-## Features
-
-### Landing View
-
-Drop zone for session files, with a demo session available instantly. When running via the CLI, the inbox is shown here instead -- auto-discovered sessions from `~/.copilot/session-state/` sorted by review priority.
-
-<div align="center">
-<img src="docs/screenshots/landing.svg" alt="Landing View" width="800" />
-</div>
-
-### Replay View
-
-Chronological event stream with a resizable inspector sidebar. Click any event to see full details plus a payload inspector with readable JSON or text, top-level keys, line and character counts, copy support, and expand or collapse controls. The colorful timeline bar at top shows event density and error locations.
-
-<div align="center">
-<img src="docs/screenshots/replay-view.svg" alt="Replay View" width="800" />
-</div>
-
-### Tracks View
-
-DAW-style multi-track lanes for Reasoning, Tool Calls, Context, and Output. Solo (**S**) isolates one track. Mute (**M**) hides it. See at a glance how your agent's time was spent.
-
-<div align="center">
-<img src="docs/screenshots/tracks-view.svg" alt="Tracks View" width="800" />
-</div>
-
-### Waterfall View
-
-Gantt-style timeline of every tool call, sorted by start time with nesting for overlapping calls. Hover any bar to see duration and timing. Click to open the full inspector, including inline diffs for file edits and readable input or result payload previews.
-
-<div align="center">
-<img src="docs/screenshots/waterfall-view.svg" alt="Waterfall View" width="800" />
-</div>
-
-### Graph View
-
-Interactive directed graph of session turns with expandable tool-call structure. Double-click a turn to open its internal tool flow, pan and zoom around the graph, and follow playback as active nodes light up and future nodes fade back.
-
-<div align="center">
-<img src="docs/screenshots/graph-view.svg" alt="Graph View" width="800" />
-</div>
-
-### Stats View
-
-Aggregate metrics, event distribution bars, tool usage ranking, and a per-turn summary. Includes token counts and estimated USD cost per turn for Claude models.
-
-<div align="center">
-<img src="docs/screenshots/stats-view.svg" alt="Stats View" width="800" />
-</div>
-
-### Coach View
-
-AI-powered session coaching available directly from any session. The coach reads your autonomy metrics, project config (`.github/copilot-instructions.md`, MCP servers, skills), and session patterns to produce evidence-backed recommendations for prompts, tooling, and workflow. Click **Analyze** to run, then accept or ignore each draft recommendation. Requires the CLI server -- run via `node bin/agentviz.js` or the MCP tool.
-
-<div align="center">
-<img src="docs/screenshots/coach-view.svg" alt="Coach View" width="800" />
-</div>
-
-### Q&A View
-
-Ask natural-language questions about any loaded session and get answers grounded in the session data. The Q&A engine uses precomputed session artifacts, a SQLite fact store for deterministic lookups, a lunr.js full-text search index for domain-specific retrieval, and query-aware routing to answer questions about turns, tools, errors, files, and overall session flow. Deterministic answers (metrics, turn lookups, file/tool/error/command listings) return in under 10ms. Domain-specific questions use the search index to find relevant turns before sending focused context to the model. Answers include clickable turn references that jump directly to the relevant point in the session. Requires the CLI server for model-backed answers.
-
-<div align="center">
-<img src="docs/screenshots/qa-view.svg" alt="Q&A View" width="800" />
-</div>
-
-### More Features
-
-| Feature | Description |
-|---------|-------------|
-| **Live Streaming** | CLI mode tails a session file via SSE. View updates in real time as events arrive, including newline-delayed JSONL writes from Claude Code. |
-| **Payload Inspector** | Replay and waterfall inspectors show readable JSON or text previews with key summaries, counts, copy, and expand controls. |
-| **Graph View** | Directed turn-flow graph with expandable tool-call nodes, pan/zoom, and playback-aware highlighting. |
-| **Token and Cost Tracking** | Per-turn token usage with estimated USD cost for Claude 3/4 models. |
-| **Search** | Full-text search across events, tools, and agents. Matches highlighted in real time. |
-| **Command Palette** | `Cmd+K` fuzzy search to jump to any turn, event, or view instantly. |
-| **Error Navigation** | Auto-detects errors from flags and text patterns. Jump with `E` / `Shift+E`. |
-| **Track Filters** | Toggle visibility per track type with filter chips in the header. |
-| **Playback Control** | Play/pause with variable speed (0.5x to 8x). Seek with arrow keys. |
-| **Diff Viewer** | Inline unified diff with dual-gutter line numbers for file-editing tool calls. |
-| **Auto-detect Format** | Supports Claude Code and Copilot CLI JSONL. Format detected from first line. |
-| **Session Comparison** | Load two traces side by side. Scorecard and tool-usage chart with delta badges. |
-| **HTML Export** | One-click export of any session or comparison to a self-contained shareable `.html` file. |
-| **CLI Digests and Stats** | Generate markdown digests and machine-readable JSON telemetry from the command line without opening the browser. |
-| **Inbox Auto-discovery** | Automatically finds recent Copilot CLI sessions and ranks them by review priority. |
-| **AI Coach** | Agentic analysis powered by Copilot SDK. Recommends prompts, skills, and MCP config with one-click apply. |
-| **Session Q&A** | Ask natural-language questions about any session. Answers are grounded in session data with clickable turn references. Uses precomputed artifacts, a SQLite fact store, lunr.js search index, and query-aware retrieval. Deterministic answers in <10ms. |
-| **Autonomy Metrics** | Measures human response time, idle gaps, and intervention frequency per session. |
-| **Fax-Viz** | Companion viewer for fax context bundles. Pick up a fax in Copilot CLI or Claude Code, launch a new session or resume a recent one, and deep-link with `--open <fax-name>`. Shares the same Q&A pipeline (deterministic fast paths, search index, caching) as AGENTVIZ. |
-
 ## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
 | `Space` | Play / Pause |
 | `Left` / `Right` | Seek 2 seconds |
-| `1` / `2` / `3` / `4` / `5` / `6` | Switch view (Replay / Tracks / Waterfall / Graph / Stats / Q&A) |
+| `1` / `2` / `3` / `4` | Switch view (Replay / Tracks / Stats / Q&A) |
 | `/` | Focus search |
 | `E` / `Shift+E` | Next / Previous error |
-| `Cmd+K` | Command palette |
-| `Enter` / `Shift+Enter` | Next / Previous search match |
+| `Escape` | Back to inbox |
+
+## Architecture
+
+```
+src/
+  fax-viz/
+    FaxApp.jsx             # Main app with inbox and observe views
+    main.jsx               # React entry point with error boundary
+    components/
+      FaxInboxView.jsx     # Fax bundle inbox with Pick Up buttons
+      FaxObserveShell.jsx  # Observe view with header and session replay
+      FaxQADrawer.jsx      # Q&A sidebar for fax context
+      PickUpModal.jsx      # Pick Up modal with tool selector and session picker
+    hooks/
+      useFaxDiscovery.js   # Polls /api/faxes for bundle list
+      useFaxReadStatus.js  # Read/unread status tracking
+    lib/
+      faxConstants.js      # Port, importance colors, sort options
+      faxReplyIntent.js    # Reply intent file read/write
+      faxTypes.ts          # TypeScript types for fax manifests
+      threadStore.js       # Thread metadata store
+  hooks/
+    usePlayback.js         # Play/pause, speed, seek state machine
+    useSearch.js           # Debounced full-text search with match highlighting
+    useKeyboardShortcuts.js # Centralized keyboard handler
+    usePersistentState.js  # localStorage-backed useState with debounced writes
+    useSessionQA.js        # Session Q&A conversation state and streaming
+  lib/
+    theme.js               # Design tokens (true black base, blue/purple/green accents)
+    parseSession.ts        # Auto-detect format router
+    parser.ts              # Claude Code JSONL parser
+    copilotCliParser.ts    # Copilot CLI JSONL parser
+    session.ts             # Pure helpers: getSessionTotal, buildFilteredEventEntries
+    sessionTypes.ts        # TypeScript type definitions
+    sessionParsing.ts      # Session parsing utilities
+    replayLayout.js        # Virtualized windowing for large sessions
+    diffUtils.js           # Diff detection and Myers line diff algorithm
+    pricing.js             # Claude model pricing table and cost estimation
+    dataInspector.js       # Payload summary and preview helpers
+    formatTime.js          # Duration and date formatting utilities
+    playbackUtils.js       # Playback state helpers
+    qaClassifier.js        # Question classification for Q&A routing
+    autonomyMetrics.js     # Session autonomy scoring
+    sessionQA.js           # Q&A helpers: context building, routing, chunk scoring
+    sessionQAServer.js     # Q&A server utilities (precompute, cache, history)
+    sessionQAPipeline.js   # Q&A pipeline: routing, fact store, model calling
+    sessionQAEndpoints.js  # Q&A endpoint handlers: readBody, cache, SSE
+    sessionQAFactStore.js  # SQLite fact store for deterministic Q&A lookups
+    sessionSearchIndex.js  # lunr.js full-text search index
+  components/
+    ReplayView.jsx         # Windowed event stream + inspector sidebar
+    TracksView.jsx         # DAW-style multi-track timeline
+    StatsView.jsx          # Aggregate metrics and tool ranking
+    QAView.jsx             # AI-powered Session Q&A panel
+    Timeline.jsx           # Scrubable playback bar with event markers
+    DiffViewer.jsx         # Inline unified diff for file edits
+    DataInspector.jsx      # Readable payload inspector with copy support
+    SyntaxHighlight.jsx    # Lightweight code syntax coloring
+    ResizablePanel.jsx     # Drag-to-resize split panel utility
+    ErrorBoundary.jsx      # React error boundary
+    Icon.jsx               # Lucide icon wrapper
+    ui/
+      ToolbarButton.jsx    # Toolbar button component
+bin/
+  fax-viz.js               # CLI entry point: starts server, opens browser
+fax-viz-server.js          # HTTP server: fax discovery, session events, Q&A
+esbuild.fax-viz.mjs        # Bundle builder for standalone distribution
+```
+
+## Development
+
+```bash
+npm run dev:fax-viz        # Vite dev server on port 3001
+node bin/fax-viz.js --fax-dir <path>  # API backend on port 4243
+npm run build:fax-viz      # Production build to dist-fax-viz/
+npm run build:fax-viz-bundle  # Standalone distributable bundle
+npm test                   # Unit tests via Vitest
+npm run test:e2e           # Playwright E2E tests
+npm run typecheck          # TypeScript checks
+```
+
+> **Full dev setup requires both servers.** `npm run dev:fax-viz` starts the Vite frontend; `node bin/fax-viz.js --fax-dir <path>` starts the API backend. Vite proxies `/api/*` to the backend automatically.
+
+### Design System
+
+True black base (`#000000`) with blue, purple, and green accents. All colors are defined as design tokens in `src/lib/theme.js`. JetBrains Mono throughout. No CSS framework; all styles are inline.
 
 ## Supported Formats
 
@@ -406,159 +230,6 @@ Ask natural-language questions about any loaded session and get answers grounded
 |--------|-----------|-----------------|
 | Claude Code | `.jsonl` from `~/.claude/projects/` | Default fallback |
 | Copilot CLI | `.jsonl` event traces | `session.start` with `producer: "copilot-agent"` |
-
-More formats planned: LangSmith traces, OpenTelemetry spans.
-
-## Architecture
-
-```
-src/
-  App.jsx                # Main orchestrator: file loading, playback, view routing
-  cli/
-    index.js             # Node-target CLI analysis exports bundled into dist-cli/
-  hooks/
-    usePlayback.js       # Play/pause, speed, seek state machine
-    useSearch.js         # Debounced full-text search with match highlighting
-    useKeyboardShortcuts.js  # Centralized keyboard handler
-    useSessionLoader.js  # File parsing, live init from /api/file, session reset
-    useLiveStream.js     # SSE EventSource hook with 500ms debounce for live mode
-    usePersistentState.js    # localStorage-backed useState with debounced writes
-    useDiscoveredSessions.js # Auto-discovery of Copilot CLI sessions via /api/sessions
-    useHashRouter.js     # Hash-based routing between inbox and session views
-    useAsyncStatus.js    # Async operation state machine (idle/loading/success/error)
-    useSessionQA.js      # Session Q&A conversation state, persistence, and streaming
-  lib/
-    cliArgs.js          # CLI flag parsing and mode resolution
-    parseSession.ts      # Auto-detect format router
-    parser.ts            # Claude Code JSONL parser
-    copilotCliParser.ts  # Copilot CLI JSONL parser
-    dataInspector.js     # Payload summary and preview helpers for inspector panels
-    session.ts           # Pure helpers: getSessionTotal, buildFilteredEventEntries
-    sessionLibrary.js    # localStorage-backed session library with content persistence
-    sessionParsing.ts    # Session parsing utilities and types
-    sessionInsights.js   # CLI stats and digest evidence builders
-    sessionDigestAgent.js # Copilot SDK digest synthesis for higher-order sections
-    autonomyMetrics.js   # Human response time, idle gaps, intervention scoring
-    projectConfig.js     # Project config surface detection (CLAUDE.md, .github/, etc.)
-    aiCoachAgent.js      # AI Coach powered by @github/copilot-sdk (gpt-4o)
-    theme.js             # Design tokens (true black base, blue/purple/green accents)
-    constants.js         # Sample events for demo mode
-    replayLayout.js      # Virtualized windowing for large sessions
-    commandPalette.js    # Precomputed fuzzy search index
-    diffUtils.js         # Diff detection and Myers line diff algorithm
-    waterfall.ts         # Waterfall view helpers: item building, stats, layout
-    graphLayout.js       # ELKjs graph builder and layout merger for Graph view
-    pricing.js           # Claude model pricing table and cost estimation
-    sessionQA.js         # Session Q&A helpers: context building, routing, chunk scoring
-    sessionQAFactStore.js # SQLite fact store for deterministic Q&A lookups
-    sessionQAPipeline.js # Shared Q&A pipeline used by both server.js and fax-viz-server.js
-    sessionSearchIndex.js # lunr.js full-text search index for domain-specific Q&A retrieval
-    exportHtml.js        # Self-contained HTML export for single sessions and comparisons
-    formatTime.js        # Duration and date formatting utilities
-    playbackUtils.js     # Playback state helpers
-  components/
-    InboxView.jsx        # Session inbox with auto-discovery, sorting, and review priority
-    DebriefView.jsx      # AI Coach panel with cached analysis and one-click apply
-    ReplayView.jsx       # Windowed event stream + inspector sidebar
-    TracksView.jsx       # DAW-style multi-track timeline
-    WaterfallView.jsx    # Tool execution waterfall with nesting and inspector
-    GraphView.jsx        # Interactive turn graph with expandable tool-call nodes
-    StatsView.jsx        # Aggregate metrics and tool ranking
-    QAView.jsx           # AI-powered Session Q&A panel with suggested questions
-    CompareView.jsx      # Side-by-side session comparison (Scorecard + Tools tabs)
-    CommandPalette.jsx   # Cmd+K fuzzy search overlay
-    Timeline.jsx         # Scrubable playback bar with event markers
-    DiffViewer.jsx       # Inline unified diff for file-editing tool calls
-    DataInspector.jsx    # Readable payload inspector with summaries and copy support
-    LiveIndicator.jsx    # Pulsing LIVE badge shown in CLI streaming mode
-    ShortcutsModal.jsx   # Keyboard shortcuts overlay
-    RecentSessionsPicker.jsx # Recent sessions dropdown picker
-    SyntaxHighlight.jsx  # Lightweight code syntax coloring for payload previews
-    ResizablePanel.jsx   # Drag-to-resize split panel utility
-    FileUploader.jsx     # Drag-and-drop file input with error handling
-    ErrorBoundary.jsx    # React error boundary with resetKey for recovery
-    Icon.jsx             # Lucide icon wrapper; all icons must be imported AND added to ICON_MAP
-    app/                 # Shell components: AppHeader, AppLandingState, AppLoadingState
-    ui/                  # Shared primitives: BrandWordmark, ShellFrame, ToolbarButton
-    waterfall/           # Waterfall sub-components: WaterfallChart, WaterfallRow, TimeAxis
-  fax-viz/
-    FaxApp.jsx           # Fax-viz main app with inbox and observe views
-    components/
-      FaxInboxView.jsx   # Fax bundle inbox with Pick Up buttons
-      FaxObserveShell.jsx # Fax observe view with header and markdown display
-      PickUpModal.jsx    # Pick Up modal with tool selector and session picker
-    lib/
-      faxReplyIntent.js  # Read/write helpers for .fax-reply-intent.json
-bin/
-  agentviz.js            # Multi-mode CLI: launch replay UI, emit stats, or generate a digest
-mcp/
-  server.js              # MCP server: launch_agentviz and close_agentviz tools
-server.js                # HTTP server: serves dist/ SPA + SSE /api/stream file tail
-vite.cli.config.js       # Vite library build for the Node CLI analysis bundle
-```
-
-### Parser API
-
-`parseSession(text)` auto-detects the format and returns a normalized structure:
-
-```js
-// Every event has the same shape regardless of source format
-{ t, agent, track, text, duration, intensity, toolName?, toolInput?, toolCallId?, toolResultText?, toolResultIsError?, raw, turnIndex, isError, model?, tokenUsage?, parentToolCallId? }
-
-// Turns group events by conversation round
-{ index, startTime, endTime, eventIndices, userMessage, toolCount, hasError }
-
-// Session-level stats
-{ totalEvents, totalTurns, totalToolCalls, errorCount, duration, models, primaryModel, tokenUsage }
-```
-
-## Development
-
-```bash
-npm run dev             # Vite dev server on port 3000
-node bin/agentviz.js    # API backend on port 4242
-npm run build           # Production builds to dist/ and dist-cli/
-npm test                # Run all tests via Vitest
-npm run test:watch      # Watch mode
-npm run typecheck       # TypeScript checks for src/lib/**/*.ts
-```
-
-> **Full dev setup requires both servers.** `npm run dev` starts the Vite frontend; `node bin/agentviz.js` starts the API backend (Coach, session discovery, config, apply, live streaming). Vite proxies `/api/*` to the backend automatically.
-
-### Design System
-
-True black base (`#000000`) with blue, purple, and green accents. Vivid semantic colors: green for success, muted red for warning, bright red for error. All colors are defined as design tokens in `src/lib/theme.js`. JetBrains Mono throughout. No CSS framework; all styles are inline.
-
-## Contributing
-
-Contributions are welcome! Here are some areas where help is appreciated:
-
-- **New parsers**: LangSmith, OpenTelemetry, custom agent frameworks
-- **Visualizations**: Graph minimap, large-session clustering, multi-agent hierarchy
-- **Features**: Bookmarks/annotations, shareable URLs
-
-Please open an issue to discuss larger changes before submitting a PR.
-
-## Roadmap
-
-- [x] Token count tracking and cost estimation per turn
-- [x] Tool execution waterfall / Gantt chart view
-- [x] Inline diff viewer for file-editing tool calls
-- [x] Live streaming mode (tail a session file in real time)
-- [x] CLI launcher: `node bin/agentviz.js session.jsonl`
-- [x] MCP server for Claude Code integration (`launch_agentviz` tool)
-- [x] Session comparison (dual-trace scorecard + tool usage chart)
-- [x] HTML export (self-contained shareable file, single session or comparison)
-- [x] Conversation flow graph (directed graph of turns and decisions)
-- [x] Inbox auto-discovery (Copilot CLI sessions found and ranked automatically)
-- [x] AI Coach agent (session analysis with one-click config recommendations)
-- [x] Autonomy metrics (human response time, idle gaps, intervention frequency)
-- [ ] Bookmarks and annotations (persisted to localStorage)
-- [ ] Graph minimap and large-session clustering
-- [ ] Multi-agent hierarchy (parent/child agents, nested tracks)
-- [ ] Shareable session URLs
-- [ ] Vim-style keyboard navigation
-- [ ] `npx agentviz` (publish to npm)
 
 ## License
 
