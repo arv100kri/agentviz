@@ -267,6 +267,24 @@ Each fax bundle is a directory containing:
 | `/api/copilot-sessions` | GET | List available sessions for resume |
 | `/api/browse-folder` | POST | Native OS folder picker dialog |
 | `/api/fax-read-status` | GET/POST | Read/unread tracking |
+| `/api/version` | GET | Server version and commit info |
+| `/api/refresh-token` | POST | Update Graph API token (SharePoint mode) |
+
+### Distribution
+
+FAX-VIZ can be distributed as a pre-built bundle (no npm/npx required):
+
+```bash
+# Build the bundle locally
+npm run build:fax-viz-bundle
+
+# Run from bundle (only Node.js 18+ required)
+node build/fax-viz-server.mjs --fax-dir /path/to/fax/bundles
+```
+
+Pre-built bundles are published as GitHub Release assets on every version tag. Download `fax-viz-bundle.zip` from the [Releases page](https://github.com/arv100kri/agentviz/releases).
+
+The bundle contains `fax-viz-server.mjs` (~186 KB) and `dist-fax-viz/` (~355 KB). Q&A features require `@github/copilot-sdk` in the Node module path.
 
 ### Shared Infrastructure
 

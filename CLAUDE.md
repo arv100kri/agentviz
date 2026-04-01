@@ -145,6 +145,35 @@ The Playwright MCP server is configured in `.github/copilot/mcp.json` for agent-
 - Product name is always AGENTVIZ (all caps, no spaces)
 - UI/UX design system: see docs/ui-ux-style-guide.md -- all UI changes must conform to it
 
+## Versioning and releases
+
+Version is tracked in `package.json` `"version"` field. Follow **semantic versioning** (MAJOR.MINOR.PATCH):
+- PATCH: bug fixes, quality improvements, test updates
+- MINOR: new features (new views, Q&A improvements, new CLI args)
+- MAJOR: breaking changes (API contract changes, removed endpoints)
+
+**When adding significant features, bump the version in `package.json` as part of the commit.**
+
+### Releasing fax-viz bundles
+
+The fax-viz server is bundled into a distributable zip via `npm run build:fax-viz-bundle`. A GitHub Actions workflow (`.github/workflows/release-fax-viz.yml`) automatically builds and publishes the bundle when a version tag is pushed.
+
+To release:
+```bash
+# 1. Ensure package.json version is updated
+# 2. Commit all changes
+# 3. Tag with the version from package.json (prefixed with v)
+git tag v$(node -p "require('./package.json').version")
+# 4. Push the tag
+git push origin v$(node -p "require('./package.json').version")
+```
+
+The workflow builds the bundle and uploads `fax-viz-bundle.zip` to the GitHub Release page. The bundle contains:
+- `fax-viz-server.mjs` -- bundled server (~186 KB)
+- `dist-fax-viz/` -- static web assets (~355 KB)
+
+Bundle requires Node.js 18+. Q&A features require `@github/copilot-sdk` in the environment.
+
 ## Planned features
 - Bookmarks and annotations (persisted to localStorage)
 - Vim-style keyboard navigation
