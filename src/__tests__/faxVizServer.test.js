@@ -207,7 +207,8 @@ describe("fax-viz-server", function () {
     it("blocks path traversal", async function () {
       var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
       var response = await makeRequest(server, "GET", "/api/fax/" + encodeURIComponent("../../etc") + "/manifest");
-      expect(response.status).toBe(403);
+      // resolveBundlePath returns null for traversal attempts — reported as 404
+      expect(response.status).toBe(404);
     });
 
     it("returns 405 for POST requests", async function () {
@@ -239,7 +240,7 @@ describe("fax-viz-server", function () {
     it("blocks path traversal in /api/fax/:id/events", async function () {
       var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
       var response = await makeRequest(server, "GET", "/api/fax/" + encodeURIComponent("../../etc") + "/events");
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(404);
     });
 
     it("blocks path traversal in /api/fax/:id/file/:name", async function () {
@@ -271,25 +272,16 @@ describe("fax-viz-server", function () {
       fs.unlinkSync(intentPath);
     });
 
-    it("returns 403 for path traversal attempts", async function () {
+    it("returns 404 for path traversal attempts", async function () {
       var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
       var response = await makeRequest(server, "POST", "/api/fax/" + encodeURIComponent("../../etc") + "/pickup");
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(404);
     });
 
     it("handles nonexistent bundle gracefully", async function () {
       var server = createFaxVizServer({ faxDir: tmpDir, distDir: null });
       var response = await makeRequest(server, "POST", "/api/fax/nonexistent-bundle-99999/pickup");
-      // Server returns 200 with empty bootstrap (no bootstrap-prompt.txt)
-      // and writes a minimal reply intent
-      expect(response.status).toBe(200);
-      var body = JSON.parse(response.body);
-      expect(body.success).toBe(true);
-      expect(body.bootstrap).toBe("");
-
-      // Clean up intent file
-      var intentPath = path.join(tmpDir, ".fax-reply-intent.json");
-      if (fs.existsSync(intentPath)) fs.unlinkSync(intentPath);
+      expect(response.status).toBe(404);
     });
 
     it("returns 405 for GET requests", async function () {

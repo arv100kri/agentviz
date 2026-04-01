@@ -82,6 +82,18 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
   var pickupFax = _pickupFax[0];
   var setPickupFax = _pickupFax[1];
 
+  var _expandedThreads = useState({});
+  var expandedThreads = _expandedThreads[0];
+  var setExpandedThreads = _expandedThreads[1];
+
+  function toggleThread(threadId) {
+    setExpandedThreads(function (prev) {
+      var next = Object.assign({}, prev);
+      next[threadId] = !next[threadId];
+      return next;
+    });
+  }
+
   // Group by thread
   var threadCounts = useMemo(function () {
     var counts = {};
@@ -91,13 +103,13 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
     return counts;
   }, [faxes]);
 
-  // Filter and sort
-  var filteredFaxes = useMemo(function () {
+  // Filter, sort, and group by thread
+  var displayItems = useMemo(function () {
     var result = faxes.filter(function (f) {
       if (importanceFilter !== "all" && f.importance !== importanceFilter) return false;
       if (search) {
         var q = search.toLowerCase();
-        var haystack = [f.label, f.sender.alias, f.sender.email, f.folderName].join(" ").toLowerCase();
+        var haystack = [f.label, f.sender.alias, f.sender.email, f.folderName, f.threadSubject || ""].join(" ").toLowerCase();
         if (haystack.indexOf(q) === -1) return false;
       }
       return true;
@@ -120,8 +132,31 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
       return 0;
     });
 
-    return result;
-  }, [faxes, sortBy, search, importanceFilter]);
+    // Group multi-entry threads: show latest as the visible row, rest hidden until expanded
+    var grouped = [];
+    var threadSeen = {};
+    for (var i = 0; i < result.length; i++) {
+      var fax = result[i];
+      var tid = fax.threadId;
+      var count = tid ? (fax.threadEntryCount || threadCounts[tid] || 1) : 1;
+      if (count <= 1 || !tid) {
+        grouped.push({ type: "fax", fax: fax });
+        continue;
+      }
+      if (threadSeen[tid]) {
+        // This is a secondary entry in a multi-entry thread
+        grouped.push({ type: "thread-child", fax: fax, threadId: tid });
+        continue;
+      }
+      threadSeen[tid] = true;
+      grouped.push({ type: "thread-header", fax: fax, threadId: tid, entryCount: count, subject: fax.threadSubject || fax.label });
+    }
+
+    return grouped;
+  }, [faxes, sortBy, search, importanceFilter, threadCounts]);
+
+  // For backward compat: filteredFaxes used by the count display
+  var filteredFaxes = displayItems.filter(function (item) { return item.type !== "thread-child" || expandedThreads[item.threadId]; });
 
   if (loading && faxes.length === 0) {
     return React.createElement("div", {
@@ -224,93 +259,107 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
     React.createElement("div", {
       style: { flex: 1, overflowY: "auto", padding: "4px 0" },
     },
-      filteredFaxes.map(function (fax) {
+      displayItems.map(function (item, idx) {
+        // Skip collapsed thread children
+        if (item.type === "thread-child" && !expandedThreads[item.threadId]) return null;
+
+        var fax = item.fax;
         var isUnread = !readStatus.isRead(fax.folderName);
-        return React.createElement("div", {
-          key: fax.id,
-          className: "av-interactive",
-          onClick: function () { onOpenFax(fax); },
-          style: {
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "10px 20px",
-            cursor: "pointer",
-            borderBottom: "1px solid " + theme.border.default,
-            opacity: isUnread ? 1 : 0.7,
-          },
-        },
-          // Unread indicator
-          React.createElement("div", {
+        var isThreadHeader = item.type === "thread-header";
+        var isThreadChild = item.type === "thread-child";
+        var directionIcon = fax.direction === "sent" ? "\u2192 " : fax.direction === "received" ? "\u2190 " : "";
+
+        return React.createElement("div", { key: fax.id + "-" + idx },
+          // Thread header bar (for multi-entry threads)
+          isThreadHeader && React.createElement("div", {
+            onClick: function () { toggleThread(item.threadId); },
             style: {
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: isUnread ? theme.accent.blue : "transparent",
-              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "6px 20px",
+              background: theme.bg.secondary,
+              borderBottom: "1px solid " + theme.border.default,
+              cursor: "pointer",
+              fontSize: 11,
+              color: theme.text.secondary,
             },
-          }),
-          // Main content
+          },
+            React.createElement("span", { style: { fontSize: 10 } }, expandedThreads[item.threadId] ? "\u25BC" : "\u25B6"),
+            React.createElement("span", { style: { fontWeight: 600 } }, item.subject),
+            React.createElement("span", { style: { color: theme.text.dim } }, item.entryCount + " messages"),
+            fax.threadPickedUp && React.createElement("span", { style: { color: theme.accent.green, fontSize: 10 } }, "\u2713 picked up"),
+            fax.threadReplied && React.createElement("span", { style: { color: theme.accent.blue, fontSize: 10 } }, "\u21A9 replied")
+          ),
+          // Fax row
           React.createElement("div", {
-            style: { flex: 1, minWidth: 0 },
+            className: "av-interactive",
+            onClick: function () { onOpenFax(fax); },
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: isThreadChild ? "8px 20px 8px 40px" : "10px 20px",
+              cursor: "pointer",
+              borderBottom: "1px solid " + theme.border.default,
+              opacity: isUnread ? 1 : 0.7,
+              background: isThreadChild ? theme.bg.secondary : "transparent",
+            },
           },
             React.createElement("div", {
               style: {
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 2,
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: isUnread ? theme.accent.blue : "transparent",
+                flexShrink: 0,
               },
-            },
-              React.createElement("span", {
-                style: {
-                  fontSize: 13,
-                  fontWeight: isUnread ? 600 : 400,
-                  color: theme.text.primary,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                },
-              }, fax.label),
-              React.createElement(ImportanceBadge, { importance: fax.importance }),
-              React.createElement(ThreadIndicator, { count: threadCounts[fax.threadId] }),
-              fax.hasEvents && React.createElement("span", {
-                style: {
-                  fontSize: 10,
-                  color: theme.accent.green,
-                  border: "1px solid " + theme.accent.green,
-                  borderRadius: 3,
-                  padding: "0px 4px",
-                },
-              }, "SESSION")
-            ),
+            }),
             React.createElement("div", {
-              style: {
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 11,
-                color: theme.text.dim,
+              style: { flex: 1, minWidth: 0 },
+            },
+              React.createElement("div", {
+                style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 2 },
               },
-            },
-              React.createElement("span", null, fax.sender.alias || fax.sender.email),
-              fax.git && fax.git.branch && React.createElement("span", {
-                style: { color: theme.text.dim },
-              }, "\u2192 " + fax.git.branch),
-              React.createElement(ProgressSummary, { progress: fax.progress })
-            )
-          ),
-          // Date
-          React.createElement("span", {
-            style: { fontSize: 11, color: theme.text.dim, flexShrink: 0, whiteSpace: "nowrap" },
-          }, formatDate(fax.createdUtc)),
-          // Pick Up button
-          React.createElement("button", {
-            className: "av-btn",
-            onClick: function (e) {
-              e.stopPropagation();
-              setPickupFax(fax);
-            },
+                React.createElement("span", {
+                  style: {
+                    fontSize: 13,
+                    fontWeight: isUnread ? 600 : 400,
+                    color: theme.text.primary,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  },
+                }, directionIcon + fax.label),
+                React.createElement(ImportanceBadge, { importance: fax.importance }),
+                !isThreadHeader && !isThreadChild && React.createElement(ThreadIndicator, { count: threadCounts[fax.threadId] }),
+                fax.hasEvents && React.createElement("span", {
+                  style: {
+                    fontSize: 10,
+                    color: theme.accent.green,
+                    border: "1px solid " + theme.accent.green,
+                    borderRadius: 3,
+                    padding: "0px 4px",
+                  },
+                }, "SESSION")
+              ),
+              React.createElement("div", {
+                style: { display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: theme.text.dim },
+              },
+                React.createElement("span", null, fax.sender.alias || fax.sender.email),
+                fax.git && fax.git.branch && React.createElement("span", { style: { color: theme.text.dim } }, "\u2192 " + fax.git.branch),
+                React.createElement(ProgressSummary, { progress: fax.progress })
+              )
+            ),
+            React.createElement("span", {
+              style: { fontSize: 11, color: theme.text.dim, flexShrink: 0, whiteSpace: "nowrap" },
+            }, formatDate(fax.createdUtc)),
+            React.createElement("button", {
+              className: "av-btn",
+              onClick: function (e) {
+                e.stopPropagation();
+                setPickupFax(fax);
+              },
             style: {
               background: theme.accent.primary,
               color: theme.text.primary,
@@ -324,8 +373,9 @@ export default function FaxInboxView({ faxes, loading, error, readStatus, onOpen
               flexShrink: 0,
             },
           }, "Pick Up")
-        );
-      })
+        )  // closes fax row div
+        );  // closes wrapper div
+      }).filter(Boolean)
     ),
     pickupFax && React.createElement(PickUpModal, {
       isOpen: true,

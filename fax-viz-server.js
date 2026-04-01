@@ -30,6 +30,7 @@ import {
   setupSSE,
 } from "./src/lib/sessionQAEndpoints.js";
 import { buildReplyIntent, writeReplyIntent } from "./src/fax-viz/lib/faxReplyIntent.js";
+import { createThreadStore } from "./src/fax-viz/lib/threadStore.js";
 
 var MIME = {
   ".html": "text/html; charset=utf-8",
@@ -186,10 +187,37 @@ function readBundleMarkdownFiles(bundlePath) {
   return result;
 }
 
-export function createFaxVizServer({ faxDir, distDir }) {
+export function createFaxVizServer({ faxDir, distDir, threadsFile }) {
   // In-memory session Q&A cache (mirrors the main server's cache pattern)
   var sessionQACache = createSessionQACacheStore();
   var modelAnswerCache = createModelAnswerCache(50);
+
+  // Thread store (optional — enabled when --threads-file is provided)
+  var threadStore = threadsFile ? createThreadStore(threadsFile) : null;
+
+  // Bundle location map: bundleId -> absolute path (built from faxDir + threads.json)
+  function resolveBundlePath(bundleId) {
+    // First check faxDir
+    if (faxDir) {
+      var localPath = path.join(faxDir, bundleId);
+      if (localPath.startsWith(faxDir)) {
+        try { fs.accessSync(path.join(localPath, "manifest.json")); return localPath; } catch (_) {}
+      }
+    }
+    // Then check thread store locations
+    if (threadStore) {
+      var locationMap = threadStore.buildLocationMap();
+      var threadPath = locationMap[bundleId];
+      if (threadPath) {
+        var resolved = path.resolve(threadPath);
+        try {
+          fs.accessSync(path.join(resolved, "manifest.json"));
+          return resolved;
+        } catch (_) {}
+      }
+    }
+    return null;
+  }
 
   function handleRequest(req, res) {
     var parsed = url.parse(req.url, true);
@@ -238,6 +266,51 @@ export function createFaxVizServer({ faxDir, distDir }) {
         return;
       }
       var faxes = discoverFaxBundles(faxDir);
+      var seenIds = {};
+      for (var fi = 0; fi < faxes.length; fi++) seenIds[faxes[fi].id] = true;
+
+      // Augment with thread metadata and include external bundles
+      if (threadStore) {
+        // Add external bundles from threads.json not already in faxDir
+        var external = threadStore.getExternalBundles(faxDir);
+        for (var ei = 0; ei < external.length; ei++) {
+          if (seenIds[external[ei].bundleId]) continue;
+          var extPath = external[ei].location;
+          // Security: verify the path exists and has a manifest
+          try {
+            var extManifest = parseManifest(extPath);
+            if (!extManifest) continue;
+            var hasEvents = false;
+            try { fs.accessSync(path.join(extPath, "events.jsonl")); hasEvents = true; } catch (_) {}
+            var extLabel = extManifest.bundleLabel || external[ei].bundleId.replace(/^fax-context-/, "").replace(/-\d{8}-\d{6}$/, "") || external[ei].bundleId;
+            faxes.push({
+              id: external[ei].bundleId,
+              folderName: external[ei].bundleId,
+              label: extLabel,
+              sender: extManifest.sender || { alias: "Unknown", email: "", program: "", sessionId: "" },
+              importance: extManifest.importance || "normal",
+              threadId: external[ei].threadId || extManifest.threadId || "",
+              createdUtc: extManifest.createdUtc || "",
+              hasEvents: hasEvents,
+              artifactCount: Array.isArray(extManifest.artifacts) ? extManifest.artifacts.length : 0,
+              sharedArtifactCount: Array.isArray(extManifest.sharedArtifacts) ? extManifest.sharedArtifacts.length : 0,
+              git: extManifest.git || null,
+              progress: extManifest.progress || null,
+              bundlePath: extPath,
+              sourceRoot: extManifest.sourceRoot || null,
+            });
+            seenIds[external[ei].bundleId] = true;
+          } catch (_) {}
+        }
+        // Augment all faxes with thread metadata
+        for (var ai = 0; ai < faxes.length; ai++) {
+          threadStore.augmentFax(faxes[ai]);
+        }
+        // Re-sort after adding external bundles
+        faxes.sort(function (a, b) {
+          return (b.createdUtc || "").localeCompare(a.createdUtc || "");
+        });
+      }
       res.writeHead(200);
       res.end(JSON.stringify({ faxes: faxes }));
       return;
@@ -289,13 +362,13 @@ export function createFaxVizServer({ faxDir, distDir }) {
         return;
       }
       var faxId = decodeURIComponent(eventsMatch[1]);
-      var eventsPath = path.join(faxDir, faxId, "events.jsonl");
-      // Prevent directory traversal
-      if (!eventsPath.startsWith(faxDir)) {
-        res.writeHead(403);
-        res.end("Forbidden");
+      var bundleDir = resolveBundlePath(faxId);
+      if (!bundleDir) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "Bundle not found" }));
         return;
       }
+      var eventsPath = path.join(bundleDir, "events.jsonl");
       try {
         var content = fs.readFileSync(eventsPath, "utf8");
         res.writeHead(200);
@@ -317,9 +390,15 @@ export function createFaxVizServer({ faxDir, distDir }) {
       }
       var faxId = decodeURIComponent(fileMatch[1]);
       var fileName = decodeURIComponent(fileMatch[2]);
-      var filePath = path.join(faxDir, faxId, fileName);
-      // Prevent directory traversal
-      if (!filePath.startsWith(path.join(faxDir, faxId))) {
+      var bundleDir = resolveBundlePath(faxId);
+      if (!bundleDir) {
+        res.writeHead(404);
+        res.end("Bundle not found");
+        return;
+      }
+      var filePath = path.join(bundleDir, fileName);
+      // Prevent directory traversal within the bundle
+      if (!filePath.startsWith(bundleDir)) {
         res.writeHead(403);
         res.end("Forbidden");
         return;
@@ -338,10 +417,10 @@ export function createFaxVizServer({ faxDir, distDir }) {
         return;
       }
       var faxId = decodeURIComponent(manifestMatch[1]);
-      var bundlePath = path.join(faxDir, faxId);
-      if (!bundlePath.startsWith(faxDir)) {
-        res.writeHead(403);
-        res.end("Forbidden");
+      var bundlePath = resolveBundlePath(faxId);
+      if (!bundlePath) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "Bundle not found" }));
         return;
       }
       var manifest = parseManifest(bundlePath);
@@ -350,7 +429,6 @@ export function createFaxVizServer({ faxDir, distDir }) {
         res.end(JSON.stringify({ error: "Manifest not found" }));
         return;
       }
-      // Also include markdown file contents for the observe view
       var markdownFiles = readBundleMarkdownFiles(bundlePath);
       res.writeHead(200);
       res.end(JSON.stringify({ manifest: manifest, markdownFiles: markdownFiles }));
@@ -639,29 +717,44 @@ export function createFaxVizServer({ faxDir, distDir }) {
       }
 
       var pickupFaxId = decodeURIComponent(pickupMatch[1]);
-      var pickupBundlePath = path.join(faxDir, pickupFaxId);
+      var pickupBundlePath = resolveBundlePath(pickupFaxId);
 
-      // Prevent directory traversal
-      if (!pickupBundlePath.startsWith(faxDir)) {
-        res.writeHead(403);
-        res.end(JSON.stringify({ error: "Forbidden" }));
+      if (!pickupBundlePath) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "Bundle not found" }));
         return;
       }
 
       try {
-        // Read bootstrap prompt
-        var bootstrapPath = path.join(pickupBundlePath, "bootstrap-prompt.txt");
         var bootstrap = "";
         try {
-          bootstrap = fs.readFileSync(bootstrapPath, "utf8");
-        } catch (bsErr) {}
+          bootstrap = fs.readFileSync(path.join(pickupBundlePath, "bootstrap-prompt.txt"), "utf8");
+        } catch (_) {}
 
-        // Read manifest for reply intent
         var pickupManifest = parseManifest(pickupBundlePath);
 
-        // Write reply intent to fax directory root (parent of bundle folders)
-        var intent = buildReplyIntent(pickupManifest, pickupFaxId);
-        writeReplyIntent(faxDir, intent);
+        // Update thread store if available, otherwise fall back to legacy intent file
+        if (threadStore) {
+          threadStore.update(function (data) {
+            var threads = data.threads || {};
+            var threadIds = Object.keys(threads);
+            for (var i = 0; i < threadIds.length; i++) {
+              var thread = threads[threadIds[i]];
+              var entries = Array.isArray(thread.entries) ? thread.entries : [];
+              for (var j = 0; j < entries.length; j++) {
+                if (entries[j].bundleId === pickupFaxId) {
+                  thread.pickedUp = true;
+                  thread.pickedUpAt = new Date().toISOString();
+                  return;
+                }
+              }
+            }
+          });
+        } else {
+          // Legacy fallback: write .fax-reply-intent.json
+          var intent = buildReplyIntent(pickupManifest, pickupFaxId);
+          writeReplyIntent(faxDir, intent);
+        }
 
         // Mark as read
         var readStatus = readReadStatus();

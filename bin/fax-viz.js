@@ -31,10 +31,12 @@ function exitWithError(msg) {
 }
 
 function parseArgs(argv) {
-  var args = { faxDir: null, noOpen: false, open: null };
+  var args = { faxDir: null, noOpen: false, open: null, threadsFile: null };
   for (var i = 2; i < argv.length; i++) {
     if (argv[i] === "--fax-dir" && argv[i + 1]) {
       args.faxDir = argv[++i];
+    } else if (argv[i] === "--threads-file" && argv[i + 1]) {
+      args.threadsFile = argv[++i];
     } else if (argv[i] === "--open" && argv[i + 1]) {
       args.open = argv[++i];
     } else if (argv[i] === "--no-open") {
@@ -47,10 +49,11 @@ function parseArgs(argv) {
         "  Usage: fax-viz --fax-dir <path>",
         "",
         "  Options:",
-        "    --fax-dir <path>  Path to directory containing fax bundles (required)",
-        "    --open <name>     Open browser directly to a specific fax bundle",
-        "    --no-open         Don't open browser automatically",
-        "    -h, --help        Show this help",
+        "    --fax-dir <path>        Path to directory containing fax bundles (required)",
+        "    --threads-file <path>   Path to threads.json for thread store integration",
+        "    --open <name>           Open browser directly to a specific fax bundle",
+        "    --no-open               Don't open browser automatically",
+        "    -h, --help              Show this help",
         "",
       ].join("\n") + "\n");
       process.exit(0);
@@ -120,7 +123,8 @@ findFreePort(getPreferredPort(), function (err, port) {
   }
 
   var serverDistDir = hasDistBundle ? distDir : null;
-  var server = createFaxVizServer({ faxDir: resolvedFaxDir, distDir: serverDistDir });
+  var resolvedThreadsFile = args.threadsFile ? path.resolve(args.threadsFile) : null;
+  var server = createFaxVizServer({ faxDir: resolvedFaxDir, distDir: serverDistDir, threadsFile: resolvedThreadsFile });
 
   server.listen(port, "127.0.0.1", function () {
     var serverUrl = "http://localhost:" + port;
